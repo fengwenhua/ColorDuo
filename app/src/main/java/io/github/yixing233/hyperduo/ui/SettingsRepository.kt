@@ -16,6 +16,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.core.content.edit
 import io.github.yixing233.hyperduo.HyperDuoApp
+import io.github.yixing233.hyperduo.ConfigPacketPublisher
 import io.github.yixing233.hyperduo.Prefs
 import io.github.yixing233.hyperduo.TrioSettings
 import io.github.libxposed.service.XposedService
@@ -299,7 +300,16 @@ class SettingsRepository(context: Context) {
      * See [Prefs.KEY_FONT_PATH]. The caller has already copied the file to a
      * location the hooked process can read; this only records where.
      */
-    fun setFontPath(value: String) = writeString(Prefs.KEY_FONT_PATH, value)
+    @JvmOverloads
+    fun setFontPath(value: String, remoteName: String = "", revision: String = java.util.UUID.randomUUID().toString()) {
+        synchronized(io.github.yixing233.hyperduo.ColorOsFontPublisher::class.java) {
+            val editor = preferences().edit().putString(Prefs.KEY_FONT_PATH, value)
+            io.github.yixing233.hyperduo.ColorOsFontPublisher.bind(editor, value, revision, remoteName)
+            check(editor.commit()) { "font selection not persisted" }
+        }
+        push { it.putString(Prefs.KEY_FONT_PATH, value) }
+        notifyModule()
+    }
 
     // ----------------------------------------------------------------- colours
 
@@ -505,6 +515,7 @@ class SettingsRepository(context: Context) {
      * carry the same values.
      */
     private fun notifyModule() {
+        ConfigPacketPublisher.publish(appContext, service)
         runCatching {
             val intent = Intent(Prefs.ACTION_RELOAD)
                 .setPackage(Prefs.SYSTEMUI_PACKAGE)

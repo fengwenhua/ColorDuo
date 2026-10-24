@@ -53,6 +53,11 @@ public final class Prefs {
      * not on the app's runtime class path.
      */
     public static final String ACTION_RELOAD = "io.github.yixing233.hyperduo.action.RELOAD";
+    /** Atomic, versioned transport used by the ColorOS adapter. Legacy keys remain compatible. */
+    public static final String ACTION_SNAPSHOT = "io.github.yixing233.hyperduo.action.SNAPSHOT_V1";
+    public static final String KEY_SNAPSHOT = "transport_snapshot_v1";
+    public static final String KEY_SNAPSHOT_EPOCH = "transport_epoch_v1";
+    public static final String KEY_SNAPSHOT_REVISION = "transport_revision_v1";
 
     /**
      * Package the reload broadcast is addressed to. SystemUI registers the

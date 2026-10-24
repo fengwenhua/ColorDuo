@@ -14,9 +14,8 @@ import io.github.libxposed.api.XposedModule;
 import io.github.libxposed.api.XposedModuleInterface;
 
 /**
- * HyperDuo — folds the Wi-Fi signal and the mobile signal into MIUI's battery
- * icon, drawing one trio glyph (battery ring + Wi-Fi arcs + signal dots) in the
- * 28dp x 20dp slot the battery icon already occupies.
+ * Selects the ROM-specific entry point and the configured ColorOS adapter stage;
+ * the established MIUI implementation is never installed in a ColorOS process.
  *
  * <p>Entry point declared in {@code META-INF/xposed/java_init.list}; scope in
  * {@code META-INF/xposed/scope.list}.
@@ -28,15 +27,45 @@ public final class HyperDuoModule extends XposedModule {
     private static final int LOG_WARN = 5;
 
     private static final String TARGET_PACKAGE = "com.android.systemui";
+    private String processName;
+    private boolean installed;
+
+    @Override
+    public void onModuleLoaded(XposedModuleInterface.ModuleLoadedParam param) {
+        processName = param.getProcessName();
+        log(LOG_INFO, "loaded process=" + processName + " api=" + getApiVersion()
+                + " framework=" + getFrameworkName() + " " + getFrameworkVersion());
+    }
 
     @Override
     public void onPackageReady(XposedModuleInterface.PackageReadyParam param) {
         final String pkg = param.getPackageName();
-        if (!TARGET_PACKAGE.equals(pkg)) {
+        if (!TARGET_PACKAGE.equals(pkg) || !TARGET_PACKAGE.equals(processName) || installed) {
             return;
         }
+        installed = true;
         try {
-            TrioHooks.install(this, param.getClassLoader());
+            final ClassLoader cl = param.getClassLoader();
+            final RomProfile profile = RomProfile.select(
+                    Refl.cls("com.android.systemui.statusbar.views.MiuiBatteryMeterIconView", cl) != null,
+                    Refl.cls("com.oplus.systemui.statusbar.pipeline.battery.ui.view.StatBatteryMeterView", cl) != null);
+            log(LOG_INFO, "adapter=" + profile);
+            switch (profile) {
+                case HYPER_OS:
+                    TrioHooks.install(this, cl);
+                    break;
+                case COLOR_OS:
+                    ColorOsObserver.install(this, cl);
+                    if ("battery".equals(BuildConfig.COLOROS_STAGE) || "network".equals(BuildConfig.COLOROS_STAGE)
+                            || "ring".equals(BuildConfig.COLOROS_STAGE) || "type".equals(BuildConfig.COLOROS_STAGE)
+                            || "capsule".equals(BuildConfig.COLOROS_STAGE) || "font".equals(BuildConfig.COLOROS_STAGE)
+                            || "outside".equals(BuildConfig.COLOROS_STAGE)) {
+                        ColorOsBatteryAdapter.install(this, cl);
+                    }
+                    break;
+                default:
+                    log(LOG_WARN, "unsupported or ambiguous ROM; native icons retained");
+            }
         } catch (Throwable t) {
             log(LOG_WARN, "install failed: " + t);
         }

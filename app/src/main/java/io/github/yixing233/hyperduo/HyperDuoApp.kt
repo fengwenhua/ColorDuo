@@ -41,6 +41,7 @@ class HyperDuoApp : Application(), XposedServiceHelper.OnServiceListener {
         // replay everything instead of relying on write-through alone.
         runCatching { SettingsRepository(this).syncAllToFramework() }
             .onFailure { Log.w(TAG, "cannot push settings to framework", it) }
+        ColorOsFontPublisher.onServiceBound(this, service)
         listeners.forEach { it(service) }
     }
 

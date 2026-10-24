@@ -203,6 +203,15 @@ final class TrioRenderer {
         }
     }
 
+    /** Installs a font already verified off-thread. The opaque key is never opened as a path. */
+    static void setLoadedFont(String key, Typeface face) {
+        if (key.equals(sFontPath) && face == sFontFace) return;
+        sFontPath = key;
+        sFontFace = face;
+        sFontFailed = "";
+        sFontGeneration++;
+    }
+
     /** Whether the current font request failed to load. For diagnostics. */
     static boolean fontFailed() {
         return sFontFailed.length() > 0;
@@ -1935,6 +1944,20 @@ final class TrioRenderer {
         final float suffix = TEXT.measureText(String.valueOf(TrioGeometry.TYPE_SUFFIX));
         TEXT.setTextSize(size);
         return base + suffix;
+    }
+
+    static int outsideTypeWidth(String text, float size, TrioAppearance appearance) {
+        applyWeight(appearance.typeWeight);
+        return (int) Math.ceil(measureType(text, size, appearance.typeSuffixScale));
+    }
+
+    static void drawOutsideType(Canvas canvas, String text, int width, int height, float size,
+                                int tint, TrioAppearance appearance) {
+        applyWeight(appearance.typeWeight);
+        TEXT.setTextSize(size);
+        Paint.FontMetrics metrics = TEXT.getFontMetrics();
+        drawType(canvas, text, width / 2f, height / 2f - (metrics.ascent + metrics.descent) / 2f,
+                size, tint, appearance);
     }
 
     // ----------------------------------------------------------------- helpers

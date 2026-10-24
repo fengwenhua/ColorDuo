@@ -405,7 +405,7 @@ fun SettingsScreen(repository: SettingsRepository) {
                     if (previous.isNotEmpty() && previous != result.path) {
                         FontInstaller.remove(previous)
                     }
-                    update { it.setFontPath(result.path) }
+                    update { it.setFontPath(result.path, result.remoteName, result.revision) }
                     showMessage(fontContext.getString(R.string.font_applied, result.name))
                 }
                 FontInstaller.Result.NotAFont ->
@@ -1815,6 +1815,16 @@ private fun ActivatedRow(settings: TrioSettings, service: XposedService?) {
 @Composable
 private fun ActivatedCard(active: Boolean, version: String, modifier: Modifier = Modifier) {
     val dark = isDarkTheme()
+    val observationBuild = version.contains("coloros-observer") &&
+        android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT) in setOf("oppo", "oneplus", "realme")
+    val batteryBuild = io.github.yixing233.hyperduo.BuildConfig.COLOROS_STAGE == "battery" &&
+        android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT) in setOf("oppo", "oneplus", "realme")
+    val networkBuild = io.github.yixing233.hyperduo.BuildConfig.COLOROS_STAGE == "network" &&
+        android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT) in setOf("oppo", "oneplus", "realme")
+    val ringBuild = io.github.yixing233.hyperduo.BuildConfig.COLOROS_STAGE in setOf("ring", "type") &&
+        android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT) in setOf("oppo", "oneplus", "realme")
+    val capsuleBuild = io.github.yixing233.hyperduo.BuildConfig.COLOROS_STAGE in setOf("capsule", "font", "outside") &&
+        android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT) in setOf("oppo", "oneplus", "realme")
     val content = if (dark) MiuixTheme.colorScheme.onSurface else ActivatedContent
 
     Card(
@@ -1839,13 +1849,28 @@ private fun ActivatedCard(active: Boolean, version: String, modifier: Modifier =
             ) {
                 Text(
                     text = stringResource(
-                        if (active) R.string.about_activated else R.string.about_inactive,
+                        if (capsuleBuild) R.string.about_coloros_capsule
+                        else if (ringBuild) R.string.about_coloros_ring
+                        else if (networkBuild) R.string.about_coloros_network
+                        else if (batteryBuild) R.string.about_coloros_battery
+                        else if (observationBuild) R.string.about_coloros_observer
+                        else if (active) R.string.about_activated else R.string.about_inactive,
                     ),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = if (active) {
+                    text = if (capsuleBuild) {
+                        stringResource(R.string.about_coloros_capsule_hint)
+                    } else if (ringBuild) {
+                        stringResource(R.string.about_coloros_ring_hint)
+                    } else if (networkBuild) {
+                        stringResource(R.string.about_coloros_network_hint)
+                    } else if (batteryBuild) {
+                        stringResource(R.string.about_coloros_battery_hint)
+                    } else if (observationBuild) {
+                        stringResource(R.string.about_coloros_observer_hint)
+                    } else if (active) {
                         stringResource(R.string.about_module_version, version)
                     } else {
                         stringResource(R.string.about_inactive_hint)

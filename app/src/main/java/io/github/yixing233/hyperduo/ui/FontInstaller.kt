@@ -42,7 +42,8 @@ internal object FontInstaller {
      */
     internal sealed interface Result {
         /** [path] is where the font now lives; [name] is what to show for it. */
-        data class Installed(val path: String, val name: String) : Result
+        data class Installed(val path: String, val name: String, val remoteName: String = "",
+                             val revision: String = java.util.UUID.randomUUID().toString()) : Result
 
         /** The picked file is not a font. */
         data object NotAFont : Result
@@ -92,7 +93,11 @@ internal object FontInstaller {
                     target.setReadable(WORLD_READ, false)
                     dir.setReadable(WORLD_READ, false)
                     dir.setExecutable(true, false)
-                    Result.Installed(target.absolutePath, name)
+                    val service = io.github.yixing233.hyperduo.HyperDuoApp.xposedService
+                    val remoteName = if (io.github.yixing233.hyperduo.ColorOsFontPublisher.supportedDevice() && service != null) {
+                        io.github.yixing233.hyperduo.ColorOsFontPublisher.exportNow(context, service, target.absolutePath)
+                    } else ""
+                    Result.Installed(target.absolutePath, name, remoteName)
                 }
             } catch (t: Throwable) {
                 Result.Failed(t.message ?: t.javaClass.simpleName)

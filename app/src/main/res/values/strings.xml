@@ -233,6 +233,16 @@
     <string name="debug_summary">把详细过程写入 LSPosed 日志，排查问题时开启。</string>
 
     <string name="about_activated">已激活</string>
+    <string name="about_coloros_observer">ColorOS 观察构建</string>
+    <string name="about_coloros_battery">ColorOS 电池验证</string>
+    <string name="about_coloros_network">ColorOS 网络融合验证</string>
+    <string name="about_coloros_ring">ColorOS 圆环布局验证</string>
+    <string name="about_coloros_capsule">ColorOS 胶囊验证</string>
+    <string name="about_coloros_capsule_hint">圆环、胶囊、网络、时钟、字体和环外读数验证中。</string>
+    <string name="about_coloros_ring_hint">跟随圆环布局与充电状态；胶囊、字体、时钟及环外组件尚在适配。</string>
+    <string name="about_coloros_network_hint">当前使用固定圆环布局验证 Wi-Fi 和单卡信号融合；5G、VoLTE 和异常状态由系统显示。</string>
+    <string name="about_coloros_battery_hint">当前仅验证电池圆环和总开关恢复，网络图标由系统显示。</string>
+    <string name="about_coloros_observer_hint">仅采集诊断，保留原生图标。接入验证中。</string>
     <string name="about_inactive">未激活</string>
     <string name="about_inactive_hint">请在 LSPosed 中启用模块</string>
     <string name="about_module_version">模块版本：%1$s</string>

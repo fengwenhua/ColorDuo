@@ -742,9 +742,10 @@ private fun DrawingStyleSelector(
             // and only relabelling its shape would preview a look clicking it does not
             // produce - and for the capsule that is a visible lie, since its openings and
             // body are filled by a different set of pieces.
-            val sample = remember(style, settings.trioStyle) {
-                settings.withComponentsFrom(snapshotForStyle(style), style)
-            }
+            // The active tile must follow every edit, including priority changes made
+            // lower on this same page. Only keying by style kept its old layout alive.
+            val sample = if (chosen) settings
+                else settings.withComponentsFrom(snapshotForStyle(style), style)
             Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
                 .background(if (chosen) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surfaceContainerHigh)
                 .border(if (chosen) 2.dp else 0.dp, if (chosen) MiuixTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(12.dp))

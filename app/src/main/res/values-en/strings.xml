@@ -215,6 +215,16 @@
     <string name="debug_summary">Write verbose output to the LSPosed log. Enable only when diagnosing.</string>
 
     <string name="about_activated">Activated</string>
+    <string name="about_coloros_observer">ColorOS observer</string>
+    <string name="about_coloros_battery">ColorOS battery validation</string>
+    <string name="about_coloros_network">ColorOS network validation</string>
+    <string name="about_coloros_ring">ColorOS ring layout validation</string>
+    <string name="about_coloros_capsule">ColorOS capsule validation</string>
+    <string name="about_coloros_capsule_hint">Validating rings, capsules, network, clock, fonts and outside readouts.</string>
+    <string name="about_coloros_ring_hint">Uses ring placements and charging state. Capsule, fonts, clock and outside components are still being adapted.</string>
+    <string name="about_coloros_network_hint">Fixed ring layout for Wi-Fi and single-SIM signals. Network type, VoLTE and warning states remain native.</string>
+    <string name="about_coloros_battery_hint">Battery ring and master-switch restoration test. Network icons remain native.</string>
+    <string name="about_coloros_observer_hint">Diagnostics only. Native icons remain unchanged; integration is under validation.</string>
     <string name="about_inactive">Inactive</string>
     <string name="about_inactive_hint">Enable the module in LSPosed</string>
     <string name="about_module_version">Module version: %1$s</string>

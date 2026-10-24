@@ -10,6 +10,8 @@ plugins {
 // checked-in defaults below.
 val tagVersionName = (findProperty("hyperduoVersionName") as String?)?.takeIf { it.isNotBlank() }
 val tagVersionCode = (findProperty("hyperduoVersionCode") as String?)?.toIntOrNull()
+val colorOsStage = (findProperty("colorOsStage") as String?) ?: "outside"
+require(colorOsStage in setOf("observe", "battery", "network", "ring", "type", "capsule", "font", "outside")) { "Unsupported ColorOS validation stage" }
 
 android {
     // io.github.* because LSPosed's module repo verifies a reverse-domain id
@@ -28,6 +30,7 @@ android {
         targetSdk = 36
         versionCode = tagVersionCode ?: 2
         versionName = tagVersionName ?: "1.1"
+        buildConfigField("String", "COLOROS_STAGE", "\"$colorOsStage\"")
     }
 
     signingConfigs {
@@ -68,6 +71,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     // Keep META-INF/xposed/{java_init.list,scope.list,module.prop} in the APK.

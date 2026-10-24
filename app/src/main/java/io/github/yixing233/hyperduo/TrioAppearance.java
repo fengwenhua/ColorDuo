@@ -498,7 +498,7 @@ public final class TrioAppearance {
      * </ol>
      *
      * <p>Case 3 is per BAND, which is why it is answered by the caller: only the zone loop
-     * knows what else is queued behind the label. This method answers the first two.
+     * knows what else is queued behind the label. This method enables yielding in both cases.
      *
      * @param wifiConnected the live connection state - never the signal level, which is a
      *   strength: 0 is a weak link and -1 also means "no reading"
@@ -511,8 +511,9 @@ public final class TrioAppearance {
         if (!ownsWifi()) {
             return false;
         }
-        // Case 2: outside the glyph, where the system icon already sits.
-        return typeOutOfRing;
+        // The zone resolver handles the inside case, including whether a replacement
+        // actually has ink. Outside labels can yield directly to our Wi-Fi arcs.
+        return typeInRing || typeOutOfRing;
     }
 
     /**
