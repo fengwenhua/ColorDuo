@@ -66,7 +66,7 @@ adb shell am instrument -w -r io.github.fengwenhua.colorduo/.CodecInstrumentatio
 - 当前 qsSplit 是未显示的零尺寸宿主，不计该布局通过；空间不足时保留原生对应图标。
 - 正常字体发布保留最多三代，发布前进程异常退出留下的孤立文件尚不自动清扫。
 - 历史 RingSlotsTest 的 empty-layout 断言在未修改的上游 HEAD 同样失败，未列为已通过。
-- 新包名下还需完成重新启用模块后的完整折叠、锁屏/QS和整机重启恢复验收。
+- 新包名下175项 Android 检查、release 安装和重新启用后的 SystemUI 实际绘制已通过；完整折叠、锁屏/QS和整机重启恢复仍需验收。
 
 ## 发布
 
