@@ -281,13 +281,13 @@ public final class TrioPreviewView extends View {
         if (t == null) {
             return null;
         }
-        return TrioZones.zoneAt(t, TrioAppearance.of(settings), x, y);
+        return TrioZones.zoneAt(t, TrioAppearance.of(ChargeLayout.forState(settings, charging, quickCharging)), x, y);
     }
 
     /** Whether a tap hits the battery arc rather than an internal component. */
     public boolean isBatteryRingAt(float x, float y) {
         if (outTypeOnly || outSignalOnly) return false;
-        TrioAppearance a = TrioAppearance.of(settings);
+        TrioAppearance a = TrioAppearance.of(ChargeLayout.forState(settings, charging, quickCharging));
         int sims = 0;
         if (slotLevels != null) for (int signal : slotLevels) if (signal >= 0) sims++;
         return TrioZones.batteryRingAt(zoneTransform(getWidth(), getHeight(), inset, settings),
@@ -430,7 +430,7 @@ public final class TrioPreviewView extends View {
         // arrangement can produce - its bottom zone is two dot columns plus the bar.
         final java.util.List<float[]> boxes =
                 java.util.Arrays.asList(
-                        TrioZones.highlightBoxes(highlight, TrioAppearance.of(settings)));
+                        TrioZones.highlightBoxes(highlight, TrioAppearance.of(ChargeLayout.forState(settings, charging, quickCharging))));
         final float r = HIGHLIGHT_CORNER_DP * density;
         for (int pass = 0; pass < 2; pass++) {
             if (pass == 1) {
@@ -474,7 +474,7 @@ public final class TrioPreviewView extends View {
             return;
         }
 
-        final TrioAppearance a = TrioAppearance.of(settings);
+        final TrioAppearance a = TrioAppearance.of(ChargeLayout.forState(settings, charging, quickCharging));
         labelPaint.setColor(foreground);
         labelPaint.setTypeface(TrioRenderer.typefaceFor(a.typeWeight));
         // Mirrors what the status-bar label does with the same weight: with a
@@ -557,7 +557,7 @@ public final class TrioPreviewView extends View {
             return;
         }
 
-        final TrioAppearance a = TrioAppearance.of(settings);
+        final TrioAppearance a = TrioAppearance.of(ChargeLayout.forState(settings, charging, quickCharging));
         final int[] reading = new int[2];
         TrioRenderer.outSignalLevels(a.dataSimOnly, mobileLevel, slotLevels, -1, reading);
         if (reading[0] < 0) {

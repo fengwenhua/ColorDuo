@@ -29,6 +29,7 @@ class ColorDuoApp : Application(), XposedServiceHelper.OnServiceListener {
 
     override fun onCreate() {
         super.onCreate()
+        FirstRunDefaults.install(getSharedPreferences(Prefs.NAME, MODE_PRIVATE))
         // Must happen in onCreate: the framework broadcasts its binder to
         // whoever registered by the time the process starts.
         runCatching { XposedServiceHelper.registerListener(this) }

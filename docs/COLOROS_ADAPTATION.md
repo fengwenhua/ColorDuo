@@ -36,7 +36,7 @@ gradle :app:assembleDebug :app:assembleRelease --no-daemon --console=plain
 bash tests/coloros-observer.sh
 ```
 
-默认版本 `1.0.0 / 10000`，可传 `-PcolorduoVersionName=1.0.0 -PcolorduoVersionCode=10000`。
+默认版本 `1.0.2 / 10002`，可传 `-PcolorduoVersionName=1.0.2 -PcolorduoVersionCode=10002`。
 默认 `colorOsStage=outside` 开启当前适配；`-PcolorOsStage=observe` 只安装诊断钩子。
 按 ROM 选择适配器，保留 HyperOS 的原 TrioHooks。
 
@@ -61,17 +61,32 @@ adb shell am instrument -w -r io.github.fengwenhua.colorduo/.CodecInstrumentatio
 ## 当前边界与下一步
 
 - 当前真机接管范围为普通单卡 Binder；双卡、特殊 Binder、未知类型和警告状态交由原生。
-- 原生外置电量百分比和充电图标继续由系统显示，避免重复绘制对应内容。
-- 真快充和低电量显示尚需实测；无网络类型的真实双网关闭、VoLTE/漫游变化及流体云拥挤需补验。
+- 原生外置电量百分比继续由系统显示。1.0.2在模块实际绘制充电帧后接管普通原生闪电，
+  停用、绘制失败或非充电帧时恢复最新原生状态；反向充电图标仍交由系统。
+- 低电量显示尚需实测；无网络类型的真实双网关闭、VoLTE/漫游变化及流体云拥挤需补验。
 - 当前 qsSplit 是未显示的零尺寸宿主，不计该布局通过；空间不足时保留原生对应图标。
 - 正常字体发布保留最多三代，发布前进程异常退出留下的孤立文件尚不自动清扫。
 - 历史 RingSlotsTest 的 empty-layout 断言在未修改的上游 HEAD 同样失败，未列为已通过。
 - 新包名下175项 Android 检查、release 安装和重新启用后的 SystemUI 实际绘制已通过；完整折叠、锁屏/QS和整机重启恢复仍需验收。
 
+## 1.0.2 默认布局与充电修复
+
+首次安装使用用户 Find N5 当前的圆环、胶囊与充电状态配置；只初始化空偏好文件，覆盖升级不写入默认值。
+具体配置见[默认配置记录](validation/coloros16-defaults-2026-10-24.md)。
+
+`1.0.2 / 10002`（验证包为 `1.0.0-charge-fix / 10001`）增加按圆环/胶囊分别保存的普通充电、快充组件布局。
+在对应预览状态下编辑组件排序或组件开关，只写该状态；字号、颜色等外观继续共享。
+未编辑的充电布局继承原有设置，拔线后回到基础布局。
+配置复制、比较、Bundle/JSON、远端增量更新和实际绘制使用同一状态解析。
+
+充电修复验证包已安装并验证；1.0.2 新增首次安装检查后，250项 Android 检查及82项纯 Java 检查通过；真实普通充电时桌面的原生闪电接管和占位释放已确认，
+用户已报告真实快充显示正常；该报告未附快充时的 ADB 日志。充电状态下的开关恢复、折叠/QS仍需补充验证。
+详见[充电修复验证记录](validation/coloros16-charge-fix-2026-10-24.md)。
+
 ## 发布
 
-源码仓使用 `v1.0.0` tag；模块仓按官方格式使用 `10000-1.0.0` tag，标题 `1.0.0`，
-Release 正文取 [release-notes-1.0.0.md](release-notes/release-notes-1.0.0.md)，两边上传同一 APK。
+源码仓使用 `v1.0.2` tag；模块仓按官方格式使用 `10002-1.0.2` tag，标题 `1.0.2`，
+Release 正文取 [release-notes-1.0.2.md](release-notes/release-notes-1.0.2.md)，两边上传同一 APK。
 模块仓仅放 SUMMARY、README 与 Release，源码在 ColorDuo 主仓保留。
 
 PowerShell 发版默认只写 ColorDuo 主仓；模块仓创建后显式传

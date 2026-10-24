@@ -156,6 +156,8 @@ public final class Prefs {
      * it the same way.
      */
     public static final String KEY_RING_LAYOUT = "ring_layout";
+    public static final String KEY_CHARGING_LAYOUT = "charging_layout";
+    public static final String KEY_QUICK_CHARGING_LAYOUT = "quick_charging_layout";
 
     /**
      * Suffix that makes a component setting belong to the capsule instead of the ring.
@@ -195,7 +197,8 @@ public final class Prefs {
         return new java.util.HashSet<>(java.util.Arrays.asList(
                 KEY_SHOW_WIFI, KEY_SHOW_MOBILE, KEY_SHOW_VALUE, KEY_SHOW_BOLT,
                 KEY_SHOW_SIM_1, KEY_SHOW_SIM_2, KEY_MOBILE_TYPE_MODE, KEY_RING_LAYOUT,
-                KEY_SIGNAL_MODE, KEY_STACKED_SIGNAL, KEY_DUAL_SIM, KEY_VALUE_CENTRED));
+                KEY_SIGNAL_MODE, KEY_STACKED_SIGNAL, KEY_DUAL_SIM, KEY_VALUE_CENTRED,
+                KEY_CHARGING_LAYOUT, KEY_QUICK_CHARGING_LAYOUT));
     }
 
     /**

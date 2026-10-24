@@ -76,6 +76,7 @@ import io.github.fengwenhua.colorduo.Prefs
 import io.github.fengwenhua.colorduo.R
 import io.github.fengwenhua.colorduo.TrioAppearance
 import io.github.fengwenhua.colorduo.TrioPreviewView
+import io.github.fengwenhua.colorduo.ChargeLayout
 import io.github.fengwenhua.colorduo.TrioSettings
 import io.github.fengwenhua.colorduo.TrioZones
 import top.yukonga.miuix.kmp.basic.Button
@@ -239,8 +240,8 @@ internal fun LazyListScope.drawingTab(
 ) {
     item {
         DrawingEditorCard(
-            settings = settings,
-            update = update,
+            storedSettings = settings,
+            persistUpdate = update,
             onEditColor = onEditColor,
             onResetColors = onResetColors,
             snapshotForStyle = snapshotForStyle,
@@ -258,8 +259,8 @@ internal fun LazyListScope.drawingTab(
  */
 @Composable
 private fun DrawingEditorCard(
-    settings: TrioSettings,
-    update: ((SettingsRepository) -> Unit) -> Unit,
+    storedSettings: TrioSettings,
+    persistUpdate: ((SettingsRepository) -> Unit) -> Unit,
     onEditColor: (RoleColor) -> Unit,
     onResetColors: () -> Unit,
     snapshotForStyle: (Int) -> TrioSettings,
@@ -282,6 +283,11 @@ private fun DrawingEditorCard(
     var previewTheme by rememberSaveable { mutableStateOf(0) }
     var lastSelection by remember { mutableStateOf<ZoneSelection?>(null) }
 
+    val editScene = ChargeLayout.scene(scene.charging, scene.quickCharging)
+    val settings = ChargeLayout.forScene(storedSettings, editScene)
+    val update: ((SettingsRepository) -> Unit) -> Unit = { change ->
+        persistUpdate { repository -> change(repository.forChargeScene(editScene)) }
+    }
     val appearance = TrioAppearance.of(settings)
     val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
     val dark = when (previewTheme) { 1 -> false; 2 -> true; else -> systemDark }
@@ -346,9 +352,14 @@ private fun DrawingEditorCard(
             )
             SceneSelector(
                 selected = scene,
-                onSelect = { scene = it },
+                onSelect = { scene = it; lastSelection = null; picking = null; editing = null },
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             )
+            if (editScene != ChargeLayout.BASE) {
+                Text(stringResource(R.string.drawing_charge_layout_notice),
+                    style = MiuixTheme.textStyles.footnote2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+            }
             LazyRow(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -745,7 +756,8 @@ private fun DrawingStyleSelector(
             // The active tile must follow every edit, including priority changes made
             // lower on this same page. Only keying by style kept its old layout alive.
             val sample = if (chosen) settings
-                else settings.withComponentsFrom(snapshotForStyle(style), style)
+                else ChargeLayout.forState(settings.withComponentsFrom(snapshotForStyle(style), style),
+                    scene.charging, scene.quickCharging)
             Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
                 .background(if (chosen) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surfaceContainerHigh)
                 .border(if (chosen) 2.dp else 0.dp, if (chosen) MiuixTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(12.dp))
@@ -793,7 +805,7 @@ private fun applyPreviewState(
     if (accent != 0) {
         view.setHighlightColors(accent)
     }
-    view.setSettings(settings)
+    view.setSettings(ChargeLayout.forState(settings, scene.charging, scene.quickCharging))
     view.setOutTypeOnly(outType)
     view.setOutSignalOnly(outSignal)
     view.setHighlight(highlight)

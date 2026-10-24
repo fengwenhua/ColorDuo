@@ -100,7 +100,7 @@ public class CapsuleZonesTest {
 $probePath=Join-Path $src 'CapsuleZonesTest.java'
 [IO.File]::WriteAllText($probePath,$probe,[Text.UTF8Encoding]::new($false))
 $sources=@(Get-ChildItem -Recurse -File -Filter *.java (Join-Path $root 'tests/shims') | ForEach-Object {$_.FullName})
-foreach($file in @('Prefs.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java','TrioRenderer.java','TrioZones.java')){$sources+=Join-Path $trio $file}
+foreach($file in @('Prefs.java','ChargeLayout.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java','TrioRenderer.java','TrioZones.java')){$sources+=Join-Path $trio $file}
 $sources+=$probePath
 & $javac -nowarn -encoding UTF-8 -d $classes $sources
 if($LASTEXITCODE){throw 'Capsule editor compilation failed'}

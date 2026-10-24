@@ -3,6 +3,7 @@
 面向 ColorOS 16 的 LSPosed 状态栏模块，基于
 [yixing233/HyperDuo](https://github.com/yixing233/HyperDuo) 修改。
 把 Wi-Fi、移动信号与电量组合为圆环或胶囊，支持组件排序、网络类型、时钟、字体和环外读数。
+普通充电和快充的组件布局可分别保存，圆环与胶囊也各自独立。
 
 ## 实测环境
 
@@ -12,7 +13,8 @@
 
 ## 安装
 
-1. 从 [ColorDuo Releases](https://github.com/fengwenhua/ColorDuo/releases) 下载 APK。
+1. 从[模块仓 Releases](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases) 或
+   [ColorDuo Releases](https://github.com/fengwenhua/ColorDuo/releases) 下载 APK。
 2. 在 LSPosed 中启用 **ColorDuo**，作用域选择 **系统界面（`com.android.systemui`）**。
 3. 重启系统界面或手机，打开桌面 ColorDuo 配置组件；后续设置修改实时生效。
 

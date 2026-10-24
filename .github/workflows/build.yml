@@ -19,11 +19,11 @@ on:
       versionName:
         description: versionName to stamp
         required: false
-        default: 1.0.0
+        default: 1.0.2
       versionCode:
         description: versionCode to stamp (must be higher than the installed one)
         required: false
-        default: '10000'
+        default: '10002'
 
 permissions:
   contents: write
@@ -87,7 +87,7 @@ jobs:
           python3 - <<'PY'
           import os, re
           name = os.environ.get('INPUT_NAME') or (
-              os.environ['REF_NAME'].removeprefix('v') if os.environ['REF_TYPE'] == 'tag' else '1.0.0'
+              os.environ['REF_NAME'].removeprefix('v') if os.environ['REF_TYPE'] == 'tag' else '1.0.2'
           )
           if not re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?', name):
               raise SystemExit('Expected a semantic version such as 1.0.0')

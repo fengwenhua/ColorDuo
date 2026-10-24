@@ -26,17 +26,13 @@ final class ColorOsRingPreset {
     }
 
     static TrioSettings userLayout(TrioSettings settings, boolean outsidePercent, ColorOsNetworkAdapter.Plan plan) {
-        return userLayout(settings, outsidePercent, plan, false);
-    }
-
-    static TrioSettings userLayout(TrioSettings settings, boolean outsidePercent, ColorOsNetworkAdapter.Plan plan, boolean outsideCharge) {
         TrioSettings paint = settings.copy();
         paint.showWifi = settings.showWifi && plan.wifi >= 1;
         paint.showMobile = settings.showMobile && plan.mobile >= 0;
         paint.showSim1 = settings.showSim1 && plan.mobile >= 0 && plan.mobileSlot == 0;
         paint.showSim2 = settings.showSim2 && plan.mobile >= 0 && plan.mobileSlot == 1;
         paint.showValue = settings.showValue && !outsidePercent;
-        paint.showBolt = settings.showBolt && !outsideCharge;
+        paint.showBolt = settings.showBolt; // The drawn battery leases the native charge icon separately.
         paint.mobileTypeMode = !plan.typeLabel.isEmpty() && settings.mobileTypeMode == Prefs.MOBILE_TYPE_IN_RING
                 ? Prefs.MOBILE_TYPE_IN_RING : Prefs.MOBILE_TYPE_OFF;
         paint.perfPower = paint.perfTemp = false;

@@ -45,7 +45,7 @@ public class View {
 '@
 $viewPath = Join-Path $viewDir 'View.java'
 [IO.File]::WriteAllText($viewPath, $view)
-$sources = @('Prefs.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java','Refl.java') | ForEach-Object { Join-Path $SourceDirectory $_ }
+$sources = @('Prefs.java','ChargeLayout.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java','Refl.java') | ForEach-Object { Join-Path $SourceDirectory $_ }
 $sources += @('android/content/SharedPreferences.java','android/os/Bundle.java') | ForEach-Object { Join-Path (Join-Path $PSScriptRoot 'shims') $_ }
 $sources += @($probePath, $viewPath)
 & $javac -nowarn -encoding UTF-8 -d $classes $sources

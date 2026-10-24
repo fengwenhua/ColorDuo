@@ -8,7 +8,7 @@ if (!(Test-Path $javac)) { $javac = 'javac'; $java = 'java' }
 $classes = Join-Path $root 'work/ring-slots/classes'
 New-Item -ItemType Directory -Force $classes | Out-Null
 $sources = @(Get-ChildItem -Recurse -Filter *.java (Join-Path $PSScriptRoot 'shims') | ForEach-Object FullName)
-$sources += @('Prefs.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java','TrioZones.java','TrioRenderer.java') | ForEach-Object { Join-Path $SourceDirectory $_ }
+$sources += @('Prefs.java','ChargeLayout.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java','TrioZones.java','TrioRenderer.java') | ForEach-Object { Join-Path $SourceDirectory $_ }
 $sources += Join-Path $PSScriptRoot 'RingSlotsTest.java'
 & $javac -nowarn -encoding UTF-8 -d $classes $sources
 if ($LASTEXITCODE) { throw 'Free-ring test compilation failed' }

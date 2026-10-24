@@ -17,6 +17,7 @@ public final class ConfigCodecProbe {
     }
     public static void run(android.content.Context context) throws Exception {
         checks = 0;
+        checks += ChargeRegressionProbe.run(context);
         String epoch = UUID.randomUUID().toString();
         for (int style : new int[]{Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
             TrioSettings original = TrioSettings.defaults();
@@ -282,8 +283,8 @@ public final class ConfigCodecProbe {
         external.stackedSignal = false;
         check(!ColorOsOutsideLayout.create(external, externalSource, 52, 240, 3.25f, false).hasSignal(), "stacked-off leaves native outside signal");
         external.showBolt = true;
-        check(!ColorOsRingPreset.userLayout(external, false, externalSource, true).showBolt,
-                "native outside charging icon prevents a duplicate module bolt");
+        check(ColorOsRingPreset.userLayout(external, false, externalSource).showBolt,
+                "native icon visibility does not change the user charging arrangement");
         external.stackedSignal = true;
         external.mobileTypeMode = Prefs.MOBILE_TYPE_OFF;
         ColorOsNetworkAdapter.Plan offTypeSource = new ColorOsNetworkAdapter.Plan(-1, 4, null, null, null, 0, "5G", null, true);

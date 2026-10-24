@@ -22,7 +22,9 @@
 
 ## 功能
 
+- **首次安装默认布局**：首次打开使用 Find N5 实测的圆环、胶囊与充电状态配置；覆盖升级保留已有设置。
 - **圆环与胶囊**：电量、Wi-Fi、移动信号、网络类型和充电状态可按位置组合，支持独立尺寸与外观设置。
+- **独立充电布局**：在「预览状态 → 充电／快充」分别设置组件布局，例如普通充电显示数字、快充显示闪电；圆环与胶囊各自保存，字号和颜色共用。
 - **组件排序**：上、中、下区域按优先级选择当前可显示的内容，不需要手动随网络切换布局。
 - **Wi-Fi / 5G 切换**：上部按「网络类型、Wi-Fi」排序，并打开「连接 Wi-Fi 时隐藏网络类型」，
   连接 Wi-Fi 时显示 Wi-Fi，断开后显示可用的蜂窝网络类型；两者都不可用时该区域留空。
@@ -37,7 +39,8 @@
 
 上图为原项目的样式素材。ColorOS 上的实测范围与版本记录见
 [ColorOS 适配说明](docs/COLOROS_ADAPTATION.md)和[验证记录](docs/validation/coloros16-2026-10-24.md)。
-真实快充、低电量显示等场景仍在补充验收。
+普通充电的原生闪电与占位恢复已检查日志，用户已确认真实快充显示正常。低电量等场景仍在补充验收。
+充电修复的具体范围见[1.0.2 验证记录](docs/validation/coloros16-charge-fix-2026-10-24.md)。
 
 ## 安装
 
@@ -115,7 +118,7 @@ gradle :app:assembleDebug :app:assembleRelease --no-daemon --console=plain
 bash tests/coloros-observer.sh
 ```
 
-默认版本为 `1.0.0 / 10000`，可用 `-PcolorduoVersionName=...` 和
+默认版本为 `1.0.2 / 10002`，可用 `-PcolorduoVersionName=...` 和
 `-PcolorduoVersionCode=...` 覆盖。默认启用完整的当前 ColorOS 适配阶段；
 只读诊断构建可传入 `-PcolorOsStage=observe`。
 

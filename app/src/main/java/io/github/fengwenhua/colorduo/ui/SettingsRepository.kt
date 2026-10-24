@@ -14,6 +14,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
+import android.os.Bundle
+import io.github.fengwenhua.colorduo.ChargeLayout
 import androidx.core.content.edit
 import io.github.fengwenhua.colorduo.ColorDuoApp
 import io.github.fengwenhua.colorduo.ConfigPacketPublisher
@@ -39,7 +41,9 @@ import io.github.libxposed.service.XposedService
  * write is pushed, otherwise a value the user changes while the service is
  * bound would never reach SystemUI.
  */
-class SettingsRepository(context: Context) {
+class SettingsRepository @JvmOverloads constructor(context: Context, private val chargeScene: Int = ChargeLayout.BASE) {
+
+    fun forChargeScene(scene: Int) = SettingsRepository(appContext, scene)
 
     private val appContext = context.applicationContext
     private val service: XposedService? get() = ColorDuoApp.xposedService
@@ -52,7 +56,7 @@ class SettingsRepository(context: Context) {
         appContext.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
     /** The current values, as the preview should render them. */
-    fun read(): TrioSettings = TrioSettings.from(preferences(), density)
+    fun read(): TrioSettings = ChargeLayout.forScene(TrioSettings.from(preferences(), density), chargeScene)
 
     /**
      * The snapshot for a style the user is <em>not</em> currently in.
@@ -65,68 +69,69 @@ class SettingsRepository(context: Context) {
      * nothing observes a transient state and no write is pushed to the hooked process.
      */
     fun readForStyle(style: Int): TrioSettings =
-        TrioSettings.from(preferences(), density, Prefs.normalizeTrioStyle(style))
+        ChargeLayout.forScene(TrioSettings.from(preferences(), density, Prefs.normalizeTrioStyle(style)), chargeScene)
 
     // ------------------------------------------------------------- appearance
 
     fun setEnabled(value: Boolean) = writeBoolean(Prefs.KEY_ENABLED, value)
-    fun setShowWifi(value: Boolean) = writeStyled(style(), Prefs.KEY_SHOW_WIFI) { e, k ->
-        e.putBoolean(k, value) }
-    fun setShowMobile(value: Boolean) = writeStyled(style(), Prefs.KEY_SHOW_MOBILE) { e, k ->
-        e.putBoolean(k, value) }
-    fun setShowValue(value: Boolean) = writeStyled(style(), Prefs.KEY_SHOW_VALUE) { e, k ->
-        e.putBoolean(k, value) }
-    fun setShowBolt(value: Boolean) = writeStyled(style(), Prefs.KEY_SHOW_BOLT) { e, k ->
-        e.putBoolean(k, value) }
-    fun setDualSim(value: Boolean) = writeStyled(style(), Prefs.KEY_DUAL_SIM) { e, k ->
-        e.putBoolean(k, value) }
+    fun setShowWifi(value: Boolean) = writeComponent(Prefs.KEY_SHOW_WIFI, value)
+    fun setShowMobile(value: Boolean) = writeComponent(Prefs.KEY_SHOW_MOBILE, value)
+    fun setShowValue(value: Boolean) = writeComponent(Prefs.KEY_SHOW_VALUE, value)
+    fun setShowBolt(value: Boolean) = writeComponent(Prefs.KEY_SHOW_BOLT, value)
+    fun setDualSim(value: Boolean) = writeComponent(Prefs.KEY_DUAL_SIM, value)
     /** SIM 1's own row of dots, placed as a component - see [Prefs.KEY_SHOW_SIM_1]. */
-    fun setShowSim1(value: Boolean) = writeStyled(style(), Prefs.KEY_SHOW_SIM_1) { e, k ->
-        e.putBoolean(k, value) }
+    fun setShowSim1(value: Boolean) = writeComponent(Prefs.KEY_SHOW_SIM_1, value)
     /** SIM 2's own row of dots, placed as a component - see [Prefs.KEY_SHOW_SIM_2]. */
-    fun setShowSim2(value: Boolean) = writeStyled(style(), Prefs.KEY_SHOW_SIM_2) { e, k ->
-        e.putBoolean(k, value) }
-    fun setValueCentred(value: Boolean) = writeStyled(style(), Prefs.KEY_VALUE_CENTRED) { e, k ->
-        e.putBoolean(k, value) }
+    fun setShowSim2(value: Boolean) = writeComponent(Prefs.KEY_SHOW_SIM_2, value)
+    fun setValueCentred(value: Boolean) = writeComponent(Prefs.KEY_VALUE_CENTRED, value)
     /** 0 = hidden, 1 = inside the ring, 2 = outside it. */
-    fun setMobileTypeMode(value: Int) = writeStyled(style(), Prefs.KEY_MOBILE_TYPE_MODE) { e, k ->
-        e.putInt(k, value) }
+    fun setMobileTypeMode(value: Int) = writeComponent(Prefs.KEY_MOBILE_TYPE_MODE, value)
     /** Stored IDs stay 0 = ring and 2 = capsule; retired ID 1 returns to the ring. */
     fun setTrioStyle(value: Int) = writeInt(Prefs.KEY_TRIO_STYLE, Prefs.normalizeTrioStyle(value))
 
     fun setNavStyle(value: Int) = writeInt(Prefs.KEY_NAV_STYLE, Prefs.normalizeNavStyle(value))
     fun setNavLabels(value: Int) = writeInt(Prefs.KEY_NAV_LABELS, Prefs.normalizeNavLabels(value))
 
-    /**
-     * The arrangement the user is currently looking at.
-     *
-     * <p>Every component switch is written under <em>this</em> style's key, so adjusting the
-     * capsule cannot reach into the ring's arrangement - see [Prefs.STYLED_KEYS]. Read fresh
-     * from storage rather than cached, because the style is itself a setting and a stale copy
-     * would write one arrangement's value into the other.
-     */
-    private fun style(): Int = Prefs.normalizeTrioStyle(preferences()
-        .getInt(Prefs.KEY_TRIO_STYLE, Prefs.DEF_TRIO_STYLE))
-
-    /**
-     * Writes one per-arrangement value, to this style's own key.
-     *
-     * <p>[block] receives the resolved key rather than the base one: the whole point is that
-     * the caller does not decide which arrangement it is writing.
-     */
-    private fun writeStyled(
-        style: Int,
-        base: String,
-        block: (SharedPreferences.Editor, String) -> Unit,
-    ) {
-        val key = Prefs.styledKey(base, style)
-        preferences().edit(commit = true) { block(this, key) }
-        push { block(it, key) }
+    /** Component edits follow the selected charging scene; visual sizes keep their shared keys. */
+    private fun writeComponent(base: String, value: Any) {
+        val current = read()
+        val key = Prefs.styledKey(base, current.trioStyle)
+        if (chargeScene != ChargeLayout.BASE) {
+            val changed = Bundle().apply {
+                putInt(Prefs.KEY_TRIO_STYLE, current.trioStyle)
+                when (value) {
+                    is Boolean -> putBoolean(key, value)
+                    is Int -> putInt(key, value)
+                }
+            }
+            applyRingAssignment(TrioSettings.fromBundle(changed, current), layoutEdit = false)
+            return
+        }
+        val write: (SharedPreferences.Editor) -> Unit = { e ->
+            when (value) {
+                is Boolean -> e.putBoolean(key, value)
+                is Int -> e.putInt(key, value)
+            }
+        }
+        preferences().edit(commit = true) { write(this) }
+        push(write)
         notifyModule()
     }
 
     /** Publish one layout edit as a single local/remote transaction and one broadcast. */
-    fun applyRingAssignment(next: TrioSettings) {
+    fun applyRingAssignment(next: TrioSettings, layoutEdit: Boolean = true) {
+        val scene = if (next.editingChargeScene != ChargeLayout.BASE) next.editingChargeScene else chargeScene
+        if (scene != ChargeLayout.BASE) {
+            val snapshot = next.copy()
+            // An explicit placement takes precedence over the legacy charging-centre override.
+            if (layoutEdit) snapshot.chargingShowsValue = false
+            val key = Prefs.styledKey(ChargeLayout.key(scene), next.trioStyle)
+            val encoded = ChargeLayout.encode(snapshot)
+            preferences().edit(commit = true) { putString(key, encoded) }
+            push { it.putString(key, encoded) }
+            notifyModule()
+            return
+        }
         // The arrangement being written is the snapshot's own, not the stored one: the caller
         // built `next` for a specific style, and a layout written under the wrong key would
         // show up in the other arrangement on the next style switch.
@@ -157,7 +162,7 @@ class SettingsRepository(context: Context) {
      * the mapping is kept - the ring's editor drives the priority lists directly.
      */
     fun setRingPartPosition(part: io.github.fengwenhua.colorduo.TrioZones.Part, position: Int) {
-        val current = TrioSettings.from(preferences(), density)
+        val current = read()
         // The choices a caller can pass are the arrangement's own cells, in the order
         // the dropdown lists them. The capsule lists four (top, left, right, bottom)
         // and the ring three, so the mapping from "choice number" to "zone" is read
@@ -210,7 +215,7 @@ class SettingsRepository(context: Context) {
      * bottom band.
      */
     fun setWifiPosition(position: Int) {
-        val current = TrioSettings.from(preferences(), density)
+        val current = read()
         val slots = if (current.trioStyle == Prefs.STYLE_CAPSULE) {
             listOf(io.github.fengwenhua.colorduo.TrioZones.Zone.TOP,
                 io.github.fengwenhua.colorduo.TrioZones.Zone.LEFT,
@@ -241,12 +246,10 @@ class SettingsRepository(context: Context) {
     }
 
     /** 0 = the signal readings stay inside the ring, 1 = they go back to the system (环外). */
-    fun setSignalMode(value: Int) = writeStyled(style(), Prefs.KEY_SIGNAL_MODE) { e, k ->
-        e.putInt(k, value.coerceIn(Prefs.MIN_SIGNAL_MODE, Prefs.MAX_SIGNAL_MODE)) }
+    fun setSignalMode(value: Int) = writeComponent(Prefs.KEY_SIGNAL_MODE, value.coerceIn(Prefs.MIN_SIGNAL_MODE, Prefs.MAX_SIGNAL_MODE))
 
     /** Out of ring, draw the module's own reading rather than handing the icon back. */
-    fun setStackedSignal(value: Boolean) = writeStyled(style(), Prefs.KEY_STACKED_SIGNAL) { e, k ->
-        e.putBoolean(k, value) }
+    fun setStackedSignal(value: Boolean) = writeComponent(Prefs.KEY_STACKED_SIGNAL, value)
 
     fun setDataSimOnly(value: Boolean) = writeBoolean(Prefs.KEY_DATA_SIM_ONLY, value)
 
@@ -273,7 +276,7 @@ class SettingsRepository(context: Context) {
         writeBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI, value)
     /** While charging the ring centre shows the percentage; see [Prefs.KEY_CHARGING_SHOWS_VALUE]. */
     fun setChargingShowsValue(value: Boolean) =
-        writeBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, value)
+        writeComponent(Prefs.KEY_CHARGING_SHOWS_VALUE, value)
 
     /**
      * Size of the ring's level-dot rows, in percent - see [Prefs.KEY_DOT_SCALE].
@@ -410,6 +413,8 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_NAV_LABELS, snapshot.navLabels)
             prefs.putString(Prefs.styledKey(Prefs.KEY_RING_LAYOUT, style),
                 Prefs.encodeLayout(snapshot.ringZones))
+            prefs.putString(Prefs.styledKey(Prefs.KEY_CHARGING_LAYOUT, style), snapshot.chargingLayout)
+            prefs.putString(Prefs.styledKey(Prefs.KEY_QUICK_CHARGING_LAYOUT, style), snapshot.quickChargingLayout)
             prefs.putBoolean(Prefs.KEY_DATA_SIM_ONLY, snapshot.dataSimOnly)
             prefs.putBoolean(Prefs.KEY_PERF_POWER, snapshot.perfPower)
                 prefs.putBoolean(Prefs.KEY_PERF_TEMP, snapshot.perfTemp)

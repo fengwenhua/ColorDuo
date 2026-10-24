@@ -48,6 +48,7 @@ final class ColorOsBatteryDrawable extends Drawable {
         Frame(int level, int tint, TrioSettings settings, ColorOsNetworkAdapter.Plan network,
               ColorOsPowerSource.State power, String clock, int width, int height, ColorOsOutsideLayout outside,
               ColorOsNetworkAdapter.Plan readings) {
+            settings = ChargeLayout.forState(settings, power.charging, power.quick);
             this.level = level; this.tint = tint; this.settings = settings;
             this.network = network;
             this.readings = readings;

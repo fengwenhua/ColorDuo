@@ -333,4 +333,5 @@
     <string name="font_applied">Applied %1$s</string>
     <string name="font_not_a_font">That file is not a font (only .ttf / .otf), ignored</string>
     <string name="font_failed">Could not install the font, please try again</string>
+    <string name="drawing_charge_layout_notice">Component placement is saved separately for this charging state. Sizes and colours are shared.</string>
 </resources>

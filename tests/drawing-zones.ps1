@@ -1481,6 +1481,7 @@ if (!(Test-Path (Join-Path $shims 'android\graphics\Canvas.java'))) {
 $preview = Get-ChildItem -Recurse -Filter *.java $shims | ForEach-Object { $_.FullName }
 $shared = @(
     (Join-Path $trio 'Prefs.java'),
+    (Join-Path $trio 'ChargeLayout.java'),
     (Join-Path $trio 'TrioSettings.java'),
     (Join-Path $trio 'TrioGeometry.java'),
     (Join-Path $trio 'TrioAppearance.java'),

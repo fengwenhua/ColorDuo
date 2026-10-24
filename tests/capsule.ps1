@@ -930,6 +930,7 @@ if (!(Test-Path (Join-Path $previewRoot 'android\graphics\Canvas.java'))) {
 $preview = Get-ChildItem -Recurse -Filter *.java $previewRoot | ForEach-Object { $_.FullName }
 $shared = @(
     (Join-Path $trio 'Prefs.java'),
+    (Join-Path $trio 'ChargeLayout.java'),
     (Join-Path $trio 'TrioSettings.java'),
     (Join-Path $trio 'TrioGeometry.java'),
     (Join-Path $trio 'TrioAppearance.java'),
