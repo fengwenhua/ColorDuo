@@ -1,13 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-// Release CI derives both numbers from the pushed tag and passes them in, so the
-// version in the APK, the version in the About card and the version the updater
-// compares against are all the same value. A local build falls back to the
-// checked-in defaults below.
+// The checked-in release stamp is shared by local builds, CI and release tooling.
+val releaseVersion = Properties().apply {
+    rootProject.file("version.properties").inputStream().use { load(it) }
+}
 val tagVersionName = (findProperty("colorduoVersionName") as String?)?.takeIf { it.isNotBlank() }
 val tagVersionCode = (findProperty("colorduoVersionCode") as String?)?.toIntOrNull()
 val colorOsStage = (findProperty("colorOsStage") as String?) ?: "outside"
@@ -24,8 +26,8 @@ android {
         applicationId = "io.github.fengwenhua.colorduo"
         minSdk = 29
         targetSdk = 36
-        versionCode = tagVersionCode ?: 10002
-        versionName = tagVersionName ?: "1.0.2"
+        versionCode = tagVersionCode ?: releaseVersion.getProperty("versionCode").toInt()
+        versionName = tagVersionName ?: releaseVersion.getProperty("versionName")
         buildConfigField("String", "COLOROS_STAGE", "\"$colorOsStage\"")
     }
 

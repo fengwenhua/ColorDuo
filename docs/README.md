@@ -15,6 +15,7 @@ HyperDuo 名称、包名和 HyperOS 测试设备对应当时的上游版本；Co
 | [validation/colorduo-migration-audit-2026-10-24.md](validation/colorduo-migration-audit-2026-10-24.md) | HyperDuo 迁移文件核对与充电问题来源。 |
 | [validation/coloros16-charge-fix-2026-10-24.md](validation/coloros16-charge-fix-2026-10-24.md) | 1.0.1 充电布局、原生闪电交接、自动检查与用户真机确认。 |
 | [validation/coloros16-defaults-2026-10-24.md](validation/coloros16-defaults-2026-10-24.md) | 1.0.2 首次安装默认配置来源、布局与升级保留检查。 |
+| [validation/coloros16-plug-style-2026-10-25.md](validation/coloros16-plug-style-2026-10-25.md) | 1.0.3 插电临时样式交接、外屏滑动提示及真机复测。 |
 | [COLOROS_OBSERVER.md](COLOROS_OBSERVER.md) | 只读诊断构建与配置/网络策略检查。 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 开发文档。架构、渲染管线、配置键参考、测试方法、发布流水线，以及逐轮的改动记录与踩坑。**多数「为什么这样写」的答案在这里。** |
 | [SWITCHES-REVIEW.md](SWITCHES-REVIEW.md) | 开关与设置项的系统性复盘：每一项的门控是否与渲染一致、哪些是死代码、门禁逻辑的边界。 |
@@ -36,11 +37,13 @@ HyperDuo 名称、包名和 HyperOS 测试设备对应当时的上游版本；Co
 （功能添加 / 功能修复 / 功能变更）、每一条该怎么写、哪五类内容绝对不能出现。
 以 `release-notes-1.7.2.md` 为范例。
 
+正式版本号与构建号统一维护于根目录 `version.properties`。构建号须高于已发布和已安装验证包；CI 校验 tag 与该文件的版本匹配。
+
 写好后放进该目录，然后：
 
 ```powershell
 git push origin main
-.\scripts\release.ps1 -Version 1.0.2 -NotesFile .\docs\release-notes\release-notes-1.0.2.md
+.\scripts\release.ps1 -Version 1.0.3 -NotesFile .\docs\release-notes\release-notes-1.0.3.md
 ```
 
 ## 验证与素材
@@ -78,7 +81,7 @@ macOS/Linux 使用根 README 的 Gradle 命令；GitHub Actions 构建 artifact 
 ```powershell
 . .\scripts\env.ps1
 git push origin main
-.\scripts\release.ps1 -Version 1.0.2 -NotesFile .\docs\release-notes\release-notes-1.0.2.md
+.\scripts\release.ps1 -Version 1.0.3 -NotesFile .\docs\release-notes\release-notes-1.0.3.md
 ```
 
 发版脚本只推 tag，**不推分支**，所以 `git push` 要单独先做；否则 GitHub 上有包和 tag，但默认分支还没有对应提交。

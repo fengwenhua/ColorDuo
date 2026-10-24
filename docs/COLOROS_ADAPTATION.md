@@ -36,7 +36,7 @@ gradle :app:assembleDebug :app:assembleRelease --no-daemon --console=plain
 bash tests/coloros-observer.sh
 ```
 
-默认版本 `1.0.2 / 10002`，可传 `-PcolorduoVersionName=1.0.2 -PcolorduoVersionCode=10002`。
+默认版本 `1.0.3 / 10006`，由 `version.properties` 维护，可用 Gradle 属性覆盖。
 默认 `colorOsStage=outside` 开启当前适配；`-PcolorOsStage=observe` 只安装诊断钩子。
 按 ROM 选择适配器，保留 HyperOS 的原 TrioHooks。
 
@@ -83,10 +83,18 @@ adb shell am instrument -w -r io.github.fengwenhua.colorduo/.CodecInstrumentatio
 用户已报告真实快充显示正常；该报告未附快充时的 ADB 日志。充电状态下的开关恢复、折叠/QS仍需补充验证。
 详见[充电修复验证记录](validation/coloros16-charge-fix-2026-10-24.md)。
 
+## 1.0.3 插电交接与外屏提示
+
+保留用户已有配置及1.0.2首次安装默认布局。插电触发的临时电池样式2继续绘制三合一，
+系统恢复样式1后接回最新原生模型；普通隐藏/禁用及失败场景仍恢复原生。
+外屏预览状态超出宽度时显示滑动提示和可点击箭头，末尾可返回起点。
+283项Android检查通过，用户已确认圆环、胶囊USB插拔及外屏箭头操作，详情见
+[验证记录](validation/coloros16-plug-style-2026-10-25.md)。
+
 ## 发布
 
-源码仓使用 `v1.0.2` tag；模块仓按官方格式使用 `10002-1.0.2` tag，标题 `1.0.2`，
-Release 正文取 [release-notes-1.0.2.md](release-notes/release-notes-1.0.2.md)，两边上传同一 APK。
+源码仓使用 `v1.0.3` tag；模块仓按官方格式使用 `10006-1.0.3` tag，标题 `1.0.3`，
+Release 正文取 [release-notes-1.0.3.md](release-notes/release-notes-1.0.3.md)，两边上传同一 APK。
 模块仓仅放 SUMMARY、README 与 Release，源码在 ColorDuo 主仓保留。
 
 PowerShell 发版默认只写 ColorDuo 主仓；模块仓创建后显式传

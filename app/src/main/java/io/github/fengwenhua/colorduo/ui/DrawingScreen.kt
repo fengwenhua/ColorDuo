@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
@@ -45,6 +46,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -1811,13 +1814,47 @@ private fun SceneSelector(
     onSelect: (PreviewScene) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(PreviewScene.entries, key = { it.name }) { entry ->
-            SceneChip(
-                label = stringResource(entry.labelRes),
-                selected = entry == selected,
-                onClick = { onSelect(entry) },
-            )
+    val state = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val overflow = state.canScrollForward || state.canScrollBackward
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            LazyRow(
+                state = state,
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(PreviewScene.entries, key = { it.name }) { entry ->
+                    SceneChip(
+                        label = stringResource(entry.labelRes),
+                        selected = entry == selected,
+                        onClick = { onSelect(entry) },
+                    )
+                }
+            }
+            if (overflow) {
+                val forward = state.canScrollForward
+                IconButton(
+                    onClick = {
+                        val target = if (forward) maxOf(state.firstVisibleItemIndex + 1,
+                            state.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0)
+                            .coerceAtMost(PreviewScene.entries.lastIndex) else 0
+                        scope.launch { state.animateScrollToItem(target) }
+                    },
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(if (forward) Lucide.ChevronRight else Lucide.ChevronLeft,
+                        contentDescription = stringResource(if (forward) R.string.drawing_more_states
+                            else R.string.drawing_previous_states),
+                        tint = MiuixTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+        if (overflow) {
+            Text(stringResource(R.string.drawing_states_scroll_hint),
+                style = MiuixTheme.textStyles.footnote2,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         }
     }
 }

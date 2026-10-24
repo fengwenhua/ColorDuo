@@ -62,6 +62,20 @@ final class ColorOsBatterySize {
         }
     }
 
+    /** Restore only the params the native helper reads; keep the current measured frame on screen. */
+    void beforeNativeStyle() {
+        if (!owned) return;
+        ImageView view = image.get();
+        ViewGroup.LayoutParams params = view == null ? null : view.getLayoutParams();
+        if (params != null) {
+            if (params.width != appliedWidth || params.height != appliedHeight)
+                throw new IllegalStateException("battery size changed by another owner");
+            params.width = nativeWidth;
+            params.height = nativeHeight;
+        }
+        owned = false;
+    }
+
     void restore() {
         if (!owned) return;
         ImageView view = image.get();

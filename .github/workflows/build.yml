@@ -19,11 +19,11 @@ on:
       versionName:
         description: versionName to stamp
         required: false
-        default: 1.0.2
+        default: ''
       versionCode:
         description: versionCode to stamp (must be higher than the installed one)
         required: false
-        default: '10002'
+        default: ''
 
 permissions:
   contents: write
@@ -86,15 +86,17 @@ jobs:
         run: |
           python3 - <<'PY'
           import os, re
+          from pathlib import Path
+          stamp = dict(line.split('=', 1) for line in Path('version.properties').read_text().splitlines()
+                       if line.strip() and not line.startswith('#'))
           name = os.environ.get('INPUT_NAME') or (
-              os.environ['REF_NAME'].removeprefix('v') if os.environ['REF_TYPE'] == 'tag' else '1.0.2'
+              os.environ['REF_NAME'].removeprefix('v') if os.environ['REF_TYPE'] == 'tag' else stamp['versionName']
           )
           if not re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?', name):
               raise SystemExit('Expected a semantic version such as 1.0.0')
-          major, minor, patch = map(int, name.split('-')[0].split('.'))
-          if minor >= 100 or patch >= 100:
-              raise SystemExit('minor and patch must be below 100 for the version-code scheme')
-          code = int(os.environ.get('INPUT_CODE') or (major * 10000 + minor * 100 + patch))
+          if name != stamp['versionName'] and not os.environ.get('INPUT_CODE'):
+              raise SystemExit('Update version.properties for this tag, or provide an explicit versionCode')
+          code = int(os.environ.get('INPUT_CODE') or stamp['versionCode'])
           if not 0 < code <= 2100000000:
               raise SystemExit('Invalid Android versionCode')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:

@@ -70,15 +70,17 @@ final class ColorOsBatteryDrawable extends Drawable {
         }
     }
 
-    private final WeakReference<Drawable> nativeDrawable;
+    private WeakReference<Drawable> nativeDrawable;
+    private Drawable emptyFallback;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final Runnable onFailed;
     private final Consumer<Frame> onDrawn;
-    private final int intrinsicWidth;
-    private final int intrinsicHeight;
+    private int intrinsicWidth;
+    private int intrinsicHeight;
     private final Paint layer = new Paint();
     private Frame frame;
     private boolean failed;
+    private boolean drawn;
     private Frame reportedFrame;
 
     ColorOsBatteryDrawable(Drawable original, Frame frame, Runnable onFailed, Consumer<Frame> onDrawn) {
@@ -99,6 +101,19 @@ final class ColorOsBatteryDrawable extends Drawable {
         }
     }
 
+    void updateNative(Drawable original) {
+        // Style 2 has no OEM Drawable; retain only its harmless transparent fallback strongly.
+        emptyFallback = original instanceof android.graphics.drawable.ColorDrawable ? original : null;
+        nativeDrawable = new WeakReference<>(original);
+        intrinsicWidth = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0) && frame.viewWidth > 0
+                ? frame.viewWidth : original.getIntrinsicWidth();
+        intrinsicHeight = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0) && frame.viewHeight > 0
+                ? frame.viewHeight : original.getIntrinsicHeight();
+        if (intrinsicWidth <= 0 && frame.viewWidth > 0) intrinsicWidth = frame.viewWidth;
+        if (intrinsicHeight <= 0 && frame.viewHeight > 0) intrinsicHeight = frame.viewHeight;
+    }
+
+    boolean hasDrawn() { return drawn && !failed; }
     Drawable original() { return nativeDrawable.get(); }
     boolean isCurrent(Frame presented) { return !failed && frame == presented; }
     boolean hasPresented(Frame desired) { return !failed && reportedFrame == frame && frame.same(desired); }
@@ -147,6 +162,7 @@ final class ColorOsBatteryDrawable extends Drawable {
                 canvas.translate(bounds.left, bounds.top);
                 render(canvas, bounds.width(), bounds.height(), frame);
                 success = true;
+                drawn = true;
             } catch (Throwable failure) {
                 failed = true;
                 main.post(onFailed);

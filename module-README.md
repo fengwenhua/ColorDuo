@@ -4,6 +4,7 @@
 [yixing233/HyperDuo](https://github.com/yixing233/HyperDuo) 修改。
 把 Wi-Fi、移动信号与电量组合为圆环或胶囊，支持组件排序、网络类型、时钟、字体和环外读数。
 普通充电和快充的组件布局可分别保存，圆环与胶囊也各自独立。
+插电显示系统充电提示时保留三合一图标；外屏预览状态显示不全时提供滑动提示与翻页箭头。
 
 ## 实测环境
 
@@ -33,7 +34,7 @@
 ## 致谢与许可证
 
 原项目作者 **yixing233** 及 HyperDuo 贡献者；设置界面使用 Compose 与 Miuix。
-修改日期：2026-10-24。沿用 [GPL-3.0](https://github.com/fengwenhua/ColorDuo/blob/main/LICENSE)，
+修改日期：2026-10-25。沿用 [GPL-3.0](https://github.com/fengwenhua/ColorDuo/blob/main/LICENSE)，
 保留上游版权及免责声明，修改版同协议公开源码。
 
 Copyright (C) 2026 yixing233 与 HyperDuo 贡献者。

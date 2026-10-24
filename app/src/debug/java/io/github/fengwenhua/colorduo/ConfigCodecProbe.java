@@ -18,6 +18,7 @@ public final class ConfigCodecProbe {
     public static void run(android.content.Context context) throws Exception {
         checks = 0;
         checks += ChargeRegressionProbe.run(context);
+        checks += BatteryStyleRegressionProbe.run(context);
         String epoch = UUID.randomUUID().toString();
         for (int style : new int[]{Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
             TrioSettings original = TrioSettings.defaults();

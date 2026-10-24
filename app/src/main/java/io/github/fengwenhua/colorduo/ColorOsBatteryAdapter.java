@@ -56,6 +56,7 @@ final class ColorOsBatteryAdapter {
         final String scene;
         final String key;
         final ColorOsBatterySize size;
+        final ColorOsPlugBridge plugBridge = new ColorOsPlugBridge();
         int generation;
         boolean attached;
         int latestLevel = -1;
@@ -65,6 +66,7 @@ final class ColorOsBatteryAdapter {
         boolean awaitLayout;
         boolean resizing;
         boolean needsNativeStyle;
+        int nativeStyleDepth;
         boolean failed;
         boolean presentationPending;
         boolean refreshQueued;
@@ -195,19 +197,7 @@ final class ColorOsBatteryAdapter {
                             reconcile(host);
                         }
                     }, meterType, type(UI + "model.StatBatteryIcon"));
-            valid &= hook(binder, "bind$updateBatteryIconStyle", chain -> {
-                Host host = hosts.get(chain.getArg(1));
-                if (host != null) { host.needsNativeStyle = true; release(host, "native-style-update"); }
-            }, chain -> {
-                Host host = hosts.get(chain.getArg(1));
-                if (host != null) {
-                    captureStyle(host, chain.getArg(5));
-                    host.needsNativeStyle = false;
-                    reconcile(host);
-                }
-            }, ImageView.class, meterType, type(UI + "viewmodel.LocationBasedBatteryViewModel"),
-                    android.widget.FrameLayout.class, android.widget.TextView.class,
-                    type(UI + "model.BatteryIconStyle"));
+            valid &= installStyleHook(binder);
             valid &= hook(binder, "bind$updateChargingView", null, chain -> {
                 Host host = hosts.get(chain.getArg(1));
                 if (host != null && chain.getArg(2) != null && chain.getArg(0) instanceof ImageView) {
@@ -262,6 +252,92 @@ final class ColorOsBatteryAdapter {
                         return result;
                     });
         } catch (Throwable failure) { log("dump", "diagnostics unavailable=" + failure.getClass().getSimpleName()); }
+    }
+
+    /** The OEM replacement is synchronous: restore our drawn frame before the next traversal. */
+    private boolean installStyleHook(Class<?> binder) {
+        try {
+            Method method = binder.getDeclaredMethod("bind$updateBatteryIconStyle", ImageView.class,
+                    meterType, type(UI + "viewmodel.LocationBasedBatteryViewModel"),
+                    android.widget.FrameLayout.class, android.widget.TextView.class,
+                    type(UI + "model.BatteryIconStyle"));
+            method.setAccessible(true);
+            module.hook(method).setId("colorduo-coloros-battery-bind$updateBatteryIconStyle")
+                    .setExceptionMode(XposedInterface.ExceptionMode.PASSTHROUGH).intercept(chain -> {
+                        Host host = hosts.get(chain.getArg(1));
+                        if (host == null || Looper.myLooper() != Looper.getMainLooper()) return chain.proceed();
+                        boolean completed = false;
+                        host.nativeStyleDepth++;
+                        host.needsNativeStyle = true;
+                        try {
+                            // The native helper reads/mutates the same LayoutParams in place.
+                            // Do not request an intermediate native-sized traversal here.
+                            try { host.size.beforeNativeStyle(); }
+                            catch (Throwable failure) {
+                                host.failed = true;
+                                log(host.key + "/style-size-error", failure.getClass().getSimpleName());
+                                try { release(host, "native-style-size-failure"); } catch (Throwable ignored) {}
+                            }
+                            Object result = chain.proceed();
+                            completed = true;
+                            return result;
+                        } finally {
+                            host.nativeStyleDepth--;
+                            try {
+                                if (!completed) {
+                                    host.failed = true;
+                                    release(host, "native-style-failure");
+                                } else if (host.nativeStyleDepth == 0) {
+                                    captureStyle(host, chain.getArg(5));
+                                    host.needsNativeStyle = false;
+                                    finishNativeStyle(host);
+                                }
+                            } catch (Throwable failure) {
+                                host.failed = true;
+                                log(host.key + "/style-error", failure.getClass().getSimpleName());
+                                try { release(host, "native-style-handoff-failure"); } catch (Throwable ignored) {}
+                            }
+                        }
+                    });
+            return true;
+        } catch (Throwable failure) {
+            log("hook/bind$updateBatteryIconStyle", "installed=false reason=" + failure.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    private void finishNativeStyle(Host host) throws Throwable {
+        View meter = host.meter.get();
+        ImageView image = host.image.get();
+        if (meter == null || image == null) { release(host, "native-style-host-missing"); return; }
+        Object original = nativeDrawable.invoke(meter);
+        boolean popup = host.plugBridge.style(host.latestStyle,
+                config.ready() && config.get().enabled && !host.failed && host.preview != null && host.preview.hasDrawn()
+                        && meter.isAttachedToWindow() && meter.isShown()
+                        && !Refl.getBool(hidden, meter, true) && !Refl.getBool(disabled, meter, true),
+                SystemClock.uptimeMillis());
+        boolean supported = host.latestStyle == 1 || host.latestStyle == 3 || host.latestStyle == 4 || popup;
+        if (popup) {
+            original = new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT);
+            image.setVisibility(View.VISIBLE);
+            log(host.key + "/plug-bridge", "nativeStyle=2 retained=true generation=" + host.generation);
+        }
+        if (config.ready() && config.get().enabled && supported && !host.failed
+                && original instanceof Drawable && host.preview != null && host.preview.hasDrawn()) {
+            // Network, clock and charging leases still correspond to our last successful frame.
+            // Only the OEM fallback and sizing change; the next frame uses the newest readings.
+            host.preview.updateNative((Drawable) original);
+            host.size.apply(meter, config.get(), host.outside.reserve);
+            image.setImageDrawable(host.preview);
+            android.view.ViewGroup.LayoutParams params = image.getLayoutParams();
+            if (params != null && (image.getWidth() != params.width || image.getHeight() != params.height)) {
+                host.awaitLayout = true;
+                host.resizing = true;
+                scheduleReconcile(host);
+            }
+            log(host.key + "/style", "nativeStyle=" + host.latestStyle + " retained=true generation=" + host.generation);
+        }
+        reconcile(host);
     }
 
     private boolean hook(Class<?> owner, String name, Action before, Action after, Class<?>... signature) {
@@ -392,6 +468,7 @@ final class ColorOsBatteryAdapter {
         View meter = host.meter.get();
         ImageView image = host.image.get();
         if (meter == null || image == null) return;
+        if (host.nativeStyleDepth > 0) return; // Nested OEM content callbacks cannot release a drawn frame mid-update.
         TrioSettings settings = layoutSettings(host);
         if (!capable || !config.ready() || !config.get().enabled || host.failed
                 || host.needsNativeStyle || !meter.isAttachedToWindow() || !meter.isShown() || !image.isShown()
@@ -401,6 +478,15 @@ final class ColorOsBatteryAdapter {
                 || (clock != null && (settings.trioStyle == Prefs.STYLE_CAPSULE
                     || TrioAppearance.of(settings).hasRingPart(Prefs.PART_CLOCK)) && !clock.ready())
                 || Refl.getBool(hidden, meter, true) || Refl.getBool(disabled, meter, true)) {
+            log(host.key + "/blocked", "attached=" + meter.isAttachedToWindow()
+                    + " meterShown=" + meter.isShown() + " imageShown=" + image.isShown()
+                    + " meterVisibility=" + meter.getVisibility() + " imageVisibility=" + image.getVisibility()
+                    + " policyHidden=" + Refl.getBool(hidden, meter, true)
+                    + " disabled=" + Refl.getBool(disabled, meter, true)
+                    + " style=" + host.latestStyle + " failed=" + host.failed + " nativeStylePending=" + host.needsNativeStyle
+                    + " powerReady=" + (power == null || power.get().ready)
+                    + " clockReady=" + (clock == null || clock.ready())
+                    + " ancestors=" + visibilityPath(meter));
             release(host, "not-ready-or-disabled");
             return;
         }
@@ -411,6 +497,7 @@ final class ColorOsBatteryAdapter {
             return;
         }
         Object original = nativeDrawable.invoke(meter);
+        if (original == null && host.plugBridge.active() && host.preview != null) original = host.preview.original();
         if (host.latestLevel < 0) captureIcon(host, batteryIcon.invoke(meter));
         if (host.latestStyle < 0) captureStyle(host, batteryStyle.invoke(meter));
         if (!(original instanceof Drawable)) {
@@ -421,7 +508,7 @@ final class ColorOsBatteryAdapter {
         int tint = host.latestTint;
         int width = image.getWidth();
         int height = image.getHeight();
-        if ((styleId != 1 && styleId != 3 && styleId != 4) || level < 0 || level > 100
+        if ((styleId != 1 && styleId != 3 && styleId != 4 && !(styleId == 2 && host.plugBridge.active())) || level < 0 || level > 100
                 || (tint >>> 24) == 0 || width <= 0 || height <= 0 || width > 2048 || height > 2048) {
             release(host, "unsupported-style-or-bounds"); return;
         }
@@ -553,6 +640,17 @@ final class ColorOsBatteryAdapter {
         });
     }
 
+    private static String visibilityPath(View view) {
+        StringBuilder result = new StringBuilder();
+        for (int depth = 0; depth < 6 && view != null; depth++) {
+            if (depth > 0) result.append('/');
+            result.append(view.getClass().getSimpleName()).append(':').append(view.getVisibility());
+            android.view.ViewParent parent = view.getParent();
+            view = parent instanceof View ? (View) parent : null;
+        }
+        return result.toString();
+    }
+
     private ColorOsNetworkAdapter.Plan currentPlan(View meter, Host host, int level) {
         TrioSettings settings = layoutSettings(host);
         ColorOsNetworkAdapter.Plan plan = network.prepare(meter, settings);
@@ -564,6 +662,7 @@ final class ColorOsBatteryAdapter {
     private TrioSettings layoutSettings(Host host) {
         TrioSettings source = config.get();
         ColorOsPowerSource.State state = power == null ? ColorOsPowerSource.State.UNKNOWN : power.get();
+        if (state.ready) host.plugBridge.power(state.plugged, SystemClock.uptimeMillis());
         int scene = ChargeLayout.scene(state.charging, state.quick);
         if (host.layoutSource != source || host.layoutScene != scene) {
             host.layoutSource = source;
@@ -590,6 +689,8 @@ final class ColorOsBatteryAdapter {
     }
 
     private void release(Host host, String reason) throws Throwable {
+        boolean popup = host.plugBridge.active();
+        host.plugBridge.clear();
         host.presentationPending = false;
         host.refreshQueued = false;
         host.refreshSequence++;
@@ -604,6 +705,7 @@ final class ColorOsBatteryAdapter {
         host.size.restore();
         ColorOsBatteryDrawable preview = host.preview;
         if (preview == null) return;
+        boolean imageOwned = image != null && image.getDrawable() == preview;
         preview.useNativeFallback();
         if (image != null && meter != null && image.getDrawable() == preview) {
             // The OEM field was never replaced and its model updates kept running.
@@ -611,6 +713,10 @@ final class ColorOsBatteryAdapter {
             try { current = nativeDrawable.invoke(meter); }
             catch (ReflectiveOperationException failure) { current = preview.original(); }
             image.setImageDrawable(current instanceof Drawable ? (Drawable) current : preview.original());
+        }
+        if (popup && imageOwned && host.latestStyle == 2) {
+            image.setImageDrawable(null);
+            image.setVisibility(View.GONE); // Restore the exact OEM style-2 state on disable/failure.
         }
         host.preview = null;
         host.mountToken++;

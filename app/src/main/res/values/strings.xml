@@ -333,4 +333,7 @@
     <string name="font_not_a_font">这个文件不是字体（只支持 .ttf / .otf），已忽略</string>
     <string name="font_failed">字体安装失败，请重试</string>
     <string name="drawing_charge_layout_notice">此状态的组件布局独立保存；尺寸和颜色共用。</string>
+    <string name="drawing_more_states">查看更多预览状态</string>
+    <string name="drawing_previous_states">返回前面的预览状态</string>
+    <string name="drawing_states_scroll_hint">左右滑动查看更多状态，也可点击箭头</string>
 </resources>

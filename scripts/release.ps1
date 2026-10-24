@@ -5,7 +5,7 @@
 #   .\scripts\release.ps1 -Version 1.1 -NotesFile .\work\notes.md
 #   .\scripts\release.ps1 -Version 1.1 -DryRun          # 只构建，不打 tag、不建 Release
 #
-# 版本号 -> versionCode 规则：major*10000 + minor*100 + patch（v1.0 -> 10000）。
+# 正式版本号与递增的 versionCode 取自根目录 version.properties，可显式 -VersionCode 覆盖。
 # 版本号可写 1、1.0 或 1.0.0，缺的段按 0 计；tag 名与所写的版本号一致。
 #
 # ★ 这个脚本只推 tag，**不推分支**。所以完整的发布是两步：
@@ -44,7 +44,10 @@ param(
     # 显式指定已申请的 ColorDuo 模块仓；留空只发主仓。
     [string]$ModuleRepo,
 
-    [switch]$SkipModuleRepo
+    [switch]$SkipModuleRepo,
+
+    [ValidateRange(0, 2100000000)]
+    [int]$VersionCode = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -78,10 +81,15 @@ if ($Version -notmatch '^\d+(\.\d+){0,2}$') {
     throw "版本号必须是 major / major.minor / major.minor.patch（收到 '$Version'）"
 }
 
-# 缺的段按 0 计：1.0 与 1.0.0 是同一个 versionCode，但 versionName 保留所写的形状。
-$parts = @($Version.Split('.') | ForEach-Object { [int]$_ })
-while ($parts.Count -lt 3) { $parts += 0 }
-$code = $parts[0] * 10000 + $parts[1] * 100 + $parts[2]
+$releaseStamp = ConvertFrom-StringData ([IO.File]::ReadAllText((Join-Path $Root 'version.properties')))
+if ($VersionCode -gt 0) {
+    $code = $VersionCode
+} elseif ($Version -eq $releaseStamp.versionName) {
+    $code = [int]$releaseStamp.versionCode
+} else {
+    throw "请先更新 version.properties，或显式传入 -VersionCode"
+}
+if ($code -le 0 -or $code -gt 2100000000) { throw "versionCode 超出 Android 有效范围" }
 $tag   = "v$Version"
 $asset = "ColorDuo-$Version.apk"
 $dist  = Join-Path $Root 'dist'

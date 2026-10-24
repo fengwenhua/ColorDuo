@@ -3,7 +3,7 @@
 面向 **ColorOS 16** 的 LSPosed 状态栏模块，把 **Wi-Fi、移动信号和电量** 融合为圆环或胶囊图标。
 
 本项目基于 [yixing233/HyperDuo](https://github.com/yixing233/HyperDuo) 修改，保留原项目的
-渲染与设置界面，并增加 ColorOS 系统界面适配。ColorDuo 由 fengwenhua 维护，修改日期：2026-10-24。
+渲染与设置界面，并增加 ColorOS 系统界面适配。ColorDuo 由 fengwenhua 维护，修改日期：2026-10-25。
 
 ## 实测设备
 
@@ -32,7 +32,8 @@
   已融合的移动信号会一并隐藏普通上下行箭头，避免残留三角形或占位。
 - **胶囊时钟与字体**：支持时间更新、自定义字体导入及恢复系统字体。
 - **环外组件**：可显示网络类型、信号条、电池温度和电池端充电功率。
-- **实时预览**：调整组件和排序时，快捷编辑中的样式卡片同步更新。
+- **实时预览**：调整组件和排序时，快捷编辑中的样式卡片同步更新；状态列表显示不全时提供滑动提示与翻页箭头。
+- **插电显示稳定**：系统显示充电提示时保留三合一图标，圆环与胶囊不会短暂退回原生图标。
 - **折叠屏适配**：已分阶段验证 Find N5 内外屏、桌面、锁屏与下拉快捷设置的布局和恢复。
 
 ![样式预览，来自 HyperDuo 原项目](docs/images/states.png)
@@ -40,7 +41,8 @@
 上图为原项目的样式素材。ColorOS 上的实测范围与版本记录见
 [ColorOS 适配说明](docs/COLOROS_ADAPTATION.md)和[验证记录](docs/validation/coloros16-2026-10-24.md)。
 普通充电的原生闪电与占位恢复已检查日志，用户已确认真实快充显示正常。低电量等场景仍在补充验收。
-充电修复的具体范围见[1.0.2 验证记录](docs/validation/coloros16-charge-fix-2026-10-24.md)。
+充电修复的具体范围见[1.0.2 验证记录](docs/validation/coloros16-charge-fix-2026-10-24.md)和
+[1.0.3 插电与外屏提示记录](docs/validation/coloros16-plug-style-2026-10-25.md)。
 
 ## 安装
 
@@ -118,7 +120,7 @@ gradle :app:assembleDebug :app:assembleRelease --no-daemon --console=plain
 bash tests/coloros-observer.sh
 ```
 
-默认版本为 `1.0.2 / 10002`，可用 `-PcolorduoVersionName=...` 和
+默认版本为 `1.0.3 / 10006`，由 `version.properties` 统一维护，可用 `-PcolorduoVersionName=...` 和
 `-PcolorduoVersionCode=...` 覆盖。默认启用完整的当前 ColorOS 适配阶段；
 只读诊断构建可传入 `-PcolorOsStage=observe`。
 
