@@ -1,7 +1,7 @@
 param([string]$SourceDirectory)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
-$trio=Join-Path $root 'app/src/main/java/io/github/yixing233/hyperduo'
+$trio=Join-Path $root 'app/src/main/java/io/github/fengwenhua/colorduo'
 if($SourceDirectory){$trio=$SourceDirectory}
 $jdk=Join-Path $root '.tools/jdk/jdk-21.0.12.1+1/bin'
 $src=Join-Path $root 'work/os4-layout/src'
@@ -39,12 +39,12 @@ $methods=@(
     $m.Value
 }
 foreach($name in @('OutRingLayout.java','Refl.java')){
-    Write-Source "io/github/yixing233/hyperduo/$name" ([IO.File]::ReadAllText((Join-Path $trio $name)))
+    Write-Source "io/github/fengwenhua/colorduo/$name" ([IO.File]::ReadAllText((Join-Path $trio $name)))
 }
 # The order ids and their codec come from the real Prefs, so the harness cannot disagree
 # with the app about what a slot number means.
-Write-Source 'io/github/yixing233/hyperduo/Prefs.java' @'
-package io.github.yixing233.hyperduo;
+Write-Source 'io/github/fengwenhua/colorduo/Prefs.java' @'
+package io.github.fengwenhua.colorduo;
 final class Prefs {
  static final int OUT_SLOT_SIGNAL=1, OUT_SLOT_READOUTS=2, OUT_SLOT_TYPE=3;
  static final int[] OUT_PRIORITY={ OUT_SLOT_SIGNAL, OUT_SLOT_READOUTS, OUT_SLOT_TYPE };
@@ -82,8 +82,8 @@ Write-Source 'android/view/ViewGroup.java' @'
 package android.view;
 public class ViewGroup extends View { public View mStatusIcon; }
 '@
-Write-Source 'io/github/yixing233/hyperduo/TrioHooks.java' @"
-package io.github.yixing233.hyperduo;
+Write-Source 'io/github/fengwenhua/colorduo/TrioHooks.java' @"
+package io.github.fengwenhua.colorduo;
 import android.view.*;
 import java.lang.reflect.*;
 import java.util.*;
@@ -112,22 +112,22 @@ final class TrioHooks {
 "@
 # The arrangement the spliced methods read. Set by each case through Row.appearance, so a
 # test can ask for any order without re-splicing the production code.
-Write-Source 'io/github/yixing233/hyperduo/TrioConfig.java' @'
-package io.github.yixing233.hyperduo;
+Write-Source 'io/github/fengwenhua/colorduo/TrioConfig.java' @'
+package io.github.fengwenhua.colorduo;
 final class TrioConfig {
  static TrioAppearance current;
  static TrioAppearance appearance(){ return current; }
 }
 '@
-Write-Source 'io/github/yixing233/hyperduo/TrioAppearance.java' @'
-package io.github.yixing233.hyperduo;
+Write-Source 'io/github/fengwenhua/colorduo/TrioAppearance.java' @'
+package io.github.fengwenhua.colorduo;
 final class TrioAppearance {
  final int[] outOrder;
  TrioAppearance(int[] order){ outOrder=order; }
 }
 '@
-Write-Source 'io/github/yixing233/hyperduo/Os4LayoutTest.java' @'
-package io.github.yixing233.hyperduo;
+Write-Source 'io/github/fengwenhua/colorduo/Os4LayoutTest.java' @'
+package io.github.fengwenhua.colorduo;
 import android.view.*;
 public class Os4LayoutTest {
  static int checks;
@@ -211,5 +211,5 @@ public class Os4LayoutTest {
 '@
 & (Join-Path $jdk 'javac.exe') -nowarn -encoding UTF-8 -d $out $files
 if($LASTEXITCODE){throw 'OS4 layout compilation failed'}
-& (Join-Path $jdk 'java.exe') -cp $out io.github.yixing233.hyperduo.Os4LayoutTest
+& (Join-Path $jdk 'java.exe') -cp $out io.github.fengwenhua.colorduo.Os4LayoutTest
 if($LASTEXITCODE){throw 'OS4 layout regression failed'}

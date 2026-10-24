@@ -18,10 +18,8 @@
 # 只删 release 记录，**tag 一律保留**（历史源码快照仍可用 tag 定位）。
 # 想保留历史 Release 就加 -KeepOldReleases。
 #
-# 主仓发布成功后还会接着调 release-module.ps1，把同一 APK、同一份说明发到 LSPosed 模块仓
-# （Xposed-Modules-Repo/io.github.yixing233.hyperduo）——两个仓库必须同版本，模块页的
-# 下载链接走模块仓的 Release。只发主仓加 -SkipModuleRepo；模块仓那步失败不会撤回主仓，
-# 直接重跑 scripts\release-module.ps1 补齐即可（用法见该文件头注释）。
+# 默认只发布 ColorDuo 主仓。模块仓申请完成后，可显式传 -ModuleRepo owner/repo，
+# 将同一 APK 与说明同步过去；不会写入 HyperDuo 的模块仓。
 
 [CmdletBinding()]
 param(
@@ -34,7 +32,7 @@ param(
     # 与 -Notes 二选一：从文件读取说明，便于写多行中文。
     [string]$NotesFile,
 
-    # 跳过上传与打 tag，只产出 dist\HyperDuo-<version>.apk。
+    # 跳过上传与打 tag，只产出 dist\ColorDuo-<version>.apk。
     [switch]$DryRun,
 
     # 已存在同名 Release 时覆盖它（默认会报错停下）。
@@ -43,16 +41,18 @@ param(
     # 保留历史 Release（默认只留最新版，删旧的不删 tag）。
     [switch]$KeepOldReleases,
 
-    # 只发主仓，跳过 Xposed 模块仓（默认两边都发，保持同版本）。
+    # 显式指定已申请的 ColorDuo 模块仓；留空只发主仓。
+    [string]$ModuleRepo,
+
     [switch]$SkipModuleRepo
 )
 
 $ErrorActionPreference = 'Stop'
 
-$Root    = 'C:\code\HyperDuo'
+$Root    = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $Tools   = Join-Path $Root '.tools'
-$Repo    = 'yixing233/HyperDuo'
-$Package = 'io.github.yixing233.hyperduo'
+$Repo    = 'fengwenhua/ColorDuo'
+$Package = 'io.github.fengwenhua.colorduo'
 
 # 原生程序把进度和警告写到 stderr（git 的 "Everything up-to-date"、gradle 的弃用提示）。
 # 在 $ErrorActionPreference='Stop' 下，一旦把 stderr 并进管道，这些就变成终止错误，
@@ -83,10 +83,10 @@ $parts = @($Version.Split('.') | ForEach-Object { [int]$_ })
 while ($parts.Count -lt 3) { $parts += 0 }
 $code = $parts[0] * 10000 + $parts[1] * 100 + $parts[2]
 $tag   = "v$Version"
-$asset = "HyperDuo-$Version.apk"
+$asset = "ColorDuo-$Version.apk"
 $dist  = Join-Path $Root 'dist'
 
-Write-Host "==> HyperDuo $Version (versionCode $code), tag $tag" -ForegroundColor Cyan
+Write-Host "==> ColorDuo $Version (versionCode $code), tag $tag" -ForegroundColor Cyan
 
 # ---- 构建 -------------------------------------------------------------------
 
@@ -103,8 +103,8 @@ $gradle = Join-Path $Tools 'gradle\gradle-9.8.0\bin\gradle.bat'
 $gradleArgs = @(
     '--project-dir', $Root, ':app:assembleRelease',
     '--no-daemon', '--console=plain',
-    "-PhyperduoVersionName=$Version",
-    "-PhyperduoVersionCode=$code"
+    "-PcolorduoVersionName=$Version",
+    "-PcolorduoVersionCode=$code"
 )
 
 $build = Invoke-Native $gradle $gradleArgs
@@ -178,7 +178,7 @@ function Remove-StaleReleases {
 $token = Get-GitHubToken
 $headers = @{
     Authorization = "token $token"
-    'User-Agent'  = 'HyperDuo-Release'
+    'User-Agent'  = 'ColorDuo-Release'
     Accept        = 'application/vnd.github+json'
 }
 
@@ -190,7 +190,7 @@ try {
     if ($existing) {
         Write-Host "==> tag $tag 已存在，跳过创建" -ForegroundColor Yellow
     } else {
-        $created = Invoke-Native 'git' @('tag', '-a', $tag, '-m', "HyperDuo $Version")
+        $created = Invoke-Native 'git' @('tag', '-a', $tag, '-m', "ColorDuo $Version")
         if ($created.ExitCode -ne 0) { throw "创建 tag $tag 失败：$($created.Output)" }
     }
     $pushed = Invoke-Native 'git' @('push', 'origin', $tag)
@@ -222,7 +222,7 @@ try {
 
 $payload = @{
     tag_name   = $tag
-    name       = "HyperDuo $Version"
+    name       = "ColorDuo $Version"
     body       = [string]$Notes
     draft      = $false
     prerelease = $false
@@ -268,15 +268,15 @@ if ($KeepOldReleases) {
 
 # ---- Xposed 模块仓 ------------------------------------------------------------
 
-# 主仓发完必须把同一 APK、同一份说明发到 LSPosed 模块仓：模块页的下载链接走模块仓的
+# 指定模块仓时把同一 APK、同一份说明同步过去：模块页的下载链接走模块仓的
 # Release，两个仓库版本一旦错开，从模块页进来的用户就会装到旧版。release-module.ps1
 # 自己负责校验 badging、上传 asset、同步 module-README.md、清理模块仓旧 Release。
 #
 # -Force / -KeepOldReleases 原样传递，两个仓库的覆盖与保留语义保持一致。
 # 这一步失败不会撤回主仓的 Release；说明为空时模块仓会拒绝发布 —— LSPosed 规范要求
 # Release 正文就是 changelog，所以发版必须带 -Notes 或 -NotesFile。
-if ($SkipModuleRepo) {
-    Write-Host '==> -SkipModuleRepo：跳过 Xposed 模块仓，只发主仓' -ForegroundColor Yellow
+if ($SkipModuleRepo -or [string]::IsNullOrWhiteSpace($ModuleRepo)) {
+    Write-Host '==> 只发 ColorDuo 主仓；同步模块仓需显式指定 -ModuleRepo' -ForegroundColor Yellow
 } else {
     # A hashtable splat, not an array one: an array splat passes its elements
     # *positionally*, so '-VersionCode' would be bound to the Apk parameter and
@@ -285,6 +285,7 @@ if ($SkipModuleRepo) {
         Version     = $Version
         VersionCode = $code
         Apk         = $target
+        ModuleRepo  = $ModuleRepo
     }
     if ($Notes)           { $moduleArgs.Notes = $Notes }
     if ($Force)           { $moduleArgs.Force = $true }

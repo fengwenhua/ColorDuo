@@ -1,15 +1,14 @@
-# HyperDuo - publish one release into the LSPosed module repository.
+# ColorDuo - publish one release into the LSPosed module repository.
 #
-# release.ps1 calls this automatically at the end of a release, so one command
-# keeps both repos on the same version. It also stays runnable standalone, to
+# release.ps1 calls this only when -ModuleRepo is explicitly supplied, keeping
+# both repos on the same version. It also stays runnable standalone, to
 # backfill a module-repo step that failed after the main repo already shipped.
 # The main repo is the website / download home, while
 # this puts the same APK where the LSPosed app looks for it. It is a separate
 # script because the module repo is a different repository with its own spec.
 #
-# The module repo (Xposed-Modules-Repo/io.github.yixing233.hyperduo) is NOT cloned
-# locally; `maintain` role cannot change repo settings but CAN create releases
-# (verified: POST /releases -> 201). So this script drives the Releases API only.
+# Apply for a separate ColorDuo module repository before using this script.
+# Its owner/name must be supplied explicitly; there is no upstream default.
 #
 # Spec (Xposed-Modules-Repo/submission README):
 #   Release Tag   = [version code]-[version name]   e.g. 10400-1.4
@@ -18,8 +17,8 @@
 #   asset         = the apk
 #
 # Usage (from the repository root; this script lives in scripts\):
-#   .\scripts\release-module.ps1 -Version 1.4 -VersionCode 10400 `
-#       -Apk .\dist\HyperDuo-1.4.apk -NotesFile .\docs\release-notes\release-notes-1.4.md
+#   .\scripts\release-module.ps1 -ModuleRepo owner/repo -Version 1.0.0 -VersionCode 10000 `
+#       -Apk .\dist\ColorDuo-1.4.apk -NotesFile .\docs\release-notes\release-notes-1.4.md
 #   .\scripts\release-module.ps1 ... -DryRun     # validate badging only, create nothing
 #   .\scripts\release-module.ps1 ... -SkipReadme # do not touch the module repo README
 #
@@ -40,6 +39,7 @@ param(
     [Parameter(Mandatory = $true)][string]$Version,
     [Parameter(Mandatory = $true)][int]$VersionCode,
     [Parameter(Mandatory = $true)][string]$Apk,
+    [Parameter(Mandatory = $true)][string]$ModuleRepo,
     [string]$Notes,
     [string]$NotesFile,
     [switch]$DryRun,
@@ -50,12 +50,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$Root    = 'C:\code\HyperDuo'
+$Root    = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $Tools   = Join-Path $Root '.tools'
-$Module  = 'Xposed-Modules-Repo/io.github.yixing233.hyperduo'
-$Package = 'io.github.yixing233.hyperduo'
+$Module  = $ModuleRepo
+$Package = 'io.github.fengwenhua.colorduo'
 $Tag     = "$VersionCode-$Version"
-$Asset   = "HyperDuo-$Version.apk"
+$Asset   = "ColorDuo-$Version.apk"
 $Readme  = Join-Path $Root 'module-README.md'
 
 $Aapt = Join-Path $Tools 'sdk\build-tools\37.0.0\aapt2.exe'
@@ -139,7 +139,7 @@ if (-not $Notes) { throw 'a changelog is required: pass -Notes or -NotesFile (th
 $token = Get-GitHubToken
 $headers = @{
     Authorization = "token $token"
-    'User-Agent'  = 'HyperDuo-Release'
+    'User-Agent'  = 'ColorDuo-Release'
     Accept        = 'application/vnd.github+json'
 }
 $api = "https://api.github.com/repos/$Module"

@@ -8,35 +8,30 @@ plugins {
 // version in the APK, the version in the About card and the version the updater
 // compares against are all the same value. A local build falls back to the
 // checked-in defaults below.
-val tagVersionName = (findProperty("hyperduoVersionName") as String?)?.takeIf { it.isNotBlank() }
-val tagVersionCode = (findProperty("hyperduoVersionCode") as String?)?.toIntOrNull()
+val tagVersionName = (findProperty("colorduoVersionName") as String?)?.takeIf { it.isNotBlank() }
+val tagVersionCode = (findProperty("colorduoVersionCode") as String?)?.toIntOrNull()
 val colorOsStage = (findProperty("colorOsStage") as String?) ?: "outside"
 require(colorOsStage in setOf("observe", "battery", "network", "ring", "type", "capsule", "font", "outside")) { "Unsupported ColorOS validation stage" }
 
 android {
-    // io.github.* because LSPosed's module repo verifies a reverse-domain id
-    // against a DNS TXT record for the root domain: hyperduo.com is registered
-    // by someone else, so anything under it would fail the check. The
-    // io.github.<user> form needs no domain and no TXT record.
-    namespace = "io.github.yixing233.hyperduo"
+    // Independent fork identity, owned by the ColorDuo repository maintainer.
+    namespace = "io.github.fengwenhua.colorduo"
     compileSdk = 37
 
     defaultConfig {
-        // Changing this makes the module a different app to Android: an existing
-        // com.hyperduo.trio install cannot be updated in place, and its settings
-        // and LSPosed scope entry do not carry over. Uninstall the old one first.
-        applicationId = "io.github.yixing233.hyperduo"
+        // ColorDuo is a separate app from HyperDuo. Settings and LSPosed scope
+        // do not migrate; disable the old module before enabling this one.
+        applicationId = "io.github.fengwenhua.colorduo"
         minSdk = 29
         targetSdk = 36
-        versionCode = tagVersionCode ?: 2
-        versionName = tagVersionName ?: "1.1"
+        versionCode = tagVersionCode ?: 10000
+        versionName = tagVersionName ?: "1.0.0"
         buildConfigField("String", "COLOROS_STAGE", "\"$colorOsStage\"")
     }
 
     signingConfigs {
-        // Same keystore the hand-rolled pipeline used, so that in-place updates
-        // over the already-installed module keep working.
-        create("hyperduo") {
+        // Retain the upstream reproducible-build signing fixture and its alias.
+        create("colorduo") {
             storeFile = rootProject.file(".tools/debug.keystore")
             storePassword = "android"
             keyAlias = "hyperduo"
@@ -47,7 +42,7 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("hyperduo")
+            signingConfig = signingConfigs.getByName("colorduo")
         }
         release {
             isMinifyEnabled = true
@@ -56,7 +51,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("hyperduo")
+            signingConfig = signingConfigs.getByName("colorduo")
         }
     }
 

@@ -3,9 +3,9 @@ $root=Split-Path $PSScriptRoot -Parent
 $jdk=Join-Path $root '.tools/jdk/jdk-21.0.12.1+1/bin'
 $javac=Join-Path $jdk 'javac.exe'; $java=Join-Path $jdk 'java.exe'
 if(!(Test-Path $javac)){$javac='javac';$java='java'}
-$hooksPath="$root/app/src/main/java/io/github/yixing233/hyperduo/TrioHooks.java"
-$battPath="$root/app/src/main/java/io/github/yixing233/hyperduo/BatteryPresence.java"
-$rendPath="$root/app/src/main/java/io/github/yixing233/hyperduo/TrioRenderer.java"
+$hooksPath="$root/app/src/main/java/io/github/fengwenhua/colorduo/TrioHooks.java"
+$battPath="$root/app/src/main/java/io/github/fengwenhua/colorduo/BatteryPresence.java"
+$rendPath="$root/app/src/main/java/io/github/fengwenhua/colorduo/TrioRenderer.java"
 $hooks=Get-Content $hooksPath -Raw
 $batt=Get-Content $battPath -Raw
 $rend=Get-Content $rendPath -Raw

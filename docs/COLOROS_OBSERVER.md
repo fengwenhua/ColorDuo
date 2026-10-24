@@ -26,16 +26,16 @@ phoneId、level/numberOfLevels/isInService，以及已注册 ImageView 的类型
 缺少某个子 View 或方法只记录 capability 缺失，绝不全局 Hook ImageView。
 
 当原生电池 `dump(PrintWriter, String[])` 被调用时，追加有界观察快照。
-框架日志 tag 为 `HyperDuoColorOS`；入口日志 tag 为 `HyperDuo`，实际可能由 LSPosedFramework 代打。
+框架日志 tag 为 `ColorDuoColorOS`；入口日志 tag 为 `ColorDuo`，实际可能由 LSPosedFramework 代打。
 
 ## 构建与验证
 
 ```sh
 bash tests/coloros-observer.sh
 gradle :app:assembleDebug --no-daemon --console=plain \
-  -PcolorOsStage=observe -PhyperduoVersionName=1.1-coloros-observer -PhyperduoVersionCode=20001
+  -PcolorOsStage=observe -PcolorduoVersionName=1.1-coloros-observer -PcolorduoVersionCode=20001
 gradle :app:assembleRelease --no-daemon --console=plain \
-  -PcolorOsStage=observe -PhyperduoVersionName=1.1-coloros-observer -PhyperduoVersionCode=20001
+  -PcolorOsStage=observe -PcolorduoVersionName=1.1-coloros-observer -PcolorduoVersionCode=20001
 ```
 
 使用观察版本标记时，OPPO/OnePlus/realme 设置页的关于卡片显示“观察构建”，不将设置端服务连接

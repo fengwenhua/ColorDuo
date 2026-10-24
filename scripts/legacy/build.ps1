@@ -1,4 +1,4 @@
-# HyperDuo offline build pipeline.
+# ColorDuo offline build pipeline.
 #
 # No Gradle: the module needs nothing beyond a manifest and its own classes, so
 # javac -> d8 -> aapt2 -> zipalign -> apksigner is deterministic and avoids
@@ -8,7 +8,7 @@
 
 $ErrorActionPreference = 'Continue'
 
-$Root      = 'C:\code\HyperDuo'
+$Root      = 'C:\code\ColorDuo'
 $AppDir    = Join-Path $Root 'app\src\main'
 $BuildDir  = Join-Path $Root 'build'
 # 21 rather than 17 so the offline pipeline and the Gradle build share one JDK.
@@ -30,7 +30,7 @@ $ApkSigner = Join-Path $BuildTools 'apksigner.bat'
 
 $MinSdk    = 29
 $TargetSdk = 37
-$ApkName   = 'HyperDuo.apk'
+$ApkName   = 'ColorDuo.apk'
 $OutApk    = Join-Path $Root "dist\$ApkName"
 
 function Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
@@ -140,7 +140,7 @@ if (-not (Test-Path $Keystore)) {
         -alias hyperduo `
         -keyalg RSA -keysize 2048 -validity 10000 `
         -storepass android -keypass android `
-        -dname 'CN=HyperDuo, O=HyperDuo, C=CN'
+        -dname 'CN=ColorDuo, O=ColorDuo, C=CN'
     if ($LASTEXITCODE -ne 0) { throw "keytool failed ($LASTEXITCODE)" }
 }
 

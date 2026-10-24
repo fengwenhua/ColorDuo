@@ -7,7 +7,7 @@
 # tracked .tools/maven repository and public Maven artifacts.
 #
 # The APK is signed with the tracked .tools/debug.keystore, the same key the
-# offline pipeline uses, so it installs in place over an existing HyperDuo.
+# offline pipeline uses. ColorDuo has its own package and cannot upgrade HyperDuo.
 name: build
 
 on:
@@ -19,11 +19,11 @@ on:
       versionName:
         description: versionName to stamp
         required: false
-        default: 1.5-overlay
+        default: 1.0.0
       versionCode:
         description: versionCode to stamp (must be higher than the installed one)
         required: false
-        default: '10500'
+        default: '10000'
 
 permissions:
   contents: write
@@ -81,42 +81,44 @@ jobs:
         env:
           INPUT_NAME: ${{ github.event.inputs.versionName }}
           INPUT_CODE: ${{ github.event.inputs.versionCode }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
         run: |
-          echo "name=${INPUT_NAME:-1.5-overlay}" >> "$GITHUB_OUTPUT"
-          echo "code=${INPUT_CODE:-10500}" >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
+          import os, re
+          name = os.environ.get('INPUT_NAME') or (
+              os.environ['REF_NAME'].removeprefix('v') if os.environ['REF_TYPE'] == 'tag' else '1.0.0'
+          )
+          if not re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?', name):
+              raise SystemExit('Expected a semantic version such as 1.0.0')
+          major, minor, patch = map(int, name.split('-')[0].split('.'))
+          if minor >= 100 or patch >= 100:
+              raise SystemExit('minor and patch must be below 100 for the version-code scheme')
+          code = int(os.environ.get('INPUT_CODE') or (major * 10000 + minor * 100 + patch))
+          if not 0 < code <= 2100000000:
+              raise SystemExit('Invalid Android versionCode')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'name={name}\ncode={code}\n')
+          PY
+
+      - name: ColorOS policy and configuration checks
+        run: bash tests/coloros-observer.sh
 
       - name: Build release APK
         run: |
           gradle --no-daemon assembleRelease \
-            -PhyperduoVersionName="${{ steps.stamp.outputs.name }}" \
-            -PhyperduoVersionCode="${{ steps.stamp.outputs.code }}"
+            -PcolorduoVersionName="${{ steps.stamp.outputs.name }}" \
+            -PcolorduoVersionCode="${{ steps.stamp.outputs.code }}"
 
       - name: Collect
         run: |
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk \
-             "dist/HyperDuo-${{ steps.stamp.outputs.name }}.apk"
-
-      # The runner can reach GitHub's blob storage; the phone this build gets
-      # installed on cannot (artifact, release assets and logs all time out from
-      # it, while api.github.com is fine). When the workflow is started by hand,
-      # the APK is therefore also committed as base64, which the Git Data API can
-      # serve - so the same build is still installable from here. The file is
-      # removed again by the next manual run.
-      - name: Publish the APK as base64 in the repo
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          base64 -w 0 dist/HyperDuo-*.apk > ci-apk.b64
-          ls -l ci-apk.b64
-          git config user.name "ci"
-          git config user.email "ci@users.noreply.github.com"
-          git add -f ci-apk.b64
-          git commit -m "ci: apk snapshot for on-device install"
-          git push origin HEAD:refs/heads/${GITHUB_REF_NAME}
+             "dist/ColorDuo-${{ steps.stamp.outputs.name }}.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: HyperDuo-${{ steps.stamp.outputs.name }}
+          name: ColorDuo-${{ steps.stamp.outputs.name }}
           path: dist/*.apk
           if-no-files-found: error
 
@@ -125,6 +127,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ci-${{ steps.stamp.outputs.name }}
-          name: HyperDuo ${{ steps.stamp.outputs.name }} (CI)
+          name: ColorDuo ${{ steps.stamp.outputs.name }} (CI)
+          body_path: docs/release-notes/release-notes-${{ steps.stamp.outputs.name }}.md
           files: dist/*.apk
           prerelease: true

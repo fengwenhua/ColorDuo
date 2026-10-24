@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2026 yixing233 and HyperDuo contributors
  *
- * This file is part of HyperDuo, released under the GNU General Public
+ * This file is part of ColorDuo, released under the GNU General Public
  * License v3.0. See the LICENSE file at the repository root, or
  * <https://www.gnu.org/licenses/gpl-3.0.html>.
  *
@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * Desktop stand-in for {@code android.os.Bundle}.
  *
- * <p>Only the calls {@link io.github.yixing233.hyperduo.TrioSettings} makes on the way in
+ * <p>Only the calls {@link io.github.fengwenhua.colorduo.TrioSettings} makes on the way in
  * and out are replayed here: the broadcast-extras path is not exercised by the
  * offline preview, it just has to compile so the real {@code TrioSettings} can
  * be linked against the desktop shims.

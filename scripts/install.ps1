@@ -1,9 +1,9 @@
-# HyperDuo - install the signed APK on the connected device and watch the log.
+# ColorDuo - install the signed APK on the connected device and watch the log.
 #
 # Usage:
-#   & C:\code\HyperDuo\scripts\install.ps1              # install + enable in LSPosed + tail log
-#   & C:\code\HyperDuo\scripts\install.ps1 -InstallOnly
-#   & C:\code\HyperDuo\scripts\install.ps1 -LogOnly
+#   & C:\code\ColorDuo\scripts\install.ps1              # install + enable in LSPosed + tail log
+#   & C:\code\ColorDuo\scripts\install.ps1 -InstallOnly
+#   & C:\code\ColorDuo\scripts\install.ps1 -LogOnly
 #
 # Notes:
 #   * The device must be connected with USB debugging authorised.
@@ -18,10 +18,10 @@ param(
 
 $ErrorActionPreference = 'Continue'
 
-$Root     = 'C:\code\HyperDuo'
+$Root     = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $Adb      = 'C:\Program Files\UotanToolbox\Bin\platform-tools\adb.exe'
 $Apk      = Join-Path $Root 'app\build\outputs\apk\debug\app-debug.apk'
-$Package  = 'io.github.yixing233.hyperduo'
+$Package  = 'io.github.fengwenhua.colorduo'
 
 function Step($t) { Write-Host "==> $t" -ForegroundColor Cyan }
 
@@ -53,10 +53,10 @@ Step 'verifying the package is present'
 & $Adb shell pm list packages 2>&1 | Select-String -Pattern $Package
 
 Step 'confirming the modern-API entry point survived packaging'
-& $Adb shell "unzip -l /data/app/*/io.github.yixing233.hyperduo*/base.apk 2>/dev/null | grep -E 'xposed|classes.dex'" 2>&1
+& $Adb shell "unzip -l /data/app/*/io.github.fengwenhua.colorduo*/base.apk 2>/dev/null | grep -E 'xposed|classes.dex'" 2>&1
 
 Step 'opening the settings screen'
-& $Adb shell am start -n io.github.yixing233.hyperduo/.ui.MainActivity 2>&1 | Out-Null
+& $Adb shell am start -n io.github.fengwenhua.colorduo/.ui.MainActivity 2>&1 | Out-Null
 
 if ($InstallOnly) { exit 0 }
 

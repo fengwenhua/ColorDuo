@@ -27,13 +27,13 @@ if(!(Test-Path $javac)){$javac='javac';$java='java'}
 # Usage:  powershell -File tests\glyph-drawable.ps1
 # ---------------------------------------------------------------------------
 
-$trio=Join-Path $root 'app/src/main/java/io/github/yixing233/hyperduo'
+$trio=Join-Path $root 'app/src/main/java/io/github/fengwenhua/colorduo'
 if($SourceDirectory){$trio=$SourceDirectory}
 $glyphPath=Join-Path $trio 'GlyphDrawable.java'
 $hooksPath=Join-Path $trio 'TrioHooks.java'
 $glyph=[System.IO.File]::ReadAllText($glyphPath)
 $hooks=[System.IO.File]::ReadAllText($hooksPath)
-$drawHook=[regex]::Match($hooks,'(?s)"hyperduo-draw", new XposedInterface.Hooker\(\) \{(.*?)\n                \}\);').Groups[1].Value
+$drawHook=[regex]::Match($hooks,'(?s)"colorduo-draw", new XposedInterface.Hooker\(\) \{(.*?)\n                \}\);').Groups[1].Value
 if(!$drawHook){throw 'Production battery draw hook missing'}
 
 # --- source contract pins ----------------------------------------------------
@@ -207,7 +207,7 @@ public class Canvas { }
 '@
 
 $trioHooks=@"
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -249,7 +249,7 @@ final class TrioHooks {
 "@
 
 $trioState=@'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 /** Counts the refreshes, because draw has to refresh before it builds a frame. */
 final class TrioState {
@@ -264,14 +264,14 @@ final class TrioState {
 '@
 
 $trioSettings=@'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 /** The renderer below ignores the settings, so this only has to exist. */
 final class TrioSettings { boolean enabled=true; }
 '@
 
 $trioConfig=@'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 /** Hands the drawable a settings object, as the real TrioConfig does. */
 final class TrioConfig {
@@ -286,7 +286,7 @@ final class TrioConfig {
 '@
 
 $trioRenderer=@'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 import android.graphics.Canvas;
 
@@ -329,7 +329,7 @@ final class TrioRenderer {
 '@
 
 $test=@'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 import android.graphics.Canvas;
 import android.graphics.drawable.MiuiArtDrawable;
@@ -546,7 +546,7 @@ $ran=0
 foreach($shape in $shapes){
     $tree=Join-Path $src $shape.name
     $out=Join-Path $classes $shape.name
-    $pkg=Join-Path $tree 'io/github/yixing233/hyperduo'
+    $pkg=Join-Path $tree 'io/github/fengwenhua/colorduo'
     New-Item -ItemType Directory -Force -Path $pkg | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $tree 'android/graphics/drawable') | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $tree 'android/graphics') | Out-Null
@@ -606,7 +606,7 @@ foreach($shape in $shapes){
     $sources = Get-ChildItem -Recurse -Filter *.java $tree | ForEach-Object { $_.FullName }
     & $javac -nowarn -d $out -encoding UTF-8 $sources
     if($LASTEXITCODE){ throw "Compilation failed for the $($shape.name) tree" }
-    & $java -Xmx128m -cp $out io.github.yixing233.hyperduo.GlyphTest $shape.name
+    & $java -Xmx128m -cp $out io.github.fengwenhua.colorduo.GlyphTest $shape.name
     if($LASTEXITCODE){ throw "Test failed for the $($shape.name) tree" }
     $ran++
 }

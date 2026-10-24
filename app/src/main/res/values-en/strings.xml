@@ -3,8 +3,8 @@
     <string name="drawing_master_title">Master switch</string>
     <string name="drawing_quick_edit_title">Quick edit</string>
     <string name="drawing_order_title">Component order</string>
-    <string name="app_name">HyperDuo</string>
-    <string name="xposed_description">Merges Wi-Fi, mobile signal and battery into a single iPhone-Duo style trio glyph in the status bar.</string>
+    <string name="app_name">ColorDuo</string>
+    <string name="xposed_description">Merges Wi-Fi, mobile signal and battery into a ring or capsule in the ColorOS 16 status bar.</string>
 
 
     <string name="group_stroke">Stroke</string>
@@ -231,7 +231,7 @@
     <string name="about_scope_count">Scoped apps</string>
     <string name="about_enabled_count">Enabled toggles</string>
     <string name="about_title">About</string>
-    <string name="about_summary">HyperDuo · an iPhone-Duo style trio status bar icon</string>
+    <string name="about_summary">ColorDuo · trio status bar icons for ColorOS 16</string>
 
     <string name="info_module_version">App version</string>
     <string name="info_framework">Xposed framework</string>
@@ -260,7 +260,7 @@
     <string name="update_retry">Retry</string>
     <string name="update_failed">Could not check for updates</string>
     <string name="update_no_release">No release has been published yet</string>
-    <string name="update_permission_needed">HyperDuo needs permission to install apps; the settings page has been opened for you.</string>
+    <string name="update_permission_needed">ColorDuo needs permission to install apps; the settings page has been opened for you.</string>
     <string name="update_install_failed">No app on this device can handle the install.</string>
     <string name="update_release_page">Open release page</string>
     <string name="update_repo">View repository</string>

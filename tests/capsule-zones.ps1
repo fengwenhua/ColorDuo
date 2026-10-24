@@ -3,16 +3,16 @@ $root=Split-Path $PSScriptRoot -Parent
 $jdk=Join-Path $root '.tools/jdk/jdk-21.0.12.1+1/bin'
 $javac=Join-Path $jdk 'javac.exe';$java=Join-Path $jdk 'java.exe'
 if(!(Test-Path $javac)){$javac='javac';$java='java'}
-$trio=Join-Path $root 'app/src/main/java/io/github/yixing233/hyperduo'
-$src=Join-Path $root 'work/capsule-zones/src/io/github/yixing233/hyperduo'
+$trio=Join-Path $root 'app/src/main/java/io/github/fengwenhua/colorduo'
+$src=Join-Path $root 'work/capsule-zones/src/io/github/fengwenhua/colorduo'
 $classes=Join-Path $root 'work/capsule-zones/classes'
 New-Item -ItemType Directory -Force $src,$classes | Out-Null
 $probe=@'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 import android.graphics.Canvas;
 import java.awt.image.BufferedImage;
-import io.github.yixing233.hyperduo.TrioZones.Zone;
-import io.github.yixing233.hyperduo.TrioZones.Part;
+import io.github.fengwenhua.colorduo.TrioZones.Zone;
+import io.github.fengwenhua.colorduo.TrioZones.Part;
 public class CapsuleZonesTest {
  static final int SIZE=960;static int checks;
  static void ok(String message,boolean result){if(!result)throw new AssertionError(message);checks++;}
@@ -104,5 +104,5 @@ foreach($file in @('Prefs.java','TrioSettings.java','TrioAppearance.java','TrioG
 $sources+=$probePath
 & $javac -nowarn -encoding UTF-8 -d $classes $sources
 if($LASTEXITCODE){throw 'Capsule editor compilation failed'}
-& $java -Xmx512m -cp $classes io.github.yixing233.hyperduo.CapsuleZonesTest
+& $java -Xmx512m -cp $classes io.github.fengwenhua.colorduo.CapsuleZonesTest
 if($LASTEXITCODE){throw 'Capsule editor verification failed'}

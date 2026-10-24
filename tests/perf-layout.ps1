@@ -4,7 +4,7 @@ $jdk=Join-Path $root '.tools/jdk/jdk-21.0.12.1+1/bin'
 $javac=Join-Path $jdk 'javac.exe'; $java=Join-Path $jdk 'java.exe'
 if(!(Test-Path $javac)){$javac='javac';$java='java'}
 
-$trio="$root/app/src/main/java/io/github/yixing233/hyperduo"
+$trio="$root/app/src/main/java/io/github/fengwenhua/colorduo"
 $hooks=Get-Content "$trio/TrioHooks.java" -Raw
 $rend=Get-Content "$trio/TrioRenderer.java" -Raw
 $geom=Get-Content "$trio/TrioGeometry.java" -Raw
@@ -457,8 +457,8 @@ public class DisplayMetrics {
 }
 '@
 
-Emit 'io/github/yixing233/hyperduo/TrioGeometry.java' @"
-package io.github.yixing233.hyperduo;
+Emit 'io/github/fengwenhua/colorduo/TrioGeometry.java' @"
+package io.github.fengwenhua.colorduo;
 
 /** The four ink boxes the fit is measured against, read from the real source. */
 final class TrioGeometry {
@@ -481,8 +481,8 @@ final class TrioGeometry {
 }
 "@
 
-Emit 'io/github/yixing233/hyperduo/Prefs.java' @"
-package io.github.yixing233.hyperduo;
+Emit 'io/github/fengwenhua/colorduo/Prefs.java' @"
+package io.github.fengwenhua.colorduo;
 
 /** The bounds the two fit multipliers and the weight clamp themselves to, read from the real Prefs. */
 final class Prefs {
@@ -503,8 +503,8 @@ final class Prefs {
 }
 "@
 
-Emit 'io/github/yixing233/hyperduo/TrioAppearance.java' @"
-package io.github.yixing233.hyperduo;
+Emit 'io/github/fengwenhua/colorduo/TrioAppearance.java' @"
+package io.github.fengwenhua.colorduo;
 
 /** Only the fields the size fit reads, plus the real accessors. */
 final class TrioAppearance {
@@ -523,8 +523,8 @@ final class TrioAppearance {
 }
 "@
 
-Emit 'io/github/yixing233/hyperduo/TrioConfig.java' @'
-package io.github.yixing233.hyperduo;
+Emit 'io/github/fengwenhua/colorduo/TrioConfig.java' @'
+package io.github.fengwenhua.colorduo;
 
 final class TrioConfig {
 
@@ -534,8 +534,8 @@ final class TrioConfig {
 }
 '@
 
-Emit 'io/github/yixing233/hyperduo/TrioRenderer.java' @"
-package io.github.yixing233.hyperduo;
+Emit 'io/github/fengwenhua/colorduo/TrioRenderer.java' @"
+package io.github.fengwenhua.colorduo;
 
 import android.graphics.Typeface;
 
@@ -574,8 +574,8 @@ final class TrioRenderer {
 }
 "@
 
-Emit 'io/github/yixing233/hyperduo/PerfLayoutTest.java' @"
-package io.github.yixing233.hyperduo;
+Emit 'io/github/fengwenhua/colorduo/PerfLayoutTest.java' @"
+package io.github.fengwenhua.colorduo;
 
 import android.graphics.Paint;
 import android.graphics.Typeface;
@@ -1019,5 +1019,5 @@ public class PerfLayoutTest {
 $sources = Get-ChildItem -Recurse -Filter *.java $src | ForEach-Object { $_.FullName }
 & $javac -nowarn -d $classes -encoding UTF-8 $sources
 if($LASTEXITCODE){throw 'Compilation failed'}
-& $java -Xmx64m -cp $classes io.github.yixing233.hyperduo.PerfLayoutTest
+& $java -Xmx64m -cp $classes io.github.fengwenhua.colorduo.PerfLayoutTest
 if($LASTEXITCODE){throw 'Test failed'}

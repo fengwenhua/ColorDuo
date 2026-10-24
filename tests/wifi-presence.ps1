@@ -3,7 +3,7 @@ $root=Split-Path $PSScriptRoot -Parent
 $jdk=Join-Path $root '.tools/jdk/jdk-21.0.12.1+1/bin'
 $javac=Join-Path $jdk 'javac.exe'; $java=Join-Path $jdk 'java.exe'
 if(!(Test-Path $javac)){$javac='javac';$java='java'}
-$s=Get-Content "$root/app/src/main/java/io/github/yixing233/hyperduo/WifiPresence.java" -Raw
+$s=Get-Content "$root/app/src/main/java/io/github/fengwenhua/colorduo/WifiPresence.java" -Raw
 $m=[regex]::Match($s,'(?s)static boolean resolve\(boolean iconVisible, int cachedLevel\) \{.*?\n    \}').Value
 if(!$m){throw 'Production resolver missing'}
 $publish=[regex]::Match($s,'(?s)private static void publish\(boolean next\) \{.*?\n    \}').Value

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 /** Desktop tests for the routing safety boundary and diagnostic backpressure. */
 public final class ColorOsObserverTest {

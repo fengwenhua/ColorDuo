@@ -1,7 +1,7 @@
 param([string]$SourceDirectory)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-if (!$SourceDirectory) { $SourceDirectory = Join-Path $root 'app/src/main/java/io/github/yixing233/hyperduo' }
+if (!$SourceDirectory) { $SourceDirectory = Join-Path $root 'app/src/main/java/io/github/fengwenhua/colorduo' }
 $jdk = Join-Path $root '.tools/jdk/jdk-21.0.12.1+1/bin'
 $javac = Join-Path $jdk 'javac.exe'; $java = Join-Path $jdk 'java.exe'
 if (!(Test-Path $javac)) { $javac = 'javac'; $java = 'java' }
@@ -12,5 +12,5 @@ $sources += @('Prefs.java','TrioSettings.java','TrioAppearance.java','TrioGeomet
 $sources += Join-Path $PSScriptRoot 'RingSlotsTest.java'
 & $javac -nowarn -encoding UTF-8 -d $classes $sources
 if ($LASTEXITCODE) { throw 'Free-ring test compilation failed' }
-& $java -Xmx512m -cp $classes io.github.yixing233.hyperduo.RingSlotsTest
+& $java -Xmx512m -cp $classes io.github.fengwenhua.colorduo.RingSlotsTest
 if ($LASTEXITCODE) { throw 'Free-ring tests failed' }

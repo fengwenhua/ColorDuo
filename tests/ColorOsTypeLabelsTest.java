@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 public final class ColorOsTypeLabelsTest {
     private static int checks;

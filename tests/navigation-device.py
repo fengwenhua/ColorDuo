@@ -13,7 +13,7 @@ import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-PACKAGE = 'io.github.yixing233.hyperduo'
+PACKAGE = 'io.github.fengwenhua.colorduo'
 STYLES = ['HyperOS 底栏', 'HyperOS 悬浮底栏', '液态玻璃底栏']
 LABELS = ['图标和文字', '仅图标', '仅文字']
 
@@ -41,12 +41,12 @@ class Device:
 
     def ui(self):
         for _ in range(4):
-            result = self.adb('shell', 'uiautomator dump /sdcard/hyperduo-navigation-test.xml')
+            result = self.adb('shell', 'uiautomator dump /sdcard/colorduo-navigation-test.xml')
             if 'dumped to' in result:
-                xml = self.adb('shell', 'cat /sdcard/hyperduo-navigation-test.xml')
+                xml = self.adb('shell', 'cat /sdcard/colorduo-navigation-test.xml')
                 root = ET.fromstring(xml)
                 if not any(n.get('package') == PACKAGE for n in root.iter('node')):
-                    raise AssertionError('The foreground UI is outside HyperDuo')
+                    raise AssertionError('The foreground UI is outside ColorDuo')
                 self.count += 1
                 (self.args.output / f'{self.count:03d}.xml').write_text(xml, encoding='utf-8')
                 return root
@@ -80,7 +80,7 @@ class Device:
         marker = '快捷编辑' if index == 0 else '系统版本'
         if self.find(root, marker) is None:
             raise AssertionError(f'Expected page {index}, missing {marker}')
-        title = 'HyperDuo' if index == 0 else '关于'
+        title = 'ColorDuo' if index == 0 else '关于'
         titles = [n for n in root.iter('node') if n.get('text') == title]
         if not any(self.bounds(n)[1] < 600 for n in titles):
             raise AssertionError(f'Missing page title: {title}')
@@ -92,7 +92,7 @@ class Device:
         return root
 
     def prefs(self):
-        root = ET.fromstring(self.adb('shell', f'run-as {PACKAGE} cat shared_prefs/hyperduo_settings.xml'))
+        root = ET.fromstring(self.adb('shell', f'run-as {PACKAGE} cat shared_prefs/colorduo_settings.xml'))
         values = {n.get('name'): n.get('value') for n in root}
         return int(values.get('nav_style', 1)), int(values.get('nav_labels', 0))
 

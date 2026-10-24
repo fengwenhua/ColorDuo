@@ -24,7 +24,7 @@ $javac = Join-Path $jdk 'javac.exe'
 $java = Join-Path $jdk 'java.exe'
 if (!(Test-Path $javac)) { $javac = 'javac'; $java = 'java' }
 
-$trio = Join-Path $root 'app\src\main\java\io\github\yixing233\hyperduo'
+$trio = Join-Path $root 'app\src\main\java\io\github\fengwenhua\colorduo'
 $rendererPath = Join-Path $trio 'TrioRenderer.java'
 $appearancePath = Join-Path $trio 'TrioAppearance.java'
 $prefsPath = Join-Path $trio 'Prefs.java'
@@ -87,11 +87,11 @@ $src = Join-Path $root 'work\glyphscale\src'
 $classes = Join-Path $root 'work\glyphscale\classes'
 if (Test-Path $src) { Remove-Item -Recurse -Force $src }
 if (Test-Path $classes) { Remove-Item -Recurse -Force $classes }
-New-Item -ItemType Directory -Force -Path (Join-Path $src 'io\github\yixing233\hyperduo') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $src 'io\github\fengwenhua\colorduo') | Out-Null
 New-Item -ItemType Directory -Force -Path $classes | Out-Null
 
 $probe = @'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 import android.graphics.Canvas;
 import java.awt.image.BufferedImage;
@@ -281,16 +281,16 @@ final class GlyphScaleTest {
 '@
 
 [System.IO.File]::WriteAllText(
-    (Join-Path $src 'io\github\yixing233\hyperduo\GlyphScaleTest.java'),
+    (Join-Path $src 'io\github\fengwenhua\colorduo\GlyphScaleTest.java'),
     $probe, (New-Object System.Text.UTF8Encoding($false)))
 
 # The constants are injected rather than restated, so the probe asks for the
 # same numbers Prefs publishes and a changed bound is not silently re-tested
 # against a stale copy.
 [System.IO.File]::WriteAllText(
-    (Join-Path $src 'io\github\yixing233\hyperduo\Bounds.java'),
+    (Join-Path $src 'io\github\fengwenhua\colorduo\Bounds.java'),
     @"
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 /** The scale bounds and the style ids, read out of the real Prefs. */
 final class Bounds {
@@ -303,7 +303,7 @@ final class Bounds {
 "@, (New-Object System.Text.UTF8Encoding($false)))
 
 # Make the injected names visible to the probe the way the real files would.
-$probeFile = Join-Path $src 'io\github\yixing233\hyperduo\GlyphScaleTest.java'
+$probeFile = Join-Path $src 'io\github\fengwenhua\colorduo\GlyphScaleTest.java'
 $probeText = [System.IO.File]::ReadAllText($probeFile)
 $probeText = $probeText.Replace(
     'final class GlyphScaleTest {',
@@ -334,5 +334,5 @@ $sources = $preview + $shared + @(Get-ChildItem -Recurse -Filter *.java $src |
 
 & $javac -nowarn -d $classes -encoding UTF-8 $sources
 if ($LASTEXITCODE) { throw 'Compilation failed' }
-& $java -Xmx128m -cp $classes io.github.yixing233.hyperduo.GlyphScaleTest
+& $java -Xmx128m -cp $classes io.github.fengwenhua.colorduo.GlyphScaleTest
 if ($LASTEXITCODE) { throw 'Test failed' }

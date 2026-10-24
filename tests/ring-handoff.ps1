@@ -1,7 +1,7 @@
 param([string]$SourceDirectory)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-if (!$SourceDirectory) { $SourceDirectory = Join-Path $root 'app/src/main/java/io/github/yixing233/hyperduo' }
+if (!$SourceDirectory) { $SourceDirectory = Join-Path $root 'app/src/main/java/io/github/fengwenhua/colorduo' }
 $jdk = Join-Path $root '.tools/jdk/jdk-21.0.12.1+1/bin'
 $javac = Join-Path $jdk 'javac.exe'; $java = Join-Path $jdk 'java.exe'
 if (!(Test-Path $javac)) { $javac = 'javac'; $java = 'java' }
@@ -50,5 +50,5 @@ $sources += @('android/content/SharedPreferences.java','android/os/Bundle.java')
 $sources += @($probePath, $viewPath)
 & $javac -nowarn -encoding UTF-8 -d $classes $sources
 if ($LASTEXITCODE) { throw 'Handoff test compilation failed' }
-& $java -cp $classes io.github.yixing233.hyperduo.RingHandoffTest
+& $java -cp $classes io.github.fengwenhua.colorduo.RingHandoffTest
 if ($LASTEXITCODE) { throw 'Handoff tests failed' }

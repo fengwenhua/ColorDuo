@@ -41,7 +41,7 @@ $javac = Join-Path $jdk 'javac.exe'
 $java = Join-Path $jdk 'java.exe'
 if (!(Test-Path $javac)) { $javac = 'javac'; $java = 'java' }
 
-$trio = Join-Path $root 'app\src\main\java\io\github\yixing233\hyperduo'
+$trio = Join-Path $root 'app\src\main\java\io\github\fengwenhua\colorduo'
 $rendererPath = Join-Path $trio 'TrioRenderer.java'
 $zonesPath = Join-Path $trio 'TrioZones.java'
 
@@ -119,15 +119,15 @@ $src = Join-Path $root 'work\zonescheck\src'
 $classes = Join-Path $root 'work\zonescheck\classes'
 if (Test-Path $src) { Remove-Item -Recurse -Force $src }
 if (Test-Path $classes) { Remove-Item -Recurse -Force $classes }
-New-Item -ItemType Directory -Force -Path (Join-Path $src 'io\github\yixing233\hyperduo') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $src 'io\github\fengwenhua\colorduo') | Out-Null
 New-Item -ItemType Directory -Force -Path $classes | Out-Null
 
 $probe = @'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 
 import android.graphics.Canvas;
-import io.github.yixing233.hyperduo.TrioZones.Part;
-import io.github.yixing233.hyperduo.TrioZones.Zone;
+import io.github.fengwenhua.colorduo.TrioZones.Part;
+import io.github.fengwenhua.colorduo.TrioZones.Zone;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -1470,7 +1470,7 @@ final class DrawingZonesTest {
 '@
 
 [System.IO.File]::WriteAllText(
-    (Join-Path $src 'io\github\yixing233\hyperduo\DrawingZonesTest.java'),
+    (Join-Path $src 'io\github\fengwenhua\colorduo\DrawingZonesTest.java'),
     $probe, (New-Object System.Text.UTF8Encoding($false)))
 
 # --- compile and run -----------------------------------------------------------
@@ -1491,5 +1491,5 @@ $sources = $preview + $shared + @(Get-ChildItem -Recurse -Filter *.java $src |
 
 & $javac -nowarn -d $classes -encoding UTF-8 $sources
 if ($LASTEXITCODE) { throw 'Compilation failed' }
-& $java -Xmx512m -cp $classes io.github.yixing233.hyperduo.DrawingZonesTest
+& $java -Xmx512m -cp $classes io.github.fengwenhua.colorduo.DrawingZonesTest
 if ($LASTEXITCODE) { throw 'Test failed' }

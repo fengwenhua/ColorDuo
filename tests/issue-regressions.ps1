@@ -5,7 +5,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$trio = Join-Path $root 'app/src/main/java/io/github/yixing233/hyperduo'
+$trio = Join-Path $root 'app/src/main/java/io/github/fengwenhua/colorduo'
 if (!$SourceDirectory) { $SourceDirectory = $trio }
 $jdk = Join-Path $root '.tools/jdk/jdk-21.0.12.1+1/bin'
 $javac = Join-Path $jdk 'javac.exe'; $java = Join-Path $jdk 'java.exe'
@@ -38,10 +38,10 @@ $iconTint = Read-Method $hooks 'private static int hookIconTint(XposedModule mod
 $rowInk = Read-Method $hooks 'static int rowInk(View row)'
 $clockVisibility = Read-Method $hooks 'static void applyClockVisibility()'
 foreach ($name in @('TrioZones.java','TrioTint.java','OutRingLayout.java')) {
-    Write-Source "io/github/yixing233/hyperduo/$name" ([IO.File]::ReadAllText((Join-Path $SourceDirectory $name)))
+    Write-Source "io/github/fengwenhua/colorduo/$name" ([IO.File]::ReadAllText((Join-Path $SourceDirectory $name)))
 }
 foreach ($name in @('Prefs.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java')) {
-    Write-Source "io/github/yixing233/hyperduo/$name" ([IO.File]::ReadAllText((Join-Path $trio $name)))
+    Write-Source "io/github/fengwenhua/colorduo/$name" ([IO.File]::ReadAllText((Join-Path $trio $name)))
 }
 foreach ($name in @('android/content/SharedPreferences.java','android/os/Bundle.java')) {
     Write-Source $name ([IO.File]::ReadAllText((Join-Path "$PSScriptRoot/shims" $name)))
@@ -146,23 +146,23 @@ public class WindowManager {
  }
 }
 '@
-$pkg = 'io/github/yixing233/hyperduo'
+$pkg = 'io/github/fengwenhua/colorduo'
 Write-Source "$pkg/TrioConfig.java" @'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 final class TrioConfig {
  static TrioSettings settings=TrioSettings.defaults();
  static TrioSettings get(){return settings;} static TrioAppearance appearance(){return TrioAppearance.of(settings);}
 }
 '@
 Write-Source "$pkg/TrioRenderer.java" @'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 final class TrioRenderer {
  static void drawState(android.graphics.Canvas c,int w,int h,TrioState s,TrioSettings cfg){}
  static boolean designTransform(float w,float h,TrioAppearance a,float[] t){throw new AssertionError("not a geometry test");}
 }
 '@
 Write-Source "$pkg/Refl.java" @'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 final class Refl {
  static int getInt(Object f,Object h,int v){return v;} static boolean getBool(Object f,Object h,boolean v){return v;}
  static float getFloat(Object f,Object h,float v){return v;}
@@ -170,7 +170,7 @@ final class Refl {
 }
 '@
 Write-Source "$pkg/TrioState.java" @"
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 import android.view.View;
 import android.os.SystemClock;
 final class TrioState {
@@ -192,7 +192,7 @@ final class TrioState {
 }
 "@
 Write-Source "$pkg/TrioHooks.java" @"
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 import android.view.*;
 import java.util.*;
 import java.lang.reflect.Method;
@@ -219,7 +219,7 @@ final class TrioHooks {
  static View rowOf(View v){return batteryContainerOf(v);}
  static View hostIn(ViewGroup row){return row.host;}
  static void applyOutRingInk(ViewGroup row,int ink){row.ink=ink;}
- static int hook(XposedModule m,Object method,String name,XposedInterface.Hooker h){hooks.put(name,h);if(name.equals("hyperduo-meter-tint"))tintHook=h;return 1;}
+ static int hook(XposedModule m,Object method,String name,XposedInterface.Hooker h){hooks.put(name,h);if(name.equals("colorduo-meter-tint"))tintHook=h;return 1;}
  $rowInk
  $meter
  $iconTint
@@ -237,7 +237,7 @@ final class TrioHooks {
  static void iconTint(View icon,ArrayList<android.graphics.Rect> areas,int colour)throws Throwable {
   hookIconTint(new XposedModule(),TrioHooks.class.getClassLoader());
   List<Object> args=Arrays.asList(areas,0.5f,colour);
-  hooks.get("hyperduo-tint-dark").intercept(new XposedInterface.Chain(){
+  hooks.get("colorduo-tint-dark").intercept(new XposedInterface.Chain(){
    public Object proceed(){return null;}public Object getThisObject(){return icon;}
    public Object getArg(int i){return args.get(i);}public List<Object> getArgs(){return args;}
   });
@@ -245,7 +245,7 @@ final class TrioHooks {
 }
 "@
 Write-Source "$pkg/IssueRegressionTest.java" @'
-package io.github.yixing233.hyperduo;
+package io.github.fengwenhua.colorduo;
 import android.content.Context;
 import android.view.*;
 import java.util.Arrays;
@@ -1415,7 +1415,7 @@ public class IssueRegressionTest {
 & $javac -nowarn -encoding UTF-8 -d $classes $files
 if ($LASTEXITCODE) { throw 'Issue regression harness compilation failed' }
 foreach ($suite in $Suite) {
-    & $java -Xmx128m -cp $classes io.github.yixing233.hyperduo.IssueRegressionTest $suite
+    & $java -Xmx128m -cp $classes io.github.fengwenhua.colorduo.IssueRegressionTest $suite
     if ($LASTEXITCODE) { throw "Issue regression failed: $suite" }
 }
 # Kotlin/Compose is compiled by the APK build. This pin only guards the bridge

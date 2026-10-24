@@ -1,5 +1,8 @@
 # HyperDuo 开发文档
 
+> 此文档保留上游架构与历史调试背景。ColorDuo 已迁移到独立包名和更新仓库，
+> 当前构建、ColorOS 16 适配与验证范围请先看 [COLOROS_ADAPTATION.md](COLOROS_ADAPTATION.md)。
+
 面向二次开发与问题定位。用户向的安装、设置说明见 [README](../README.md)。
 
 2026-10-18 上中下改为「多选 + 优先级排序」：每处不再是一个槽位，而是一份**有序候选列表**。
