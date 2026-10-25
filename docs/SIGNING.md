@@ -47,6 +47,10 @@ Release APK 的真实签名与下载回读由发布工作流继续校验。
 这只扩大检查范围，不修改 APK 的 minSdk，也不放宽证书检查。
 依据：[Android ApkVerifier 的签名选择逻辑](https://android.googlesource.com/platform/tools/apksig/+/refs/heads/main/src/main/java/com/android/apksig/ApkVerifier.java)。
 
-发布运行 `40217235276` 在此检查误判后停止，publish 未执行。修复增加 4 组解析单测，
+发布运行 `40217235276` 在此检查误判后停止，publish 未执行。修复增加 6 组解析单测，
 并在普通 CI/发布 build 阶段使用公开 debug fixture 实际签署临时 APK：双签名通过，
 缺少任一签名、错误证书和修改后的 APK 均被拒绝。测试产物只在临时目录中存在，正式发布仍仅使用云端私钥。
+
+Build Tools 37 将证书显示前缀从 `Signer #1` 改为 `V3.0 Signer:`。
+校验器按证书摘要字段读取，仍要求唯一签名者、唯一合法证书，并与固定摘要比较；
+不会误取公钥摘要。修复后用官方 Build Tools 36 和 37 分别运行完整临时签名回归。

@@ -3,7 +3,6 @@
 import argparse
 import hashlib
 import importlib.util
-import re
 import tempfile
 import zipfile
 from pathlib import Path
@@ -30,7 +29,7 @@ def main():
                           "--v3-signing-enabled", str(v3).lower(), "--v4-signing-enabled", "false",
                           "--out", str(apk), str(args.apk)])
             report = sign.checked([str(tool), "verify", "--verbose", "--print-certs", str(apk)])
-            cert = re.search(r"Signer #1 certificate SHA-256 digest: ([a-f0-9]{64})", report).group(1)
+            cert = sign.signer_digest(report)
             try:
                 sign.verify_apk(tool, apk, cert)
             except RuntimeError:

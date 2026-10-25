@@ -30,6 +30,15 @@ class SigningVerificationTest(unittest.TestCase):
     def test_both_verified_by_default_are_also_accepted(self):
         self.verify(output(), output())
 
+    def test_build_tools_37_certificate_label(self):
+        self.verify(output(v2=False).replace("Signer #1", "V3.0 Signer:"),
+                    output().replace("Signer #1", "V3.0 Signer:"))
+
+    def test_public_key_digest_cannot_replace_missing_certificate(self):
+        report = output().replace("certificate SHA-256", "public key SHA-256")
+        with self.assertRaisesRegex(RuntimeError, "one valid certificate"):
+            sign.signer_digest(report)
+
     def test_missing_scheme_is_rejected(self):
         for first, second in [(output(), output(v2=False)), (output(), output(v3=False)),
                               (output(v3=False), output())]:
@@ -40,7 +49,7 @@ class SigningVerificationTest(unittest.TestCase):
         for invalid in [output(cert="b" * 64), output(cert=""), output(signers=2),
                         output() + "Signer #2 certificate SHA-256 digest: " + CERT + "\n"]:
             for first, second in [(invalid, output()), (output(), invalid)]:
-                with self.subTest(invalid=invalid), self.assertRaisesRegex(RuntimeError, "pinned production certificate"):
+                with self.subTest(invalid=invalid), self.assertRaises(RuntimeError):
                     self.verify(first, second)
 
 

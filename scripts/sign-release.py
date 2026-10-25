@@ -22,6 +22,17 @@ def checked(command, **kwargs):
     return result.stdout.decode()
 
 
+def signer_digest(report):
+    # Build Tools 36 prints "Signer #1"; 37 prints "V3.0 Signer:".
+    # Match the certificate field, not the display label or public-key digest.
+    lines = report.splitlines()
+    certificates = [line.rsplit(": ", 1)[1] for line in lines if " certificate SHA-256 digest: " in line]
+    if ("Number of signers: 1" not in lines or len(certificates) != 1
+            or not re.fullmatch(r"[a-fA-F0-9]{64}", certificates[0])):
+        raise RuntimeError("Release APK signer report must contain exactly one valid certificate")
+    return certificates[0].lower()
+
+
 def verify_apk(tool, target, expected_cert):
     """Check the real device range, then require both v2 and v3 to verify."""
     for options, schemes in [((), (3,)), (("--min-sdk-version", "24"), (2, 3))]:
@@ -31,8 +42,7 @@ def verify_apk(tool, target, expected_cert):
         for scheme in schemes:
             if f"Verified using v{scheme} scheme (APK Signature Scheme v{scheme}): true" not in signed.splitlines():
                 raise RuntimeError(f"Release APK did not verify with signature scheme v{scheme}")
-        certificates = re.findall(r"^Signer #\d+ certificate SHA-256 digest: ([a-fA-F0-9]{64})$", signed, re.MULTILINE)
-        if "Number of signers: 1" not in signed.splitlines() or certificates != [expected_cert]:
+        if signer_digest(signed) != expected_cert:
             raise RuntimeError("Release APK signer does not match the pinned production certificate")
 
 
