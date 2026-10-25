@@ -14,7 +14,9 @@
 
 ## 安装
 
-**1.1.0 更换正式签名：先卸载旧 ColorDuo，再安装此版本。卸载会清除配置，请提前记录布局；安装后重新启用 LSPosed 模块及系统界面作用域。后续新签名正式版可覆盖更新。**
+**升级必读：低于 1.1.0 的旧版本（不包含 1.1.0）必须先卸载，再安装新版。卸载会清除配置，请提前记录布局；安装后在 LSPosed 重新启用 ColorDuo、勾选系统界面并重载。**
+
+**1.1.0 新签名正式版可直接覆盖升级至 1.1.1，配置保留，无需卸载。** 旧测试签名的调试包因签名不同仍需卸载重装。
 
 1. 从[模块仓 Releases](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases) 或
    [ColorDuo Releases](https://github.com/fengwenhua/ColorDuo/releases) 下载 APK。
@@ -36,7 +38,7 @@
 ## 致谢与许可证
 
 原项目作者 **yixing233** 及 HyperDuo 贡献者；设置界面使用 Compose 与 Miuix。
-修改日期：2026-10-25。沿用 [GPL-3.0](https://github.com/fengwenhua/ColorDuo/blob/main/LICENSE)，
+修改日期：2026-10-26。沿用 [GPL-3.0](https://github.com/fengwenhua/ColorDuo/blob/main/LICENSE)，
 保留上游版权及免责声明，修改版同协议公开源码。
 
 Copyright (C) 2026 yixing233 与 HyperDuo 贡献者。
