@@ -46,6 +46,8 @@
 
 ## 安装
 
+**1.1.0 换签迁移：请先卸载旧版本 ColorDuo，再安装 1.1.0。卸载会清除自定义配置，请提前记录布局；安装后重新在 LSPosed 启用模块、勾选系统界面并重载。后续同一新签名的正式版可覆盖更新。**
+
 ### 前置条件
 
 | 项目 | 要求 |
@@ -60,7 +62,7 @@ APK 的最低 Android 声明为 API 29；这不代表每种 Android 版本的系
 ### 步骤
 
 1. 从 [ColorDuo Releases](https://github.com/fengwenhua/ColorDuo/releases) 下载 `ColorDuo-*.apk`。
-   还没有发布版时，可自行构建，或下载 [Actions](https://github.com/fengwenhua/ColorDuo/actions) 中成功构建的 APK artifact。
+   正式 APK 由受保护的 GitHub Actions 签名；普通 CI artifact 为 unsigned，供开发验证使用。
 2. 安装后，在 LSPosed 中启用 **ColorDuo**，勾选 **系统界面（`com.android.systemui`）**。
 3. 重启系统界面或手机，使模块首次加载。设置页顶栏的重启按钮需要 root 授权。
 4. 打开桌面的 **ColorDuo**，设置圆环或胶囊及组件布局。后续配置修改会实时生效。
@@ -112,7 +114,7 @@ ColorDuo 包名为 **`io.github.fengwenhua.colorduo`**，与原版及此前的
 
 ## 开发与验证
 
-需要 **JDK 21、Gradle 9.8.0、Android SDK Platform 37 和对应 Build Tools**。
+需要 **JDK 21、Android SDK Platform 37 和对应 Build Tools**；仓库内 Wrapper 固定 Gradle 9.8.0。
 配置好 `JAVA_HOME`、`ANDROID_HOME`，在本仓库运行：
 
 ```sh
@@ -120,11 +122,12 @@ ColorDuo 包名为 **`io.github.fengwenhua.colorduo`**，与原版及此前的
 bash tests/coloros-observer.sh
 ```
 
-默认版本为 `1.0.3 / 10006`，由 `version.properties` 统一维护，可用 `-PcolorduoVersionName=...` 和
+默认版本为 `1.1.0 / 10100`，由 `version.properties` 统一维护，可用 `-PcolorduoVersionName=...` 和
 `-PcolorduoVersionCode=...` 覆盖。默认启用完整的当前 ColorOS 适配阶段；
 只读诊断构建可传入 `-PcolorOsStage=observe`。
 
-产物位于 `app/build/outputs/apk/`。仓库包含上游构建所需的 libxposed Maven 文件与测试签名材料；
+产物位于 `app/build/outputs/apk/`；本地 release 为 unsigned，正式签名私钥仅在受保护云任务使用。
+仓库包含上游构建所需的 libxposed Maven 文件与仅供 debug 使用的公开测试签名材料；
 本机 SDK、构建缓存、APK、手机日志及截图不入库。
 
 新包名下的 Android 配置与绘制探针可以在安装 debug 包后执行：
@@ -140,7 +143,7 @@ adb logcat -v time -s LSPosedFramework:* | rg ColorDuo
 ```
 
 更多说明见[文档索引](docs/README.md)、[ColorOS 适配说明](docs/COLOROS_ADAPTATION.md)和
-[上游架构文档](docs/DEVELOPMENT.md)。历史 HyperOS 文档、截图和发布说明保留原有名称与实测背景。
+[开发入口](docs/DEVELOPMENT.md)。历史 HyperOS 文档、截图和发布说明保留原有名称与实测背景。
 
 ## 致谢与许可证
 

@@ -14,6 +14,8 @@
 
 ## 安装
 
+**1.1.0 更换正式签名：先卸载旧 ColorDuo，再安装此版本。卸载会清除配置，请提前记录布局；安装后重新启用 LSPosed 模块及系统界面作用域。后续新签名正式版可覆盖更新。**
+
 1. 从[模块仓 Releases](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases) 或
    [ColorDuo Releases](https://github.com/fengwenhua/ColorDuo/releases) 下载 APK。
 2. 在 LSPosed 中启用 **ColorDuo**，作用域选择 **系统界面（`com.android.systemui`）**。
