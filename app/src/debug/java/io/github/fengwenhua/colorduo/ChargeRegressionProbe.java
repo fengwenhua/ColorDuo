@@ -160,13 +160,19 @@ final class ChargeRegressionProbe {
             nativeIcon.setVisibility(View.VISIBLE); icon.onNativeUpdate();
             check(nativeIcon.getVisibility() == View.GONE && icon.nativeVisibility() == View.VISIBLE,
                     "native charging refresh stays hidden and records latest state");
+            icon.commit(HostDecision.chargeIcon(new HostDecision.ChargePresentation(true, true, true, false, true)));
+            check(icon.owned() && nativeIcon.getVisibility() == View.GONE,
+                    "pausing charging while still plugged retains native bolt ownership");
+            nativeIcon.setVisibility(View.VISIBLE); icon.onNativeUpdate();
+            check(nativeIcon.getVisibility() == View.GONE,
+                    "paused charging native refresh cannot bring back the outside bolt");
             icon.restore();
             check(!icon.owned() && nativeIcon.getVisibility() == View.VISIBLE, "disable/failure restores latest native charge");
             icon.commit(true);
             nativeIcon.setVisibility(View.GONE); icon.onNativeUpdate(); icon.restore();
             check(nativeIcon.getVisibility() == View.GONE, "unplug while owned never restores a stale lightning icon");
             nativeIcon.setVisibility(View.VISIBLE); icon.commit(true); icon.commit(false);
-            check(nativeIcon.getVisibility() == View.VISIBLE && !icon.owned(), "non-charging frame returns native ownership");
+            check(nativeIcon.getVisibility() == View.VISIBLE && !icon.owned(), "unrepresented frame returns native ownership");
             icon.restore();
             check(nativeIcon.getVisibility() == View.VISIBLE, "repeated release is harmless");
         } finally {

@@ -7,6 +7,16 @@ import static io.github.fengwenhua.colorduo.HostDecision.Action.*;
 
 /** Event sequences protect ownership: a mounted drawable alone never hides native rows. */
 public final class HostDecisionTest {
+    @Test public void pausedOrFullPluggedFramesStillOwnTheOrdinaryChargeIcon() {
+        assertTrue(HostDecision.chargeIcon(new HostDecision.ChargePresentation(true, true, true, false, true)));
+        assertTrue(HostDecision.chargeIcon(new HostDecision.ChargePresentation(true, true, true, true, true)));
+        assertTrue(HostDecision.chargeIcon(new HostDecision.ChargePresentation(true, true, true, true, false)));
+        assertFalse(HostDecision.chargeIcon(new HostDecision.ChargePresentation(true, true, true, false, false)));
+        assertFalse(HostDecision.chargeIcon(new HostDecision.ChargePresentation(false, true, true, false, true)));
+        assertFalse(HostDecision.chargeIcon(new HostDecision.ChargePresentation(true, false, true, false, true)));
+        assertFalse(HostDecision.chargeIcon(new HostDecision.ChargePresentation(true, true, false, false, true)));
+    }
+
     private HostDecision.Model model(int style, boolean popup, int width) {
         return new HostDecision.Model(true, style, popup, 67, 0xff000000, width, 52);
     }

@@ -724,7 +724,8 @@ final class ColorOsBatteryAdapter {
         if (!(view instanceof ImageView)) return;
         ColorOsPowerSource.State current = power == null ? ColorOsPowerSource.State.UNKNOWN : power.get();
         // A delayed draw callback must never hide a newer native charging state.
-        chargeIcon(host, (ImageView) view).commit(userLayout && current.same(frame.power) && frame.power.charging);
+        chargeIcon(host, (ImageView) view).commit(HostDecision.chargeIcon(new HostDecision.ChargePresentation(
+                userLayout, current.same(frame.power), frame.power.ready, frame.power.charging, frame.power.plugged)));
     }
 
     private void release(Host host, String reason) throws Throwable {

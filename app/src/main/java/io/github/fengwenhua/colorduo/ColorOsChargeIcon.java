@@ -28,8 +28,8 @@ final class ColorOsChargeIcon {
         if (owned && view.getVisibility() != View.GONE) view.setVisibility(View.GONE);
     }
 
-    void commit(boolean chargingFrameDrawn) {
-        if (!chargingFrameDrawn) { restore(); return; }
+    void commit(boolean poweredFrameDrawn) {
+        if (!poweredFrameDrawn) { restore(); return; }
         ImageView view = image.get();
         if (view == null) return;
         if (!owned) nativeVisibility = view.getVisibility();

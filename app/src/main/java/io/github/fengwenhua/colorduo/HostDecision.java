@@ -16,6 +16,14 @@ final class HostDecision {
     record Configuration(boolean enabled, boolean attached, boolean shown, boolean imageOwned,
                          boolean drawn, boolean failed, boolean nativePending, boolean policyVisible,
                          int style, boolean popup) {}
+    record ChargePresentation(boolean userLayout, boolean currentPower, boolean powerReady,
+                              boolean charging, boolean plugged) {}
+
+    static boolean chargeIcon(ChargePresentation state) {
+        // ColorOS may keep its ordinary bolt visible while USB charging is paused or full.
+        // A drawn, current powered frame owns that indicator without pretending to be charging.
+        return state.userLayout && state.currentPower && state.powerReady && (state.charging || state.plugged);
+    }
 
     static Decision configuration(Configuration state) {
         boolean supported = state.style == 1 || state.style == 3 || state.style == 4
