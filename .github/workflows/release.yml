@@ -48,6 +48,8 @@ jobs:
           ./gradlew --no-daemon :app:testReleaseUnitTest :render-tests:test :app:lintRelease :app:assembleRelease
       - name: Verify production packaging
         run: python3 scripts/check-observer.py app/build/outputs/apk/release/app-release-unsigned.apk --expect absent
+      - name: Exercise release signature verification without production keys
+        run: python3 scripts/check-signing.py --apk app/build/outputs/apk/release/app-release-unsigned.apk --build-tools "$ANDROID_HOME/build-tools/37.0.0"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: unsigned-release

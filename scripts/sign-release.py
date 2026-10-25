@@ -22,6 +22,20 @@ def checked(command, **kwargs):
     return result.stdout.decode()
 
 
+def verify_apk(tool, target, expected_cert):
+    """Check the real device range, then require both v2 and v3 to verify."""
+    for options, schemes in [((), (3,)), (("--min-sdk-version", "24"), (2, 3))]:
+        # minSdk 29 skips v2 when v3 exists. Extending verification down to API 24
+        # exercises both signatures; this does not change the APK's minSdk.
+        signed = checked([str(tool), "verify", "--verbose", "--print-certs", *options, str(target)])
+        for scheme in schemes:
+            if f"Verified using v{scheme} scheme (APK Signature Scheme v{scheme}): true" not in signed.splitlines():
+                raise RuntimeError(f"Release APK did not verify with signature scheme v{scheme}")
+        certificates = re.findall(r"^Signer #\d+ certificate SHA-256 digest: ([a-fA-F0-9]{64})$", signed, re.MULTILINE)
+        if "Number of signers: 1" not in signed.splitlines() or certificates != [expected_cert]:
+            raise RuntimeError("Release APK signer does not match the pinned production certificate")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apk", type=Path, required=True)
@@ -53,11 +67,7 @@ def main():
             "--ks-pass", "env:RELEASE_STORE_PASSWORD", "--key-pass", "env:RELEASE_STORE_PASSWORD",
             "--v2-signing-enabled", "true", "--v3-signing-enabled", "true", "--v4-signing-enabled", "false",
             "--out", str(target), str(args.apk)])
-        signed = checked([str(tool), "verify", "--verbose", "--print-certs", str(target)])
-        if ("Verified using v2 scheme (APK Signature Scheme v2): true" not in signed or
-                "Verified using v3 scheme (APK Signature Scheme v3): true" not in signed or
-                re.search(r"Signer #1 certificate SHA-256 digest: ([a-f0-9]+)", signed).group(1) != expected_cert):
-            raise RuntimeError("Unexpected release certificate or signature schemes")
+        verify_apk(tool, target, expected_cert)
         badging = checked([str(aapt), "dump", "badging", str(target)])
         for value in ["name='io.github.fengwenhua.colorduo'", "versionCode='" + version["versionCode"] + "'",
                       "versionName='" + version["versionName"] + "'"]:

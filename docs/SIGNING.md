@@ -38,3 +38,15 @@ HTTP Content-Length、同代理返回的 SHA 文本、GitHub release notes 均�
 
 验证包含 JVM 篡改/错误密钥/非法身份/文件截断用例及 Android 实际 JCA/JSON 探针。
 Release APK 的真实签名与下载回读由发布工作流继续校验。
+
+## apksigner 校验范围
+
+本项目 minSdk=29。默认 `apksigner verify` 找到 v3 后会跳过 v2，
+所以输出 `v2: false` 并不表示 APK 没有 v2 签名。正式脚本先按实际设备范围验证，
+再用 `verify --min-sdk-version 24` 要求 v2、v3 均验证通过；两次均须恰好一个签名者且匹配固定证书。
+这只扩大检查范围，不修改 APK 的 minSdk，也不放宽证书检查。
+依据：[Android ApkVerifier 的签名选择逻辑](https://android.googlesource.com/platform/tools/apksig/+/refs/heads/main/src/main/java/com/android/apksig/ApkVerifier.java)。
+
+发布运行 `40217235276` 在此检查误判后停止，publish 未执行。修复增加 4 组解析单测，
+并在普通 CI/发布 build 阶段使用公开 debug fixture 实际签署临时 APK：双签名通过，
+缺少任一签名、错误证书和修改后的 APK 均被拒绝。测试产物只在临时目录中存在，正式发布仍仅使用云端私钥。

@@ -121,6 +121,7 @@ jobs:
 
       - name: Collect
         run: |
+          python3 scripts/check-signing.py --apk app/build/outputs/apk/release/app-release-unsigned.apk --build-tools "$ANDROID_HOME/build-tools/37.0.0"
           python3 scripts/check-observer.py app/build/outputs/apk/release/app-release-unsigned.apk --expect absent
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release-unsigned.apk \
