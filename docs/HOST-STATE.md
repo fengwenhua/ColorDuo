@@ -28,3 +28,8 @@ JADX 确认该固件 `StatBatteryMeterView.onConfigurationChanged` 仅调用父�
 新的尺寸仍要 preflight，新帧仍要实际绘制后才能提交 leases。等待期间的必要 resize 不销毁桥接；
 原生样式更新仍照常运行。关闭功能、detach、绘制失败、未知样式和第三方替换继续恢复原生。
 `HostDecisionTest` 新增插电→样式2→展开→合上→样式1序列及各项拒绝条件。
+
+2026-10-25 Find N5 实测：维护者确认插电瞬间开合不再闪回。模块 ledger 显示
+home/configuration 4 次 retained=true，最新 nativeStyle=2、generation=4；home/mount 保持 1 次，
+没有 home/native 释放条目；最终 home/style 为 1 retained=true，home/drawn generation=4。
+这是当前固件、同一存活宿主的结果；重新创建的宿主仍需首次真实绘制，不能继承旧 View 的 leases。

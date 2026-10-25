@@ -21,7 +21,7 @@
 | O-04 | 已实现 | 内存预览 + 80ms 合并，松手/停止 flush、重连重放，按 ROM 单一路径且先写后通知；6 组队列/事务测试证明合并、并发、失败与各一次写入。Gradle/Lint 通过；真机 292 项通过。旧工装首次暴露同步恢复假设，已改独立测试文件，用户配置已对照备份恢复并核对。见 CONFIGURATION.md；突发测试不充当真人拖动流畅性证明。 |
 | O-05 | 已实现 | `lintRelease` 成功，0 error；82 项 Java 检查通过。CI 显式运行 Lint，abortOnError=true。权限误报仅在 SystemUI 方法局部说明；旧系统 receiver 分支局部说明。其余 warning 分配到对应后续优化项。 |
 | O-06 | 已建立基础门禁 | 82 项原断言已迁到 app/src/test，JUnit 另加插电事件序列；render-tests 4 组真实配置/绘制测试通过。真机工具已实跑，283 项 Android 检查通过。保留旧 PowerShell 工装，未声称全量迁移；状态机/Schema/更新测试随对应项补入。见 TESTING.md。 |
-| O-07 | 已实现 | HostDecision 提取不可变 Gate/Model/Preparation/Attachment/Presentation 决策；适配器执行主线程副作用，保留 token 和先绘制后接管。5 组事件序列单测、Gradle/Lint/Canvas 通过；真机 292 项通过且重载 coreReady。真人插拔/折叠验收待回复，未将纯状态测试计作视觉验收。见 HOST-STATE.md。 |
+| O-07 | 已实现并真机复测 | HostDecision 提取不可变阶段决策；适配器执行副作用，保留先绘制后接管。7 组事件单测、Gradle/Lint 及 292 项 Android 检查通过。首轮真人发现插电瞬间折叠会清除样式2桥接，独立修复后用户确认正常；ledger 记录 configuration retained=true 4 次（含样式2），mount 仍1次、无 home/native 释放，随后样式1保留并绘制。见 HOST-STATE.md。 |
 | O-08 | 待实施 | 配置 Schema 与映射一致性 |
 | O-09 | 待实施 | 按职责提取，保持绘制数学 |
 | O-10 | 已实现 | 当前窗口高度驱动弹层，2 组单元测试覆盖外/内/分屏尺寸及 1.0/1.3/1.5 字体倍率；Lint/Debug 构建通过。资源读取在 O-05 修正；箭头已有描述/键盘 Button 语义，补 48dp 触控和 RTL 镜像。实际折叠/大字截图组合待最终真机验收，不把纯逻辑测试算作视觉验收。 |
