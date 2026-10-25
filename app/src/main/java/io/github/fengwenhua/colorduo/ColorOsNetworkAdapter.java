@@ -329,6 +329,7 @@ final class ColorOsNetworkAdapter {
 
     Plan prepare(View meter, TrioSettings settings) {
         requireMain();
+        debugLog = settings.debugLog;
         if (!capable) return Plan.EMPTY;
         try {
             View wifi = null, container = null;
@@ -592,10 +593,15 @@ final class ColorOsNetworkAdapter {
         catch (RuntimeException ignored) { return false; }
     }
 
+    private boolean debugLog;
+
     private void log(String key, String message) {
         try {
             String line = ledger.record(key, message, SystemClock.uptimeMillis());
-            if (line != null) module.log(4, "ColorDuoColorOSNetwork", line);
+            boolean important = key.equals("install") || key.equals("type/install") || key.equals("failure")
+                    || key.startsWith("hook/") || key.startsWith("restore/");
+            if (line != null && (important || BuildConfig.DEBUG || debugLog))
+                module.log(4, "ColorDuoColorOSNetwork", line);
         } catch (Throwable ignored) {}
     }
 }

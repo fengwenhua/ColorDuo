@@ -72,7 +72,7 @@ public final class ColorDuoModule extends XposedModule {
                     log(LOG_WARN, "unsupported or ambiguous ROM; native icons retained");
             }
         } catch (Throwable t) {
-            log(LOG_WARN, "install failed: " + t);
+            log(LOG_WARN, "install failed: " + t.getClass().getSimpleName());
         }
     }
 

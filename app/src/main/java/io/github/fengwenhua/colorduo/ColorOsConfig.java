@@ -100,8 +100,9 @@ final class ColorOsConfig {
                 snapshot = packet.settings;
                 fontFile = packet.fontFile;
                 ready = true;
-                log("snapshot applied revision=" + packet.revision + " enabled=" + snapshot.enabled
-                        + " source=" + (trustedRemote ? "framework" : "authenticated-broadcast"));
+                if (BuildConfig.DEBUG || snapshot.debugLog)
+                    log("snapshot applied revision=" + packet.revision + " enabled=" + snapshot.enabled
+                            + " source=" + (trustedRemote ? "framework" : "authenticated-broadcast"));
                 changed.run();
             } else if (decision != ConfigRevisionGate.Result.DUPLICATE) {
                 log("snapshot ignored reason=" + decision + " revision=" + packet.revision);

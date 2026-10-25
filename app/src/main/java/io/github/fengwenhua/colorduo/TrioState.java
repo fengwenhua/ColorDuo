@@ -34,13 +34,13 @@ import java.util.List;
  *
  * <p>Signal levels are learned from the signal icons the Wi-Fi and mobile binders
  * apply (see {@link #noteSignalIcon}). Those arrive as raw resource ids, which are
- * resolved to entry names once a host view 鈥?and therefore a {@code Resources} 鈥?
+ * resolved to entry names once a host view -and therefore a {@code Resources} -
  * is available.
  *
  * <p>That path carries exactly one mobile level: {@code transformResId} is static
  * and its arguments never name a SIM, so it can only ever describe whichever SIM
  * MIUI is drawing. Reading one level <em>per</em> SIM therefore has to come from
- * telephony directly 鈥?see {@link #sampleSimsIfDue()}.
+ * telephony directly -see {@link #sampleSimsIfDue()}.
  */
 final class TrioState {
 
@@ -149,7 +149,7 @@ final class TrioState {
     static final int SIM_SLOTS = 2;
 
     /**
-     * Signal level per SIM <em>slot</em> 鈥?index 0 is SIM 1, index 1 is SIM 2 鈥?
+     * Signal level per SIM <em>slot</em> -index 0 is SIM 1, index 1 is SIM 2 -
      * or {@code -1} where that slot is empty or its level is unknown.
      *
      * <p>Only used by the dual-SIM reading; the single row keeps using the
@@ -390,7 +390,7 @@ final class TrioState {
      * <p>Why not the signal icons: {@code transformResId} is static and its
      * arguments name neither a SIM nor a slot, so the icons cannot say which SIM
      * a level belongs to. The framework can, and {@link SubscriptionInfo} is the
-     * one place that maps a subscription to its slot 鈥?resolved at run time
+     * one place that maps a subscription to its slot -resolved at run time
      * rather than assumed, because the ids differ per device.
      *
      * <p>Every step is defensive: any missing permission, dead radio or absent
@@ -566,7 +566,7 @@ final class TrioState {
     // ------------------------------------------------------------ signal levels
 
     /**
-     * Records a signal icon resource id 鈥?the {@code rawResId} the Wi-Fi and
+     * Records a signal icon resource id -the {@code rawResId} the Wi-Fi and
      * mobile binders pass to
      * {@code MiuiStatusBarIconViewHelper.transformResId(int,boolean,boolean)}.
      *
@@ -705,7 +705,7 @@ final class TrioState {
         return wifi ? C_WIFI_BASE + value : value;
     }
 
-    /** {@code stat_sys_wifi_signal_2} 鈫?2, {@code stat_sys_signal_0_no_voice} 鈫?0. */
+    /** {@code stat_sys_wifi_signal_2} ->2, {@code stat_sys_signal_0_no_voice} ->0. */
     private static int parseLevel(String name) {
         final String[] parts = name.split("_");
         for (int i = 0; i < parts.length - 1; i++) {

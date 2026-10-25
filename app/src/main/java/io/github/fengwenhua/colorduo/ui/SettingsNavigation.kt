@@ -126,8 +126,8 @@ internal enum class SettingsTab(val labelRes: Int, val route: Route) {
  * has to round-trip. Page content uses its tab name as a separate saveable-state
  * key so the preview's saved choices survive a section switch.
  *
- * The on-screen state that is not a place 鈥?the colour picker, the restart sheet,
- * the reset prompt 鈥?deliberately stays a dialog. Those are prompts dismissed
+ * The on-screen state that is not a place -the colour picker, the restart sheet,
+ * the reset prompt -deliberately stays a dialog. Those are prompts dismissed
  * over the page, and pushing them would turn the back gesture into "cancel"
  * instead of "go back a section".
  */

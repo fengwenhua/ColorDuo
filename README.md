@@ -116,7 +116,7 @@ ColorDuo 包名为 **`io.github.fengwenhua.colorduo`**，与原版及此前的
 配置好 `JAVA_HOME`、`ANDROID_HOME`，在本仓库运行：
 
 ```sh
-gradle :app:assembleDebug :app:assembleRelease --no-daemon --console=plain
+./gradlew :app:assembleDebug :app:assembleRelease --no-daemon --console=plain
 bash tests/coloros-observer.sh
 ```
 

@@ -249,7 +249,7 @@ internal fun IntSlider(
  *
  * <p>Each gate is a dependency paired with the title of the row that owns it.
  * The first dependency that is switched off wins, so a row that needs two of
- * them names the one the user is likeliest to fix first 鈥?reading order, top
+ * them names the one the user is likeliest to fix first -reading order, top
  * to bottom. Returning null rather than a generic sentence is what lets the
  * caller pass the result straight to `TooltipBox(enabled = ...)`: a row that is
  * live has nothing to explain, and a tooltip that says nothing would still eat

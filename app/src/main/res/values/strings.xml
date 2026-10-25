@@ -28,9 +28,6 @@
     <string name="drawing_priority_showing">第 1 位 · 正在显示</string>
     <string name="drawing_pick_in_zone">已在环内</string>
     <string name="drawing_pick_elsewhere">在别处</string>
-    <string name="drawing_pick_showing_now">正在显示这个组件。</string>
-    <string name="drawing_pick_promote_summary">已在环内，点它会挪到第一位。</string>
-    <string name="drawing_pick_move_summary">目前在%1$s，点它会移到这一处，%1$s 将空出。</string>
     <string name="drawing_move_title">移到这一处？</string>
     <string name="drawing_move_summary">%1$s 目前在%2$s。移到这里后，%2$s 就不再有它了。</string>
     <string name="drawing_move_confirm">移到这里</string>
@@ -67,7 +64,6 @@
     <string name="drawing_part_battery">电池</string>
     <string name="drawing_part_readouts">读数组</string>
     <string name="drawing_part_ring">环内组件</string>
-    <string name="drawing_parts_title">组件外观</string>
     <string name="drawing_preview_hidden">预览已隐藏</string>
     <string name="drawing_readout_sample_summary">环外读数组的示例，实际内容随状态变化。</string>
     <string name="drawing_theme_dark">深色</string>
@@ -102,7 +98,6 @@
     <string name="drawing_master_off">已关闭总开关，预览按你选的样式照画，但状态栏不会显示。</string>
     <string name="drawing_settings_title">「%1$s」的设置</string>
     <string name="drawing_settings_none">这一项没有可调的尺寸或颜色。</string>
-    <string name="drawing_close">关闭</string>
 
     <string name="master_title">启用三合一图标</string>
 

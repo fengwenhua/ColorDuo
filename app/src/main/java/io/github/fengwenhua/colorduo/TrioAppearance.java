@@ -149,7 +149,7 @@ public final class TrioAppearance {
      */
     public final boolean perfPower;
     /** The battery temperature is drawn in the same out-of-ring strip. */
-    public final boolean perfTemp;
+    public final boolean perfTemp;
     /** Drops the temperature unless a charger is attached; see {@link Prefs#KEY_PERF_TEMP_CHARGING_ONLY}. */
     public final boolean perfTempChargingOnly;
     /**
@@ -300,7 +300,7 @@ public final class TrioAppearance {
         chargingShowsValue = c.chargingShowsValue;
         fontPath = c.fontPath == null ? "" : c.fontPath;
         perfPower = c.perfPower;
-        perfTemp = c.perfTemp;
+        perfTemp = c.perfTemp;
         perfTempChargingOnly = c.perfTempChargingOnly;
         perfScale = c.perfScale;
         perfWeight = c.perfWeight;
@@ -383,12 +383,12 @@ public final class TrioAppearance {
                 || (capsule && hasCapsulePart(Prefs.PART_BOLT))
                 || (capsule && !anyPlacedInCapsule() && value);
     }
-    
+
     /** Whether the capsule's body holds this piece anywhere, left column included. */
     private boolean hasCapsulePart(int part) {
         return capsuleParts().contains(part);
     }
-    
+
     /** Every piece the capsule's four cells name, in the order they were placed. */
     private java.util.Set<Integer> capsuleParts() {
         final java.util.Set<Integer> out = new java.util.HashSet<>();
@@ -399,7 +399,7 @@ public final class TrioAppearance {
         }
         return out;
     }
-    
+
     /** True when no capsule cell holds anything, i.e. the shipped look is in force. */
     private boolean anyPlacedInCapsule() {
         for (int[] chain : ringZones) {

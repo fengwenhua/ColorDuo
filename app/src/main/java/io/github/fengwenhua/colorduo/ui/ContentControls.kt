@@ -106,7 +106,7 @@ internal fun ContentControlRow(
     val a = TrioAppearance.of(settings)
     val master = listOf(a.glyph to R.string.master_title)
     val positioned = when (control) {
-        ContentControl.Value -> TrioZones.Part.VALUE
+        ContentControl.Value -> TrioZones.Part.VALUE
         // Not a position row: it is a lens over the centre, not a place for the number.
         ContentControl.ChargingShowsValue -> null
         ContentControl.Bolt -> TrioZones.Part.BOLT

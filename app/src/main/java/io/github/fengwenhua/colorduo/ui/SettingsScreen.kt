@@ -190,7 +190,7 @@ fun SettingsScreen(repository: SettingsRepository) {
     }
 
     // Switching section: tapping the one already open is a no-op rather than a
-    // second copy of it on the stack 鈥?the library rejects a repeated route, and
+    // second copy of it on the stack -the library rejects a repeated route, and
     // the strip accepts taps faster than a transition runs. Going back to a
     // section further down walks back to it instead of pushing it again, so the
     // stack stays a path through the page rather than a log of every tap.
@@ -741,8 +741,8 @@ private fun GlassIconButton(
  * The scrolling body of one destination: the shared header and then the rows of
  * whichever section this is.
  *
- * Each destination carries its own copy of the header 鈥?the preview and the strip
- * are the same two rows everywhere 鈥?because they have to scroll with the list
+ * Each destination carries its own copy of the header -the preview and the strip
+ * are the same two rows everywhere -because they have to scroll with the list
  * they belong to. A band pinned above the display would not: it would have to sit
  * outside every destination, which is a different page shape from the one the rows
  * were written for.
@@ -751,7 +751,7 @@ private fun GlassIconButton(
  * section keeps contributing plain `item {}`s: the list owns their identity and
  * therefore their state, and the shape of the four `*Tab` functions is unchanged.
  *
- * [isTop] is whether this destination is the section currently on screen 鈥?the top
+ * [isTop] is whether this destination is the section currently on screen -the top
  * of the back stack. It gates the reset to the first row, so a section opens at the
  * top every time the strip brings it forward rather than resuming where it was left.
  */
@@ -795,7 +795,7 @@ private fun SectionList(
  * of borrowing a second popup style. Rendering through the Scaffold's popup host
  * is also why this has to stay inside the Scaffold's content lambda.
  *
- * <p>Dismissal is refused while the kill is in flight 鈥?the user may already be
+ * <p>Dismissal is refused while the kill is in flight -the user may already be
  * looking at a root prompt, and closing the dialog there would leave the outcome
  * with nowhere to be reported.
  */

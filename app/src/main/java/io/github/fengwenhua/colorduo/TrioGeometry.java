@@ -135,7 +135,7 @@ final class TrioGeometry {
     /**
      * The charging bolt, scaled up from the reference path.
      *
-     * <p>The reference path only spans x 51.3..67.6 and y 2.2..21.6 鈥?a pinched
+     * <p>The reference path only spans x 51.3..67.6 and y 2.2..21.6 -a pinched
      * sliver next to a 103-unit ring. {@link #BOLT_SCALE} grows it about
      * {@link #BOLT_CX} and pins its top edge to {@link #BOLT_TOP}, so it fills
      * the opened 12 o'clock gap without leaving the 120x120 box.

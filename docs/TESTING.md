@@ -3,8 +3,8 @@
 普通提交执行：
 
 ```sh
-gradle :app:testReleaseUnitTest :render-tests:test :app:lintRelease :app:assembleRelease
-python3 scripts/check-observer.py app/build/outputs/apk/release/app-release.apk --expect absent
+./gradlew :app:testReleaseUnitTest :render-tests:test :app:lintRelease :app:assembleRelease
+python3 scripts/check-observer.py app/build/outputs/apk/release/app-release-unsigned.apk --expect absent
 ```
 
 `app/src/test` 用 JUnit 运行路由、观察记录上限、快照时序、网络警告保护、精确类型标签以及插电事件序列。
@@ -28,4 +28,11 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 
 `tests/*.ps1` 保留为上游历史回归工装，不删除旧断言，也不把它们算成已由 Gradle 全量覆盖。
 历史 `RingSlotsTest` 的三分区空布局字符串预期落后于当前四分区编码，尚不计入通过集合。
-后续状态机、配置 Schema、版本比较各优化项会继续增加对应 Gradle 测试。
+状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
+Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前共 27+12 个 JUnit 测试方法，
+每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
+
+附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
+它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。
+
+Wrapper 与依赖校验规则见 [TOOLCHAIN.md](TOOLCHAIN.md)。

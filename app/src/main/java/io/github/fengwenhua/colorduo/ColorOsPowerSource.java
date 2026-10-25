@@ -11,6 +11,7 @@ import android.os.PowerManager;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.function.BooleanSupplier;
 import io.github.libxposed.api.XposedModule;
 
 /** One native Java listener; callbacks only copy scalars and post out of the OEM lock. */
@@ -31,6 +32,7 @@ final class ColorOsPowerSource {
     private final XposedModule module;
     private final ClassLoader loader;
     private final Runnable changed;
+    private final BooleanSupplier verbose;
     private final Handler main = new Handler(Looper.getMainLooper());
     private Object controller, listener;
     private Method unregister;
@@ -40,8 +42,8 @@ final class ColorOsPowerSource {
     private boolean failed;
     private volatile long generation;
 
-    ColorOsPowerSource(XposedModule module, ClassLoader loader, Runnable changed) {
-        this.module = module; this.loader = loader; this.changed = changed;
+    ColorOsPowerSource(XposedModule module, ClassLoader loader, Runnable changed, BooleanSupplier verbose) {
+        this.module = module; this.loader = loader; this.changed = changed; this.verbose = verbose;
     }
 
     State get() { return state; }
@@ -137,6 +139,7 @@ final class ColorOsPowerSource {
     }
 
     private void log(String message) {
+        if (message.startsWith("ready=") && !BuildConfig.DEBUG && !verbose.getAsBoolean()) return;
         try { module.log(4, "ColorDuoColorOSPower", message); } catch (Throwable ignored) {}
     }
 }

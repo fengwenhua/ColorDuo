@@ -37,14 +37,15 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
-        with:
-          gradle-version: '9.8.0'
       - name: Android SDK
         run: bash scripts/setup-android.sh
+      - name: Verify Gradle Wrapper
+        run: python3 scripts/check-wrapper.py
+
       - name: Test, lint and build unsigned release
         run: |
           python3 -m unittest discover -s tests -p 'test_*.py'
-          gradle --no-daemon :app:testReleaseUnitTest :render-tests:test :app:lintRelease :app:assembleRelease
+          ./gradlew --no-daemon :app:testReleaseUnitTest :render-tests:test :app:lintRelease :app:assembleRelease
       - name: Verify production packaging
         run: python3 scripts/check-observer.py app/build/outputs/apk/release/app-release-unsigned.apk --expect absent
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

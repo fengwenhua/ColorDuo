@@ -5,6 +5,11 @@
 *.ps1 text eol=crlf
 *.bat text eol=crlf
 *.sh  text eol=lf
+*.java text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.py text eol=lf
+gradlew text eol=lf
 
 # Explicitly binary
 *.keystore binary

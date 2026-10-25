@@ -47,7 +47,7 @@ public final class TrioPreviewView extends View {
     /**
      * Corner radius of the cell's own background, in dp.
      *
-     * <p>Matches the Compose cards that host these cells (10鈥?2dp); 12 is the host
+     * <p>Matches the Compose cards that host these cells (10-12dp); 12 is the host
      * {@code RoundedCornerShape} and the ceiling, because a radius larger than half the
      * cell would stop being a rounded corner at all.
      */

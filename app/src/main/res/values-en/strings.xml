@@ -28,9 +28,6 @@
     <string name="drawing_priority_showing">#1 · showing now</string>
     <string name="drawing_pick_in_zone">In ring</string>
     <string name="drawing_pick_elsewhere">Elsewhere</string>
-    <string name="drawing_pick_showing_now">This is the one being shown.</string>
-    <string name="drawing_pick_promote_summary">Already in this third; tapping moves it to the front.</string>
-    <string name="drawing_pick_move_summary">Currently in %1$s; tapping moves it here and leaves %1$s empty.</string>
     <string name="drawing_move_title">Move it here?</string>
     <string name="drawing_move_summary">%1$s is currently in %2$s. Moving it here takes it out of %2$s.</string>
     <string name="drawing_move_confirm">Move here</string>
@@ -66,10 +63,8 @@
     <string name="drawing_master_off">The master switch is off: the preview still draws the style you pick, but the status bar will not.</string>
     <string name="drawing_settings_title">Settings for “%1$s”</string>
     <string name="drawing_settings_none">This part has no size or colour of its own.</string>
-    <string name="drawing_close">Close</string>
     <string name="drawing_part_appearance">Overall appearance</string>
     <string name="drawing_part_readouts">Power and temperature</string>
-    <string name="drawing_parts_title">Component appearance</string>
     <string name="drawing_outside_title">Outside components</string>
     <string name="out_order_move_in">Move toward the battery</string>
     <string name="out_order_move_out">Move outwards</string>

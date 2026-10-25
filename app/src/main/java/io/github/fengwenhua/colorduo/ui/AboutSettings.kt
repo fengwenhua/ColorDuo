@@ -220,15 +220,15 @@ internal fun UpdateNotesDialog(
  * The in-app updater.
  *
  * <p>The card is a short stack of Miuix preference rows, one per action the
- * current state actually offers 鈥?check, download, install, open the release
- * page 鈥?with the state itself spelled out as the summary of the first row.
+ * current state actually offers -check, download, install, open the release
+ * page -with the state itself spelled out as the summary of the first row.
  * A row only exists while its verb is possible, so the card never shows an
  * action that would do nothing, and it never says the same words twice the way
  * a heading plus a button of the same name did.
  *
  * <p>The repository row is the one deliberate exception to that rule, and it
  * sits last so it stays out of the way: reading the source is possible in every
- * state, including the ones the card handles worst 鈥?no release published yet, or
+ * state, including the ones the card handles worst -no release published yet, or
  * a check that just failed.
  *
  * <p>The state lives in [updater], which the screen remembers, so scrolling this
@@ -252,7 +252,7 @@ internal fun UpdateCard(updater: UpdateController, showMessage: (String) -> Unit
         )
 
         is UpdateState.Ready -> null
-        // The raw reason is diagnostic text 鈥?an HTTP code, a socket error 鈥?and
+        // The raw reason is diagnostic text -an HTTP code, a socket error -and
         // would lose its meaning if it were run through a string resource.
         is UpdateState.Failed -> listOfNotNull(
             stringResource(R.string.update_failed),
@@ -297,7 +297,7 @@ internal fun UpdateCard(updater: UpdateController, showMessage: (String) -> Unit
         // The one row that is always there: it reports the state and, whenever
         // nothing is in flight and nothing is waiting to be installed, offers
         // another look at the release feed. It is also the retry action after a
-        // failure, because its summary is the failure 鈥?asking the user to press a
+        // failure, because its summary is the failure -asking the user to press a
         // second row called "retry" to find that out would be one row too many.
         if (busy) {
             ArrowPreference(
@@ -415,8 +415,8 @@ internal fun UpdateCard(updater: UpdateController, showMessage: (String) -> Unit
         }
 
         // Last, and unlike every row above it, always present: the repository is
-        // what the user reads when the card cannot answer 鈥?no release published,
-        // a check that failed, or a changelog that explains too little 鈥?so taking
+        // what the user reads when the card cannot answer -no release published,
+        // a check that failed, or a changelog that explains too little -so taking
         // it away exactly when the card is least useful would be backwards.
         ArrowPreference(
             title = stringResource(R.string.update_repo),
@@ -450,7 +450,7 @@ private fun InfoRow(label: String, value: String, bottomPadding: Dp = 24.dp) {
 
 /**
  * The reference's four identity rows first, then the two the reference has no
- * equivalent for 鈥?the scope list and the Android level are what a user actually
+ * equivalent for -the scope list and the Android level are what a user actually
  * needs to report a bug, so they stay on rather than being dropped for symmetry.
  */
 @Composable

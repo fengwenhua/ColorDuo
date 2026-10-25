@@ -108,7 +108,7 @@ final class TrioHooks {
     }
 
     /**
-     * {@code MiuiStatusBatteryContainer} 鈥?matched by name while walking the view
+     * {@code MiuiStatusBatteryContainer} -matched by name while walking the view
      * tree, because resolving it through the host's class loader never worked.
      */
     private static final String BATTERY_CONTAINER_CLASS =
@@ -2626,7 +2626,7 @@ final class TrioHooks {
      * screen forever.
      *
      * <p>Note what "present" means here. When Wi-Fi is switched off MIUI does
-     * <em>not</em> remove the {@code slot=wifi} child 鈥?it keeps the view and
+     * <em>not</em> remove the {@code slot=wifi} child -it keeps the view and
      * merely stops binding it, so the child count stays at one. The live answer
      * is {@code ModernStatusBarView.isIconVisible()}, which reads the binding.
      * Counting children instead would never see the indicator leave.
@@ -4557,7 +4557,7 @@ final class TrioHooks {
      * here and letting each caller pick the physical one is what stops the RTL
      * branch from silently swapping the two.
      *
-     * <p>The dp鈫抪x conversion follows {@link TrioRenderer#outSignalHeight}: the
+     * <p>The dp-to-px conversion follows {@link TrioRenderer#outSignalHeight}: the
      * display's density, never the status bar row's height, which MIUI changes
      * when the control centre is pulled down.
      */

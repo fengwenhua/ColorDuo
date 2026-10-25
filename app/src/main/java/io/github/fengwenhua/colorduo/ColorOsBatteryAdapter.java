@@ -107,7 +107,7 @@ final class ColorOsBatteryAdapter {
         config = new ColorOsConfig(module, this::refreshAll);
         network = ("network".equals(BuildConfig.COLOROS_STAGE) || userLayout)
                 ? new ColorOsNetworkAdapter(module, loader, this::refreshAll) : null;
-        power = userLayout ? new ColorOsPowerSource(module, loader, this::refreshAll) : null;
+        power = userLayout ? new ColorOsPowerSource(module, loader, this::refreshAll, () -> config.get().debugLog) : null;
         clock = capsuleStage ? new ColorOsClockBridge(module, loader, this::refreshAll) : null;
         font = ("font".equals(BuildConfig.COLOROS_STAGE) || outsideStage) ? new ColorOsFontSource(module, this::refreshAll) : null;
         readouts = outsideStage ? new ColorOsReadoutSource(this::refreshAll) : null;
@@ -802,7 +802,10 @@ final class ColorOsBatteryAdapter {
     private void log(String key, String message) {
         try {
             String value = ledger.record(key, message, SystemClock.uptimeMillis());
-            if (value != null) module.log(4, "ColorDuoColorOSBattery", value);
+            boolean important = key.equals("install") || key.startsWith("hook/") || key.startsWith("error/")
+                    || key.endsWith("/native") || key.contains("error");
+            if (value != null && (important || BuildConfig.DEBUG || config.get().debugLog))
+                module.log(4, "ColorDuoColorOSBattery", value);
         } catch (Throwable ignored) {}
     }
 }

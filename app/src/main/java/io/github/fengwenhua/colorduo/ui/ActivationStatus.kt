@@ -169,7 +169,7 @@ private fun ActivatedCard(active: Boolean, version: String, modifier: Modifier =
             }
             // The badge is not aligned to the corner: it is nudged 27x31 further
             // out so a different slice of the ring survives the clip. The vector
-            // is the reference's own asset rather than a redrawing of it 鈥?the
+            // is the reference's own asset rather than a redrawing of it -the
             // ring-to-viewport ratio is what the eye compares, and it is easy to
             // get wrong by hand.
             Box(
