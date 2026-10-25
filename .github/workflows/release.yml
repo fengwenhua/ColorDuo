@@ -1,0 +1,127 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing source tag to release (for example v1.1.0)
+        required: true
+        type: string
+      prune_old_releases:
+        description: Explicitly remove previous Releases after both repositories publish
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+concurrency:
+  group: colorduo-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'fengwenhua/ColorDuo' && github.actor == 'fengwenhua' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate committed tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python3 scripts/github-release.py preflight --tag "$RELEASE_TAG"
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+        with:
+          gradle-version: '9.8.0'
+      - name: Android SDK
+        run: bash scripts/setup-android.sh
+      - name: Test, lint and build unsigned release
+        run: |
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          gradle --no-daemon :app:testReleaseUnitTest :render-tests:test :app:lintRelease :app:assembleRelease
+      - name: Verify production packaging
+        run: python3 scripts/check-observer.py app/build/outputs/apk/release/app-release-unsigned.apk --expect absent
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unsigned-release
+          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error
+  sign:
+    needs: build
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: unsigned-release
+          path: unsigned
+      - name: Sign APK and update manifest
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          UPDATE_SIGNING_KEY_PEM: ${{ secrets.UPDATE_SIGNING_KEY_PEM }}
+        run: |
+          build_tools=$(ls -1d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          python3 scripts/sign-release.py --apk unsigned/app-release-unsigned.apk --build-tools "$build_tools"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: signed-release
+          path: dist/*
+          if-no-files-found: error
+  publish:
+    needs: sign
+    environment: release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: signed-release
+          path: dist
+      - name: Publish verified main Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python3 scripts/github-release.py publish --tag "$RELEASE_TAG"
+      - name: Synchronize module repository when a scoped credential is available
+        env:
+          GITHUB_TOKEN: ${{ secrets.MODULE_REPO_TOKEN }}
+          PRUNE: ${{ inputs.prune_old_releases }}
+        run: |
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo 'Module repository needs its own authorized credential; publish the same signed-release artifact using the documented fallback.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          module_tag=$(python3 -c 'import pathlib; v=dict(l.split("=",1) for l in pathlib.Path("version.properties").read_text().splitlines() if "=" in l); print(v["versionCode"]+"-"+v["versionName"])')
+          python3 scripts/github-release.py publish --repo Xposed-Modules-Repo/io.github.fengwenhua.colorduo --tag "$module_tag"
+          if [ "$PRUNE" = true ]; then
+            python3 scripts/github-release.py prune --repo Xposed-Modules-Repo/io.github.fengwenhua.colorduo --tag "$module_tag" --execute
+          fi
+      - name: Prune old main Releases only after module synchronization
+        if: inputs.prune_old_releases
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MODULE_REPO_TOKEN: ${{ secrets.MODULE_REPO_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [ -n "$MODULE_REPO_TOKEN" ]; then
+            python3 scripts/github-release.py prune --tag "$RELEASE_TAG" --execute
+          else
+            echo 'Pruning deferred until the module repository fallback is complete.' >> "$GITHUB_STEP_SUMMARY"
+          fi

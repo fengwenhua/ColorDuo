@@ -16,7 +16,7 @@
 | 编号 | 状态 | 验证与备注 |
 | --- | --- | --- |
 | O-01 | 代码与密钥已接入 | 受保护云任务 40204334588 成功生成独立 RSA/P-256 私钥，环境 Secret 已核对，一次性凭据已删除；只导出公钥。更新校验签名清单、字节摘要、包名/版本/当前证书，拒绝降级/调试包；正式构建 unsigned。Gradle 9 组 app 测试和 7 组 JVM 测试、Lint 通过；真实正式 APK 签名/公开下载随 O-02 发布验收。见 SIGNING.md。 |
-| O-02 | 待实施 | Actions 发布、双仓同产物、旧 Release 显式清理 |
+| O-02 | 代码就绪，待正式发布验收 | 独立 build/sign/publish 工作流，生产密钥仅 sign step 获取；签名清单、四附件 draft 回读、幂等拒绝覆盖、显式清理和凭据重定向保护。6 项发布边界测试通过；旧 PowerShell 改薄封装，默认不删除历史。模块仓组织授权仍需专用凭据或官方网页回退。最后统一执行新版本发布/旧版清理。 |
 | O-03 | 已实现 | release/debug 构建通过；直接检查 DEX，正式 APK 不含观察 Hook ID，debug 保留。手机 debug instrumentation 283 项通过，配置已备份。显式 observe release 在最终工具链检查时补验。 |
 | O-04 | 待实施 | UI 即时预览、合并配置写入 |
 | O-05 | 已实现 | `lintRelease` 成功，0 error；82 项 Java 检查通过。CI 显式运行 Lint，abortOnError=true。权限误报仅在 SystemUI 方法局部说明；旧系统 receiver 分支局部说明。其余 warning 分配到对应后续优化项。 |

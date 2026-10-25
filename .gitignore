@@ -31,6 +31,8 @@
 *.apks
 *.idsig
 *.hprof
+__pycache__/
+*.pyc
 
 # Machine-specific SDK path
 local.properties
