@@ -23,6 +23,7 @@
 # Build output
 /build/
 /app/build/
+/render-tests/build/
 /dist/
 /.gradle/
 /.kotlin/

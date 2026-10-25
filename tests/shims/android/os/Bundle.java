@@ -67,4 +67,6 @@ public class Bundle {
     public Set<String> keySet() {
         return values.keySet();
     }
+
+    public Object get(String key) { return values.get(key); }
 }

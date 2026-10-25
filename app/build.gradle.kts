@@ -81,6 +81,7 @@ android {
     lint {
         abortOnError = true
     }
+
 }
 
 kotlin {
@@ -89,7 +90,14 @@ kotlin {
     }
 }
 
+androidComponents {
+    beforeVariants(selector().withBuildType("release")) {
+        it.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
+    }
+}
+
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     // Provided by the Xposed framework at runtime, never bundled.
     compileOnly("io.github.libxposed:api:102.0.0")
     // Needed by the settings app to talk to the framework service.

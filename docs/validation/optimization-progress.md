@@ -20,7 +20,7 @@
 | O-03 | 已实现 | release/debug 构建通过；直接检查 DEX，正式 APK 不含观察 Hook ID，debug 保留。手机 debug instrumentation 283 项通过，配置已备份。显式 observe release 在最终工具链检查时补验。 |
 | O-04 | 待实施 | UI 即时预览、合并配置写入 |
 | O-05 | 已实现 | `lintRelease` 成功，0 error；82 项 Java 检查通过。CI 显式运行 Lint，abortOnError=true。权限误报仅在 SystemUI 方法局部说明；旧系统 receiver 分支局部说明。其余 warning 分配到对应后续优化项。 |
-| O-06 | 待实施 | Gradle 测试入口与真机检查工具 |
+| O-06 | 已建立基础门禁 | 82 项原断言已迁到 app/src/test，JUnit 另加插电事件序列；render-tests 4 组真实配置/绘制测试通过。真机工具已实跑，283 项 Android 检查通过。保留旧 PowerShell 工装，未声称全量迁移；状态机/Schema/更新测试随对应项补入。见 TESTING.md。 |
 | O-07 | 待实施 | 可测试 Host 决策与事件序列 |
 | O-08 | 待实施 | 配置 Schema 与映射一致性 |
 | O-09 | 待实施 | 按职责提取，保持绘制数学 |

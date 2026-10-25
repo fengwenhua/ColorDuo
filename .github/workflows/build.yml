@@ -107,7 +107,7 @@ jobs:
         run: bash tests/coloros-observer.sh
 
       - name: Android Lint gate
-        run: gradle --no-daemon :app:lintRelease
+        run: gradle --no-daemon :app:testReleaseUnitTest :render-tests:test :app:lintRelease
 
       - name: Build release APK
         run: |
