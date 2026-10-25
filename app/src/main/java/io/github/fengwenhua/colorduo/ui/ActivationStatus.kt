@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -37,6 +38,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,42 +56,54 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 
 /**
- * The top block of the about page: a tall "activated" card on the left and two
- * short statistic cards stacked on the right.
- *
- * <p>The size is driven by aspectRatio(1f) rather than a fixed height, matching
- * the reference: the side length follows the available width on any device, so
- * the block keeps its proportions instead of looking squat on a tablet.
+ * The about page keeps square status cards when there is room. Narrow windows
+ * and larger text use content-driven heights so the version and figures cannot clip.
  */
 @Composable
 internal fun ActivatedRow(settings: TrioSettings, service: XposedService?) {
     val context = LocalContext.current
     val module = remember(context) { readModuleInfo(context) }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ActivatedCard(
-            active = service != null,
-            version = module.moduleVersion,
-            modifier = Modifier.weight(1f).aspectRatio(1f),
-        )
-        Column(
-            modifier = Modifier.weight(1f).aspectRatio(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            StatCard(
-                label = stringResource(R.string.about_scope_count),
-                value = scopeCount(service).toString(),
-                modifier = Modifier.weight(1f),
-            )
-            StatCard(
-                label = stringResource(R.string.about_enabled_count),
-                value = enabledCount(settings).toString(),
-                modifier = Modifier.weight(1f),
-            )
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact = maxWidth < 300.dp || (maxWidth < 600.dp && fontScale > 1.2f)
+        if (compact) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ActivatedCard(service != null, module.moduleVersion, Modifier.fillMaxWidth(), compact = true)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    StatCard(stringResource(R.string.about_scope_count), scopeCount(service).toString(),
+                        Modifier.weight(1f), compact = true)
+                    StatCard(stringResource(R.string.about_enabled_count), enabledCount(settings).toString(),
+                        Modifier.weight(1f), compact = true)
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ActivatedCard(
+                    active = service != null,
+                    version = module.moduleVersion,
+                    modifier = Modifier.weight(1f).aspectRatio(1f),
+                )
+                Column(
+                    modifier = Modifier.weight(1f).aspectRatio(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    StatCard(
+                        label = stringResource(R.string.about_scope_count),
+                        value = scopeCount(service).toString(),
+                        modifier = Modifier.weight(1f),
+                    )
+                    StatCard(
+                        label = stringResource(R.string.about_enabled_count),
+                        value = enabledCount(settings).toString(),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
     }
 }
@@ -99,7 +113,7 @@ internal fun ActivatedRow(settings: TrioSettings, service: XposedService?) {
  * and the ring-and-check badge bleeding off the bottom-right corner.
  */
 @Composable
-private fun ActivatedCard(active: Boolean, version: String, modifier: Modifier = Modifier) {
+private fun ActivatedCard(active: Boolean, version: String, modifier: Modifier = Modifier, compact: Boolean = false) {
     val dark = isDarkTheme()
     val observationBuild = io.github.fengwenhua.colorduo.BuildConfig.COLOROS_STAGE == "observe" &&
         android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT) in setOf("oppo", "oneplus", "realme")
@@ -114,7 +128,7 @@ private fun ActivatedCard(active: Boolean, version: String, modifier: Modifier =
     val content = if (dark) MiuixTheme.colorScheme.onSurface else ActivatedContent
 
     Card(
-        modifier = modifier.fillMaxHeight(),
+        modifier = if (compact) modifier else modifier.fillMaxHeight(),
         colors = CardDefaults.defaultColors(
             color = if (dark) ActivatedContainerDark else ActivatedContainer,
             contentColor = content,
@@ -129,9 +143,27 @@ private fun ActivatedCard(active: Boolean, version: String, modifier: Modifier =
         // clipToBounds rather than clip(RoundedCornerShape): the card has already
         // drawn its squircle outline, and clipping to a plain rounded rectangle
         // here would square off the corners the user is looking at.
-        Box(modifier = Modifier.fillMaxSize().clipToBounds()) {
+        Box(modifier = (if (compact) Modifier.fillMaxWidth() else Modifier.fillMaxSize()).clipToBounds()) {
+            if (!compact) {
+                // The badge is not aligned to the corner: it is nudged 27x31 further
+                // out so a different slice of the ring survives the clip. The vector
+                // is the reference's own asset rather than a redrawing of it -the
+                // ring-to-viewport ratio is what the eye compares, and it is easy to
+                // get wrong by hand.
+                Box(
+                    modifier = Modifier.fillMaxSize().offset(27.dp, 31.dp),
+                    contentAlignment = Alignment.BottomEnd,
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_check_circle_outline),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(if (dark) ActivatedBadgeDark else ActivatedBadge),
+                        modifier = Modifier.size(110.dp),
+                    )
+                }
+            }
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = (if (compact) Modifier.fillMaxWidth() else Modifier.fillMaxSize()).padding(16.dp),
             ) {
                 Text(
                     text = stringResource(
@@ -167,37 +199,22 @@ private fun ActivatedCard(active: Boolean, version: String, modifier: Modifier =
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            // The badge is not aligned to the corner: it is nudged 27x31 further
-            // out so a different slice of the ring survives the clip. The vector
-            // is the reference's own asset rather than a redrawing of it -the
-            // ring-to-viewport ratio is what the eye compares, and it is easy to
-            // get wrong by hand.
-            Box(
-                modifier = Modifier.fillMaxSize().offset(27.dp, 31.dp),
-                contentAlignment = Alignment.BottomEnd,
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_check_circle_outline),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(if (dark) ActivatedBadgeDark else ActivatedBadge),
-                    modifier = Modifier.size(110.dp),
-                )
-            }
+
         }
     }
 }
 
 /** One of the two short right-hand cards: a quiet label over a large figure. */
 @Composable
-private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
+private fun StatCard(label: String, value: String, modifier: Modifier = Modifier, compact: Boolean = false) {
     Card(
-        modifier = modifier.fillMaxHeight(),
+        modifier = if (compact) modifier else modifier.fillMaxHeight(),
         // Same read-out-not-a-button treatment as [ActivatedCard]; the two cards
         // sit side by side, so they must not disagree about how they respond.
         pressFeedbackType = PressFeedbackType.Tilt,
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(14.dp),
+            modifier = (if (compact) Modifier.fillMaxWidth() else Modifier.fillMaxSize()).padding(14.dp),
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
