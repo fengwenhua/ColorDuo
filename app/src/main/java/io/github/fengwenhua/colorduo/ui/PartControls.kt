@@ -26,12 +26,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import io.github.fengwenhua.colorduo.Prefs
 import io.github.fengwenhua.colorduo.R
 import io.github.fengwenhua.colorduo.TrioAppearance
 import io.github.fengwenhua.colorduo.TrioSettings
 import io.github.fengwenhua.colorduo.TrioZones
+import io.github.fengwenhua.colorduo.WindowSheetPolicy
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TooltipBox
 import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
@@ -700,8 +703,10 @@ internal fun PartSettingsSheet(
     val colors = if (part == TrioSettingsPart.Appearance || part == TrioSettingsPart.Battery) RoleColor.entries
         else part.part?.let(::roleColorsForPart).orEmpty()
     val configuration = LocalConfiguration.current
-    val compact = configuration.screenHeightDp < 600 || configuration.fontScale > 1.3f
-    val maxHeight = (configuration.screenHeightDp * 0.72f).dp
+    val windowHeight = LocalWindowInfo.current.containerSize.height
+    val density = LocalDensity.current.density
+    val compact = WindowSheetPolicy.compact(windowHeight, density, configuration.fontScale)
+    val maxHeight = WindowSheetPolicy.maxHeightDp(windowHeight, density).dp
     // The system's gesture bar (or nav bar) overlays the bottom of the window, so the
     // sheet's last row has to stay above it. Only the bottom inset is taken: the sheet
     // is anchored to the bottom edge, and adding the side/top insets there would shift

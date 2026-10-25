@@ -68,6 +68,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -1817,6 +1820,7 @@ private fun SceneSelector(
     val state = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val overflow = state.canScrollForward || state.canScrollBackward
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             LazyRow(
@@ -1841,13 +1845,13 @@ private fun SceneSelector(
                             .coerceAtMost(PreviewScene.entries.lastIndex) else 0
                         scope.launch { state.animateScrollToItem(target) }
                     },
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(if (forward) Lucide.ChevronRight else Lucide.ChevronLeft,
                         contentDescription = stringResource(if (forward) R.string.drawing_more_states
                             else R.string.drawing_previous_states),
                         tint = MiuixTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp))
+                        modifier = Modifier.size(20.dp).graphicsLayer { scaleX = if (rtl) -1f else 1f })
                 }
             }
         }
