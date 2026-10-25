@@ -470,14 +470,17 @@ final class ColorOsBatteryAdapter {
         if (meter == null || image == null) return;
         if (host.nativeStyleDepth > 0) return; // Nested OEM content callbacks cannot release a drawn frame mid-update.
         TrioSettings settings = layoutSettings(host);
-        if (!capable || !config.ready() || !config.get().enabled || host.failed
+        boolean blocked = !capable || !config.ready() || !config.get().enabled || host.failed
                 || host.needsNativeStyle || !meter.isAttachedToWindow() || !meter.isShown() || !image.isShown()
                 || (power != null && !power.get().ready)
                 || (userLayout && config.get().trioStyle != Prefs.STYLE_RING
                     && !(capsuleStage && config.get().trioStyle == Prefs.STYLE_CAPSULE))
                 || (clock != null && (settings.trioStyle == Prefs.STYLE_CAPSULE
                     || TrioAppearance.of(settings).hasRingPart(Prefs.PART_CLOCK)) && !clock.ready())
-                || Refl.getBool(hidden, meter, true) || Refl.getBool(disabled, meter, true)) {
+                || Refl.getBool(hidden, meter, true) || Refl.getBool(disabled, meter, true);
+        HostDecision.Decision gate = HostDecision.gate(new HostDecision.Gate(true, false, !blocked,
+                host.awaitLayout, host.resizing));
+        if (gate.action() == HostDecision.Action.RELEASE) {
             log(host.key + "/blocked", "attached=" + meter.isAttachedToWindow()
                     + " meterShown=" + meter.isShown() + " imageShown=" + image.isShown()
                     + " meterVisibility=" + meter.getVisibility() + " imageVisibility=" + image.getVisibility()
@@ -487,30 +490,28 @@ final class ColorOsBatteryAdapter {
                     + " powerReady=" + (power == null || power.get().ready)
                     + " clockReady=" + (clock == null || clock.ready())
                     + " ancestors=" + visibilityPath(meter));
-            release(host, "not-ready-or-disabled");
+            release(host, gate.reason());
             return;
         }
-        if (host.awaitLayout) {
+        if (gate.action() == HostDecision.Action.WAIT) {
             // A native tint callback can run inside the very layout that applies our size.
             // Keep the pending dimensions until that layout finishes; all ownership is released.
-            if (!host.resizing) release(host, "await-native-layout");
+            if (gate.releaseLeases()) release(host, gate.reason());
             return;
         }
         Object original = nativeDrawable.invoke(meter);
         if (original == null && host.plugBridge.active() && host.preview != null) original = host.preview.original();
         if (host.latestLevel < 0) captureIcon(host, batteryIcon.invoke(meter));
         if (host.latestStyle < 0) captureStyle(host, batteryStyle.invoke(meter));
-        if (!(original instanceof Drawable)) {
-            release(host, "missing-native-model"); return;
-        }
         int styleId = host.latestStyle;
         int level = host.latestLevel;
         int tint = host.latestTint;
         int width = image.getWidth();
         int height = image.getHeight();
-        if ((styleId != 1 && styleId != 3 && styleId != 4 && !(styleId == 2 && host.plugBridge.active())) || level < 0 || level > 100
-                || (tint >>> 24) == 0 || width <= 0 || height <= 0 || width > 2048 || height > 2048) {
-            release(host, "unsupported-style-or-bounds"); return;
+        HostDecision.Decision model = HostDecision.model(new HostDecision.Model(original instanceof Drawable,
+                styleId, host.plugBridge.active(), level, tint, width, height));
+        if (model.action() == HostDecision.Action.RELEASE) {
+            release(host, model.reason()); return;
         }
         ColorOsNetworkAdapter.Plan rawPlan = network == null ? ColorOsNetworkAdapter.Plan.EMPTY : network.prepare(meter, settings);
         View nativePercent = child(meter, "battery_percentage_view");
@@ -526,22 +527,27 @@ final class ColorOsBatteryAdapter {
                     ColorOsRingPreset.resolve(ColorOsRingPreset.userLayout(settings, outsidePercent, rawPlan),
                             level, power.get().charging, rawPlan).wifi)
                 : ColorOsOutsideLayout.EMPTY;
-        if (capsuleStage && host.size.resizeNeeded(meter, config.get(), outside.reserve)) {
-            release(host, "resize");
+        HostDecision.Decision preparation = HostDecision.prepare(new HostDecision.Preparation(
+                capsuleStage && host.size.resizeNeeded(meter, config.get(), outside.reserve),
+                outside.reserve <= 0 || (width >= base[0] + outside.reserve && height >= base[1])));
+        if (preparation.reason().equals("resize")) {
+            release(host, preparation.reason());
             host.awaitLayout = true;
             host.resizing = true;
             host.size.apply(meter, config.get(), outside.reserve);
             scheduleReconcile(host);
             return;
         }
-        if (outside.reserve > 0 && (width < base[0] + outside.reserve || height < base[1])) {
+        if (preparation.action() == HostDecision.Action.RELEASE) {
             host.failed = true;
-            release(host, "outside-layout-constrained"); return;
+            release(host, preparation.reason()); return;
         }
         if (host.preview != null && image.getDrawable() != host.preview) {
             release(host, "drawable-replaced");
         }
-        if (host.preview == null && image.getDrawable() != original) {
+        HostDecision.Decision attachment = HostDecision.attach(new HostDecision.Attachment(host.preview != null,
+                image.getDrawable() == original, host.testedWidth == width && host.testedHeight == height));
+        if (attachment.action() == HostDecision.Action.WAIT) {
             log(host.scene, "nativeOwnershipRetained=drawable-conflict"); return;
         }
         ColorOsNetworkAdapter.Plan plan = rawPlan;
@@ -567,12 +573,12 @@ final class ColorOsBatteryAdapter {
         if (font != null) font.prepareRenderer();
         ColorOsBatteryDrawable.Frame frame = new ColorOsBatteryDrawable.Frame(level, tint, host.paintSettings, plan, powerState,
                 clock == null ? "" : clock.time(), width, height, outside, rawPlan);
-        if (host.testedWidth != width || host.testedHeight != height || host.preview == null) {
+        if (attachment.action() == HostDecision.Action.PREFLIGHT) {
             if (font == null) TrioRenderer.setFont("");
             ColorOsBatteryDrawable.preflight(width, height, frame);
             host.testedWidth = width; host.testedHeight = height;
         }
-        if (host.preview == null) {
+        if (HostDecision.mount(host.preview != null).action() == HostDecision.Action.MOUNT) {
             final long token = ++host.mountToken;
             ColorOsBatteryDrawable drawable = new ColorOsBatteryDrawable((Drawable) original, frame,
                     () -> {
@@ -584,9 +590,15 @@ final class ColorOsBatteryAdapter {
                         if (host.mountToken != token || host.preview == null || !host.preview.isCurrent(presented)) return;
                         log(host.key + "/drawn", "stage=DRAWN generation=" + host.generation);
                         View readyMeter = host.meter.get();
-                        if (network != null && config.ready() && config.get().enabled
-                                && !host.awaitLayout && readyMeter != null && readyMeter.isAttachedToWindow() && readyMeter.isShown()
-                                && presented.network.same(currentPlan(readyMeter, host, presented.level))) {
+                        boolean planMatches = network != null && config.ready() && config.get().enabled
+                                && !host.awaitLayout && readyMeter != null
+                                && readyMeter.isAttachedToWindow() && readyMeter.isShown()
+                                && presented.network.same(currentPlan(readyMeter, host, presented.level));
+                        HostDecision.Decision presentation = HostDecision.presented(new HostDecision.Presentation(true,
+                                config.ready() && config.get().enabled, !host.awaitLayout,
+                                readyMeter != null && readyMeter.isAttachedToWindow(),
+                                readyMeter != null && readyMeter.isShown(), planMatches));
+                        if (presentation.action() == HostDecision.Action.COMMIT_LEASES) {
                             network.commit(readyMeter, presented.network);
                             commitClock(readyMeter, host, presented);
                             commitCharge(readyMeter, host, presented);

@@ -1,0 +1,18 @@
+# ColorOS 宿主接管
+
+`HostDecision` 对不可变采样快照作纯决策；`ColorOsBatteryAdapter` 留在主线程采样 View、反射 OEM 状态并执行副作用。
+决策按阶段进行，禁止把“准备挂载”当作“已绘制”：
+
+1. Gate：缺失宿主或原生样式嵌套更新时等待；配置关闭、能力缺失和失败时释放。
+2. Model：校验原生 Drawable、样式、电量、透明度和尺寸。
+3. Preparation：尺寸变化先释放并安排布局；空间不足恢复原生。
+4. Attachment：第三方 Drawable 保留所有权；新尺寸或首次挂载先 preflight，随后 MOUNT/UPDATE。
+5. Presentation：只有当前 token/帧、配置启用、布局完成、宿主可见且网络计划匹配，才 COMMIT_LEASES。
+
+原生样式更新期间不释放仍已成功绘制的帧；新插电的样式 2 仍由 `ColorOsPlugBridge` 限定，
+不把任意隐藏策略视为充电动画。布局等待保留原先区别：模块主动 resize 可以暂留既有接管，
+普通原生布局等待则释放。Drawable 绘制失败的回调继续立即释放并设置失败状态。
+
+`HostDecisionTest` 覆盖首次帧、折叠尺寸、1→2→1、无桥接样式 2、关闭/不支持、第三方替换、
+旧帧回调及网络计划切换。Android Canvas 探针验证实际 Drawable 绘制状态、失败恢复和 leases。
+这些测试不代表其他 ColorOS/HyperOS 机型已验证。
