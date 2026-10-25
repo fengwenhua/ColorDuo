@@ -1,0 +1,33 @@
+name: initialize signing secrets
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type CREATE_NEW_SIGNING_KEYS (one-time, refuses existing keys)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  initialize:
+    if: github.repository == 'fengwenhua/ColorDuo' && github.actor == 'fengwenhua' && github.ref == 'refs/heads/main' && inputs.confirmation == 'CREATE_NEW_SIGNING_KEYS'
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Generate in ephemeral runner and store encrypted secrets
+        env:
+          GH_TOKEN: ${{ secrets.SIGNING_SETUP_TOKEN }}
+        run: python3 scripts/bootstrap-signing.py
+      - name: Export public trust anchors only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: signing-public-trust
+          path: ${{ runner.temp }}/colorduo-signing-public/*
+          if-no-files-found: error
+          retention-days: 7
