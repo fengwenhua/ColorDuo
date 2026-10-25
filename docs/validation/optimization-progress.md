@@ -15,8 +15,8 @@
 
 | 编号 | 状态 | 验证与备注 |
 | --- | --- | --- |
-| O-01 | 代码与密钥已接入 | 受保护云任务 40204334588 成功生成独立 RSA/P-256 私钥，环境 Secret 已核对，一次性凭据已删除；只导出公钥。更新校验签名清单、字节摘要、包名/版本/当前证书，拒绝降级/调试包；正式构建 unsigned。Gradle 9 组 app 测试和 7 组 JVM 测试、Lint 通过；真实正式 APK 签名/公开下载随 O-02 发布验收。见 SIGNING.md。 |
-| O-02 | 代码就绪，待正式发布验收 | 独立 build/sign/publish 工作流，生产密钥仅 sign step 获取；签名清单、四附件 draft 回读、幂等拒绝覆盖、显式清理和凭据重定向保护。6 项发布边界测试通过；旧 PowerShell 改薄封装，默认不删除历史。模块仓组织授权仍需专用凭据或官方网页回退。最后统一执行新版本发布/旧版清理。 |
+| O-01 | 已实现并正式发布验收 | 云任务 40204334588 生成独立 RSA/P-256 私钥，只导出公钥，一次性凭据已删除。1.1.0 正式包由云端密钥签署，真实 v2/v3、固定证书、签名清单及公开下载摘要均已核对。更新验证包名/版本/当前签名并拒绝降级/调试包。手机仍保留原测试签名及配置，未把只读工装被终止计为正式包装机通过。见 SIGNING.md 与 release-1.1.0-2026-10-26.md。 |
+| O-02 | 已发布并清理旧 Release | 受保护运行 40218450115 的 build/sign/publish 成功；12 项 Python 测试及实际签名回归通过。主仓由 Actions 发布，模块仓按官方网页回退同步同一组四附件；八个公开下载文件逐字节一致。换签/卸载/配置清除/LSPosed 提示已发布；随后删除主仓3个、模块仓2个旧 Release，两仓 Git tag 全量引用保持相同。见发布验收记录。 |
 | O-03 | 已实现 | 正常 release/debug 通过，直接检查 DEX：正常正式包无 Observer Hook ID；显式 observe release 严格依赖校验构建成功且包含观察 Hook ID。debug 保留观察能力，真机检查随后续项扩大至 304 项。 |
 | O-04 | 已实现并补验持续输入 | 内存预览+80ms 合并、松手/停止 flush、重连重放、按 ROM 单一路径；6 组队列/事务测试。工作线程只消费单批，防止慢 Binder 下绕过定时器；约两秒240次输入、20ms慢持久化时计数≤30且最终值正确。字体查询无I/O，提交后才导出，避免首次绑定竞态。Gradle/Lint 通过，Find N5 共312项断言通过。旧工装已改独立测试文件，用户配置已恢复核对。见 CONFIGURATION.md。 |
 | O-05 | 已实现 | `lintRelease` 成功，0 error；82 项 Java 检查通过。CI 显式运行 Lint，abortOnError=true。权限误报仅在 SystemUI 方法局部说明；旧系统 receiver 分支局部说明。其余 warning 分配到对应后续优化项。 |
@@ -26,6 +26,6 @@
 | O-09 | UI 与纯辅助边界已提取 | 设置/绘制页提取 7 个文件，101 个声明函数体保持相同；原文件约 2434/1890 行缩为 905/606 行。HyperOS 5 个无副作用辅助实现提到 HostTree/Diagnostics，保留原委托入口，12 项 Android View/反射检查覆盖新增边界，总计 304 项真机通过。Gradle/Lint 与配置/绘制测试通过。网络/时钟/lease 的 OEM Hook 时序继续保持，后续有对应回归后再提取；Renderer/Geometry 按方案保持绘制数学，未宣称完成 GPU golden 或全 Hook 重写。见 ARCHITECTURE.md。 |
 | O-10 | 已实现并真机验收 | 当前窗口高度驱动弹层，2 组逻辑测试；箭头 48dp 触控、描述/按钮语义及 RTL。外屏 1140×2616、内屏 2248×2480 完成三档字体截图，发现并修复窄窗大字状态卡截字。维护者在 1.5 倍真实分屏确认版本/统计完整、弹层可滚动关闭，最后取证模块窗口 1111×2480；恢复字体 1.0。Lint/debug/304 项检查通过；未声称完成 TalkBack 语音验收。见 window-fonts-2026-10-26.md。 |
 | O-11 | 已实现 | 93 个生产符号集中为 ColorOsSymbols；能力探测与实际 Hook 状态分别报告。“关于”可复制固定字段脱敏报告，指定 SystemUI 有序请求受签名权限及 API34+ UID/包名校验；不开放 app 回复端点、不上传。5 组画像/边界单测、Gradle/Lint/304 项真机通过；真实请求返回 9 项能力均 true，匹配 Find N5 已测画像。见 COMPATIBILITY.md。 |
-| O-12 | 已实现；云端复验进行中 | Wrapper 9.8.0 固定官方发行包/JAR 摘要，CI/发布统一 ./gradlew。448 组件/714 artifact 启用 strict（含 Linux/Windows AAPT2）；篡改插件摘要会拒绝。首次 Linux CI 因 5 份缺失描述文件停止；干净依赖缓存构建后补齐 7 份 Maven Central 描述文件，独立核对摘要且既有707份不变，待重跑云端。27+12 JUnit、Lint、debug/release、6 项发布测试通过；正常 release 无 Observer。正式日志降频，文档分离归档，清理5个无引用字符串、修复注释/LF，补 v33 monochrome 与备份规则。见 TOOLCHAIN.md。 |
+| O-12 | 已实现并云端复验 | Wrapper 9.8.0 固定官方发行包/JAR 摘要，CI/发布统一 ./gradlew。448 组件/714 artifact 启用 strict（含 Linux/Windows AAPT2）；篡改插件摘要会拒绝。首次 Linux CI 缺失描述文件，经干净缓存构建补齐 7 份并独立核对 Maven Central 摘要，既有707份不变。Linux 正式发布与普通 CI 最终均成功；27+12 JUnit、Lint、debug/release、12 项 Python 测试通过，正常 release 无 Observer。正式日志降频，文档分离归档，清理5个无引用字符串、修复注释/LF，补 v33 monochrome 与备份规则。见 TOOLCHAIN.md。 |
 
 状态仅在对应代码与验证完成后更新。未实测的设备/场景不计为通过。
