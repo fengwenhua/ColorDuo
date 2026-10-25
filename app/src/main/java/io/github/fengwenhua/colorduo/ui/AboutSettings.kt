@@ -69,6 +69,7 @@ internal fun LazyListScope.aboutTab(
     item { ActivatedRow(settings = settings, service = service) }
     item { InfoCard(service = service) }
     item { UpdateCard(updater, showMessage) }
+    item { CompatibilityReportCard(showMessage) }
     item {
         Card {
             SwitchPreference(

@@ -50,6 +50,7 @@ public final class ColorDuoModule extends XposedModule {
                     Refl.cls("com.android.systemui.statusbar.views.MiuiBatteryMeterIconView", cl) != null,
                     Refl.cls("com.oplus.systemui.statusbar.pipeline.battery.ui.view.StatBatteryMeterView", cl) != null);
             log(LOG_INFO, "adapter=" + profile);
+            SystemUiCompatibilityReporter.install(this, cl, profile);
             switch (profile) {
                 case HYPER_OS:
                     TrioHooks.install(this, cl);

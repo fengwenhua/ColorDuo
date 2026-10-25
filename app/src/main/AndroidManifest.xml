@@ -4,6 +4,9 @@
 
     <permission android:name="${applicationId}.permission.CONFIG" android:protectionLevel="signature" />
     <uses-permission android:name="${applicationId}.permission.CONFIG" />
+    <queries>
+        <package android:name="com.android.systemui" />
+    </queries>
 
     <!-- Only the settings app talks to the network, to ask GitHub for the newest
          release. The hooked SystemUI process never gets this permission because

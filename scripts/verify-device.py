@@ -27,8 +27,11 @@ def main():
     parser.add_argument("--apk", type=Path, help="Explicitly install this same-signature debug APK")
     parser.add_argument("--restart-systemui", action="store_true")
     parser.add_argument("--skip-probes", action="store_true", help="Read-only production diagnostics")
+    parser.add_argument("--compatibility-report", action="store_true", help="Query the real app-to-SystemUI debug report")
     parser.add_argument("--output", type=Path, default=Path(".local/device-verification.json"))
     args = parser.parse_args()
+    if args.skip_probes and args.compatibility_report:
+        parser.error("Compatibility instrumentation requires debug probes")
     adb = [args.adb, "-s", args.serial]
     if run(adb, "get-state") != "device":
         raise RuntimeError("Authorized device required")
@@ -64,6 +67,13 @@ def main():
         else:
             raise RuntimeError("SystemUI did not restart")
     dump = run(adb, "shell", "dumpsys activity service com.android.systemui/.SystemUIService")
+    if args.compatibility_report:
+        compatibility = run(adb, "shell", "am", "instrument", "-w", "-r",
+                            report["package"] + "/.CompatibilityReportInstrumentation")
+        if "runtime.report=true\n" not in compatibility or "INSTRUMENTATION_CODE: -1" not in compatibility:
+            raise RuntimeError("SystemUI compatibility endpoint did not answer")
+        report["compatibility"] = dict(line.split("=", 1) for line in compatibility.splitlines()
+            if re.match(r"^(?:device\.(?:manufacturer|model)|android\.(?:release|api)|firmware\.build|systemui\.version|module\.version|adapter\.rom|runtime\.report|compatibility|capability\.[a-z_]+(?:\.errorType)?)=", line))
     # Only module-owned counters/status; no notifications, network names or raw OEM dump.
     report["adapter"] = sorted(set(line.strip() for line in dump.splitlines()
         if re.match(r"\s*(ColorDuo ColorOS adapter:|adapter/install |adapter/[^ /]+/[^ /]+/(?:mount|drawn) )", line)))

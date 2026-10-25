@@ -20,8 +20,8 @@ import io.github.libxposed.api.XposedModule;
 
 /** Event driven network bridge. Native collectors stay attached and keep updating. */
 final class ColorOsNetworkAdapter {
-    private static final String WIFI = "com.android.systemui.statusbar.pipeline.wifi.";
-    private static final String MOBILE = "com.oplus.systemui.statusbar.pipeline.mobile.ui.view.";
+    private static final String WIFI = ColorOsSymbols.WIFI_PREFIX;
+    private static final String MOBILE = ColorOsSymbols.PREFIX_COM_OPLUS_SYSTEMUI_STATUSBAR_PIPELINE_MOBILE_UI_VIEW;
     private final XposedModule module;
     private final ClassLoader loader;
     private final Runnable changed;
@@ -135,51 +135,51 @@ final class ColorOsNetworkAdapter {
 
     void install() {
         try {
-            activeType = type(WIFI + "shared.model.WifiNetworkModel$Active");
-            visibleType = type(WIFI + "ui.model.WifiIcon$Visible");
-            cellularType = type("com.android.systemui.statusbar.pipeline.mobile.domain.model.SignalIconModel$Cellular");
-            containerType = type("com.android.systemui.statusbar.phone.StatusIconContainer");
-            Class<?> modern = type("com.android.systemui.statusbar.pipeline.shared.ui.view.ModernStatusBarView");
-            wifiLevel = activeType.getMethod("getLevel");
-            validated = activeType.getDeclaredField("isValidated");
-            cellLevel = cellularType.getMethod("getLevel");
-            cellLevels = cellularType.getMethod("getNumberOfLevels");
-            cellChanging = cellularType.getMethod("getCarrierNetworkChange");
-            cellExclamation = cellularType.getMethod("getShowExclamationMark");
-            cellSlot = cellularType.getMethod("getPhoneId");
-            inService = cellularType.getDeclaredField("isInService");
-            softSim = cellularType.getDeclaredField("isSoftSimCard");
-            iconVisible = modern.getMethod("isIconVisible");
-            iconBlocked = modern.getMethod("isIconBlocked");
-            visibleState = modern.getMethod("getVisibleState");
-            slot = modern.getMethod("getSlot");
-            addIgnored = containerType.getMethod("addIgnoredSlot", String.class);
-            removeIgnored = containerType.getMethod("removeIgnoredSlot", String.class);
-            ignoredSlots = containerType.getDeclaredField("mIgnoredSlots");
+            activeType = type(WIFI + ColorOsSymbols.CLASS_MODEL_WIFI_NETWORK_MODEL_ACTIVE);
+            visibleType = type(WIFI + ColorOsSymbols.CLASS_MODEL_WIFI_ICON_VISIBLE);
+            cellularType = type(ColorOsSymbols.CLASS_MODEL_SIGNAL_ICON_MODEL_CELLULAR);
+            containerType = type(ColorOsSymbols.CLASS_PHONE_STATUS_ICON_CONTAINER);
+            Class<?> modern = type(ColorOsSymbols.CLASS_VIEW_MODERN_STATUS_BAR_VIEW);
+            wifiLevel = activeType.getMethod(ColorOsSymbols.NAME_GET_LEVEL);
+            validated = activeType.getDeclaredField(ColorOsSymbols.NAME_IS_VALIDATED);
+            cellLevel = cellularType.getMethod(ColorOsSymbols.NAME_GET_LEVEL);
+            cellLevels = cellularType.getMethod(ColorOsSymbols.NAME_GET_NUMBER_OF_LEVELS);
+            cellChanging = cellularType.getMethod(ColorOsSymbols.NAME_GET_CARRIER_NETWORK_CHANGE);
+            cellExclamation = cellularType.getMethod(ColorOsSymbols.NAME_GET_SHOW_EXCLAMATION_MARK);
+            cellSlot = cellularType.getMethod(ColorOsSymbols.NAME_GET_PHONE_ID);
+            inService = cellularType.getDeclaredField(ColorOsSymbols.NAME_IS_IN_SERVICE);
+            softSim = cellularType.getDeclaredField(ColorOsSymbols.NAME_IS_SOFT_SIM_CARD);
+            iconVisible = modern.getMethod(ColorOsSymbols.NAME_IS_ICON_VISIBLE);
+            iconBlocked = modern.getMethod(ColorOsSymbols.NAME_IS_ICON_BLOCKED);
+            visibleState = modern.getMethod(ColorOsSymbols.NAME_GET_VISIBLE_STATE);
+            slot = modern.getMethod(ColorOsSymbols.NAME_GET_SLOT);
+            addIgnored = containerType.getMethod(ColorOsSymbols.NAME_ADD_IGNORED_SLOT, String.class);
+            removeIgnored = containerType.getMethod(ColorOsSymbols.NAME_REMOVE_IGNORED_SLOT, String.class);
+            ignoredSlots = containerType.getDeclaredField(ColorOsSymbols.NAME_M_IGNORED_SLOTS);
             ignoredSlots.setAccessible(true);
-            boolean valid = hook(WIFI + "ui.viewmodel.WifiViewModel$wifiIcon$1", "invoke", (chain, result) -> {
+            boolean valid = hook(WIFI + ColorOsSymbols.CLASS_VIEWMODEL_WIFI_VIEW_MODEL_WIFI_ICON_1, ColorOsSymbols.NAME_INVOKE, (chain, result) -> {
                 Object model = chain.getArg(3);
                 int next = ColorOsNetworkPolicy.wifi(activeType.isInstance(model),
                         activeType.isInstance(model) && validated.getBoolean(model), visibleType.isInstance(result),
                         activeType.isInstance(model) ? ((Number) wifiLevel.invoke(model)).intValue() : -1);
                 if (next != latestWifi) { latestWifi = next; requestRefresh(); }
             }, Object.class, Object.class, Object.class, Object.class, Object.class);
-            valid &= hook(WIFI + "ui.binder.WifiViewBinder", "bind", (chain, result) -> {
+            valid &= hook(WIFI + ColorOsSymbols.CLASS_BINDER_WIFI_VIEW_BINDER, ColorOsSymbols.NAME_BIND, (chain, result) -> {
                 requireMain();
                 View root = (View) chain.getArg(0);
                 if (!wifiRows.containsKey(root)) { wifiRows.put(root, true); watch(root); }
                 requestRefresh();
-            }, ViewGroup.class, type(WIFI + "ui.viewmodel.LocationBasedWifiViewModel"));
+            }, ViewGroup.class, type(WIFI + ColorOsSymbols.CLASS_VIEWMODEL_LOCATION_BASED_WIFI_VIEW_MODEL));
             // Only the exact normal Binder observed on this ROM is owned. Other variants stay native.
-            valid &= hook(MOBILE + "OplusStatusBarMobileViewBinder", "bindCustEx", (chain, result) -> {
+            valid &= hook(MOBILE + ColorOsSymbols.NAME_OPLUS_STATUS_BAR_MOBILE_VIEW_BINDER, ColorOsSymbols.NAME_BIND_CUST_EX, (chain, result) -> {
                 requireMain();
                 View root = (View) chain.getArg(1);
-                View signal = child(root, "mobile_signal");
+                View signal = child(root, ColorOsSymbols.ID_MOBILE_SIGNAL);
                 if (signal instanceof ImageView && !mobileRows.containsKey(signal)) {
                     mobileRows.put((ImageView) signal, new Mobile(root)); watch(root);
                 }
                 if (typeCapable) {
-                    View typeView = child(root, "mobile_type");
+                    View typeView = child(root, ColorOsSymbols.ID_MOBILE_TYPE);
                     if (typeView instanceof ImageView) {
                         ImageView image = (ImageView) typeView;
                         typeRows.put(image, new TypeRow(root));
@@ -187,17 +187,17 @@ final class ColorOsNetworkAdapter {
                     }
                 }
                 requestRefresh();
-            }, type("com.android.systemui.statusbar.pipeline.mobile.ui.viewmodel.LocationBasedMobileViewModel"),
+            }, type(ColorOsSymbols.CLASS_VIEWMODEL_LOCATION_BASED_MOBILE_VIEW_MODEL),
                     ViewGroup.class, type("kotlinx.coroutines.flow.Flow"), type("kotlinx.coroutines.flow.StateFlow"),
-                    type("com.android.systemui.statusbar.pipeline.mobile.ui.MobileViewLogger"));
-            valid &= hook(MOBILE + "OplusStatusBarMobileViewBinder", "bindCustEx$updateSignalIcon", (chain, result) -> {
+                    type(ColorOsSymbols.CLASS_UI_MOBILE_VIEW_LOGGER));
+            valid &= hook(MOBILE + ColorOsSymbols.NAME_OPLUS_STATUS_BAR_MOBILE_VIEW_BINDER, ColorOsSymbols.NAME_BIND_CUST_EX_UPDATE_SIGNAL_ICON, (chain, result) -> {
                 requireMain();
                 ImageView image = (ImageView) chain.getArg(0);
                 Mobile row = mobileRows.get(image);
                 if (row == null) {
                     // Initial update is inside bindCustEx, before its after-hook registers the row.
                     View root = image;
-                    while (root != null && !type("com.android.systemui.statusbar.pipeline.shared.ui.view.ModernStatusBarView").isInstance(root)) {
+                    while (root != null && !type(ColorOsSymbols.CLASS_VIEW_MODERN_STATUS_BAR_VIEW).isInstance(root)) {
                         ViewParent parent = root.getParent(); root = parent instanceof View ? (View) parent : null;
                     }
                     if (root == null) return;
@@ -213,8 +213,9 @@ final class ColorOsNetworkAdapter {
                 if (row.level != next || row.slot != nextSlot) {
                     row.level = next; row.slot = nextSlot; requestRefresh();
                 }
-            }, ImageView.class, type("com.android.systemui.statusbar.pipeline.mobile.domain.model.SignalIconModel"));
+            }, ImageView.class, type(ColorOsSymbols.CLASS_MODEL_SIGNAL_ICON_MODEL));
             capable = valid;
+            ColorOsProfile.note(CompatibilitySnapshot.Capability.NETWORK_HOOK, valid, "HookUnavailable");
             if (typeStage) installTypes();
             log("install", "networkReady=" + capable + " types=OEM multiSim=OEM warnings=OEM");
         } catch (Throwable failure) { disable(failure); }
@@ -222,24 +223,24 @@ final class ColorOsNetworkAdapter {
 
     private void installTypes() {
         try {
-            Class<?> collector = type(MOBILE + "OplusStatusBarMobileViewBinder$bindCustEx$1$2$1$2$1");
-            Field image = collector.getDeclaredField("$iconView");
-            Field branch = collector.getDeclaredField("$r8$classId");
+            Class<?> collector = type(MOBILE + ColorOsSymbols.NAME_OPLUS_STATUS_BAR_MOBILE_VIEW_BINDER_BIND_CUST_EX_1_2_1_2_1);
+            Field image = collector.getDeclaredField(ColorOsSymbols.NAME_ICON_VIEW);
+            Field branch = collector.getDeclaredField(ColorOsSymbols.NAME_R8_CLASS_ID);
             image.setAccessible(true); branch.setAccessible(true);
-            Class<?> resource = type("com.android.systemui.common.shared.model.Icon$Resource");
-            Method resourceId = resource.getMethod("getRes");
-            boolean valid = hook("com.android.systemui.common.ui.binder.IconViewBinder", "bind", (chain, result) -> {
+            Class<?> resource = type(ColorOsSymbols.CLASS_MODEL_ICON_RESOURCE);
+            Method resourceId = resource.getMethod(ColorOsSymbols.NAME_GET_RES);
+            boolean valid = hook(ColorOsSymbols.CLASS_BINDER_ICON_VIEW_BINDER, ColorOsSymbols.NAME_BIND, (chain, result) -> {
                 if (Looper.myLooper() != Looper.getMainLooper()) return;
                 ImageView view = (ImageView) chain.getArg(1);
-                if (isNamed(view, "mobile_type")
+                if (isNamed(view, ColorOsSymbols.ID_MOBILE_TYPE)
                         && resource.isInstance(chain.getArg(0))) {
                     pendingTypes.put(view, ((Number) resourceId.invoke(chain.getArg(0))).intValue());
                 }
-            }, type("com.android.systemui.common.shared.model.Icon"), ImageView.class);
-            valid &= hook(collector.getName(), "emit", (chain, result) -> {
+            }, type(ColorOsSymbols.CLASS_MODEL_ICON), ImageView.class);
+            valid &= hook(collector.getName(), ColorOsSymbols.NAME_EMIT, (chain, result) -> {
                 requireMain();
                 ImageView view = (ImageView) image.get(chain.getThisObject());
-                if (branch.getInt(chain.getThisObject()) == 1 && isNamed(view, "data_inout")) {
+                if (branch.getInt(chain.getThisObject()) == 1 && isNamed(view, ColorOsSymbols.ID_DATA_INOUT)) {
                     int id = ((Number) chain.getArg(0)).intValue();
                     String name = "";
                     try { if (id > 0) name = view.getResources().getResourceEntryName(id); } catch (RuntimeException ignored) {}
@@ -257,9 +258,11 @@ final class ColorOsNetworkAdapter {
                 noteType(view, id, view.getVisibility());
             }, Object.class, type("kotlin.coroutines.Continuation"));
             typeCapable = valid;
+            ColorOsProfile.note(CompatibilitySnapshot.Capability.TYPE_HOOK, valid, "HookUnavailable");
             log("type/install", "typeReady=" + valid);
         } catch (Throwable failure) {
             typeCapable = false;
+            ColorOsProfile.note(CompatibilitySnapshot.Capability.TYPE_HOOK, false, failure.getClass().getSimpleName());
             log("type/install", "typeReady=false reason=" + failure.getClass().getSimpleName());
         }
     }
@@ -319,6 +322,7 @@ final class ColorOsNetworkAdapter {
 
     private void disable(Throwable failure) {
         capable = false;
+        ColorOsProfile.note(CompatibilitySnapshot.Capability.NETWORK_HOOK, false, failure.getClass().getSimpleName());
         log("failure", "nativeFallback=" + failure.getClass().getSimpleName());
         requestRefresh();
     }
@@ -363,7 +367,7 @@ final class ColorOsNetworkAdapter {
             ImageView typeImage = null;
             boolean hideType = false;
             if (typeCapable && mobileCount == 1 && mobileRoot != null) {
-                View view = child(mobileRoot, "mobile_type");
+                View view = child(mobileRoot, ColorOsSymbols.ID_MOBILE_TYPE);
                 TypeRow row = view instanceof ImageView ? typeRows.get(view) : null;
                 if (row != null && row.nativeVisibility == View.VISIBLE && !row.label.isEmpty()) {
                     label = row.label;
@@ -531,8 +535,8 @@ final class ColorOsNetworkAdapter {
                 if (row != null) root = row.root.get();
             }
             if (root == null) return false;
-            View group = child(root, "mobile_group");
-            View dot = child(root, "status_bar_dot");
+            View group = child(root, ColorOsSymbols.ID_MOBILE_GROUP);
+            View dot = child(root, ColorOsSymbols.ID_STATUS_BAR_DOT);
             if (group == null || dot == null) return false;
             if (lease.compactRoot.get() != root) {
                 if (lease.activity != null) lease.activity.restore();
@@ -540,7 +544,7 @@ final class ColorOsNetworkAdapter {
                 lease.activity = null; lease.gap = null; lease.compactRoot = new WeakReference<>(root);
             }
             if (lease.gap == null) lease.gap = new ColorOsMobileGap(dot);
-            View activityView = child(root, "data_inout");
+            View activityView = child(root, ColorOsSymbols.ID_DATA_INOUT);
             boolean activityChanged = false;
             if (activityView instanceof ImageView) {
                 if (lease.activity == null) lease.activity = new ColorOsActivityLayout((ImageView) activityView);

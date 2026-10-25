@@ -337,4 +337,8 @@
     <string name="drawing_more_states">查看更多预览状态</string>
     <string name="drawing_previous_states">返回前面的预览状态</string>
     <string name="drawing_states_scroll_hint">左右滑动查看更多状态，也可点击箭头</string>
+    <string name="compatibility_report_title">复制兼容性报告</string>
+    <string name="compatibility_report_summary">包含设备、系统版本与适配状态，不含网络名称、通知或原始日志。</string>
+    <string name="compatibility_report_copied">兼容性报告已复制</string>
+    <string name="compatibility_report_copy_failed">无法复制报告，请重试</string>
 </resources>

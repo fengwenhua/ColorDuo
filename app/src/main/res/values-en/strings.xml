@@ -338,4 +338,8 @@
     <string name="drawing_more_states">More preview states</string>
     <string name="drawing_previous_states">Previous preview states</string>
     <string name="drawing_states_scroll_hint">Swipe for more states, or tap the arrow</string>
+    <string name="compatibility_report_title">Copy compatibility report</string>
+    <string name="compatibility_report_summary">Device, system versions and adapter status only. No network names, notifications or raw logs.</string>
+    <string name="compatibility_report_copied">Compatibility report copied</string>
+    <string name="compatibility_report_copy_failed">Could not copy the report. Try again.</string>
 </resources>

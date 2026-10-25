@@ -43,11 +43,11 @@ final class ColorOsClockBridge {
 
     void install() {
         try {
-            clockType = Class.forName("com.oplus.systemui.statusbar.widget.StatClock", false, loader);
-            updateVisibility = clockType.getMethod("updateClockVisibility");
-            Method visible = clockType.getDeclaredMethod("shouldBeVisible");
+            clockType = Class.forName(ColorOsSymbols.CLASS_WIDGET_STAT_CLOCK, false, loader);
+            updateVisibility = clockType.getMethod(ColorOsSymbols.NAME_UPDATE_CLOCK_VISIBILITY);
+            Method visible = clockType.getDeclaredMethod(ColorOsSymbols.NAME_SHOULD_BE_VISIBLE);
             nativePolicy = visible;
-            Method setter = clockType.getDeclaredMethod("setVisibility", int.class);
+            Method setter = clockType.getDeclaredMethod(ColorOsSymbols.NAME_SET_VISIBILITY, int.class);
             visible.setAccessible(true); setter.setAccessible(true);
             module.hook(visible).setId("colorduo-coloros-clock-policy")
                     .setExceptionMode(XposedInterface.ExceptionMode.PASSTHROUGH).intercept(chain -> {
@@ -61,7 +61,11 @@ final class ColorOsClockBridge {
                         return owned ? chain.proceed(new Object[]{View.GONE}) : chain.proceed();
                     });
             capable = true;
-        } catch (Throwable failure) { log("clockReady=false " + failure.getClass().getSimpleName()); }
+            ColorOsProfile.note(CompatibilitySnapshot.Capability.CLOCK_HOOK, true, "None");
+        } catch (Throwable failure) {
+            ColorOsProfile.note(CompatibilitySnapshot.Capability.CLOCK_HOOK, false, failure.getClass().getSimpleName());
+            log("clockReady=false " + failure.getClass().getSimpleName());
+        }
     }
 
     String time() { return time; }
@@ -158,8 +162,8 @@ final class ColorOsClockBridge {
     }
 
     private View findHomeClock(View meter) {
-        int contents = meter.getResources().getIdentifier("status_bar_contents", "id", "com.android.systemui");
-        int clockId = meter.getResources().getIdentifier("clock", "id", "com.android.systemui");
+        int contents = meter.getResources().getIdentifier(ColorOsSymbols.ID_STATUS_BAR_CONTENTS, "id", "com.android.systemui");
+        int clockId = meter.getResources().getIdentifier(ColorOsSymbols.ID_CLOCK, "id", "com.android.systemui");
         if (contents == 0 || clockId == 0) return null;
         for (ViewParent parent = meter.getParent(); parent instanceof View; parent = parent.getParent()) {
             View view = (View) parent;

@@ -54,16 +54,16 @@ final class ColorOsPowerSource {
         try {
             context = requestedContext.getApplicationContext();
             if (context == null) throw new IllegalStateException("application context not ready");
-            Class<?> owner = Class.forName("com.oplusos.systemui.common.battery.OplusBatteryController", false, loader);
+            Class<?> owner = Class.forName(ColorOsSymbols.CLASS_BATTERY_OPLUS_BATTERY_CONTROLLER, false, loader);
             Class<?> callback = Class.forName(owner.getName() + "$IBatteryStateChanged", false, loader);
-            Class<?> additional = Class.forName("com.android.systemui.common.charge.OplusAddBatteryStatus", false, loader);
-            Method realCharging = additional.getMethod("isRealCharging");
-            Method fastCharging = additional.getMethod("isSuperVoocCharge");
-            Method plugged = additional.getMethod("isPluggin");
-            Method full = additional.getMethod("isClockFullCharge");
-            Field status = additional.getField("status");
-            unregister = owner.getMethod("unregisterIBatteryStateChanged", callback);
-            controller = owner.getMethod("getInstance").invoke(null);
+            Class<?> additional = Class.forName(ColorOsSymbols.CLASS_CHARGE_OPLUS_ADD_BATTERY_STATUS, false, loader);
+            Method realCharging = additional.getMethod(ColorOsSymbols.NAME_IS_REAL_CHARGING);
+            Method fastCharging = additional.getMethod(ColorOsSymbols.NAME_IS_SUPER_VOOC_CHARGE);
+            Method plugged = additional.getMethod(ColorOsSymbols.NAME_IS_PLUGGIN);
+            Method full = additional.getMethod(ColorOsSymbols.NAME_IS_CLOCK_FULL_CHARGE);
+            Field status = additional.getField(ColorOsSymbols.NAME_STATUS);
+            unregister = owner.getMethod(ColorOsSymbols.NAME_UNREGISTER_IBATTERY_STATE_CHANGED, callback);
+            controller = owner.getMethod(ColorOsSymbols.NAME_GET_INSTANCE).invoke(null);
             listener = Proxy.newProxyInstance(loader, new Class<?>[]{callback}, (proxy, method, args) -> {
                 switch (method.getName()) {
                     case "equals": return args != null && args.length == 1 && proxy == args[0];
@@ -96,7 +96,8 @@ final class ColorOsPowerSource {
                 }
             };
             context.registerReceiver(receiver, new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED), Context.RECEIVER_NOT_EXPORTED);
-            owner.getMethod("registerIBatteryStateChanged", callback).invoke(controller, listener);
+            owner.getMethod(ColorOsSymbols.NAME_REGISTER_IBATTERY_STATE_CHANGED, callback).invoke(controller, listener);
+            ColorOsProfile.note(CompatibilitySnapshot.Capability.POWER_LISTENER, true, "None");
             log("listener registered");
         } catch (Throwable failure) { fail(failure); }
     }
@@ -117,6 +118,7 @@ final class ColorOsPowerSource {
 
     private void fail(Throwable failure) {
         failed = true;
+        ColorOsProfile.note(CompatibilitySnapshot.Capability.POWER_LISTENER, false, failure.getClass().getSimpleName());
         log("native battery state unavailable: " + failure.getClass().getSimpleName());
         stop();
         changed.run();

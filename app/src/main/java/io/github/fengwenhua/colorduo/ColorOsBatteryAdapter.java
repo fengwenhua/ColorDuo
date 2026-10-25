@@ -22,7 +22,7 @@ import io.github.libxposed.api.XposedModule;
  * Unsupported battery styles, outside percent, reverse charge and exceptional network icons stay native.
  */
 final class ColorOsBatteryAdapter {
-    private static final String UI = "com.oplus.systemui.statusbar.pipeline.battery.ui.";
+    private static final String UI = ColorOsSymbols.BATTERY_UI_PREFIX;
     private final XposedModule module;
     private final ClassLoader loader;
     private final Map<View, Host> hosts = new WeakHashMap<>();
@@ -121,23 +121,23 @@ final class ColorOsBatteryAdapter {
         try {
             if (network != null) network.install();
             if (clock != null) clock.install();
-            meterType = type(UI + "view.StatBatteryMeterView");
-            batteryIcon = meterType.getMethod("getBatteryIcon");
-            batteryStyle = meterType.getMethod("getBatteryIconStyle");
-            nativeDrawable = meterType.getMethod("getBatteryStyleDrawable");
-            powerLevel = type(UI + "model.StatBatteryIcon").getMethod("getPowerLevel");
-            tintColor = type(UI + "model.StatBatteryIcon").getMethod("getTintColor");
-            contentDescription = type(UI + "model.StatBatteryIcon").getMethod("getContentDescription");
-            iconStyle = type(UI + "model.BatteryIconStyle").getMethod("getIconStyle");
-            moduleTag = type(UI + "viewmodel.LocationBasedBatteryViewModel").getMethod("getModuleTag");
-            hidden = Refl.field(meterType, "hidden");
-            disabled = Refl.field(meterType, "disable");
+            meterType = type(UI + ColorOsSymbols.CLASS_VIEW_STAT_BATTERY_METER_VIEW);
+            batteryIcon = meterType.getMethod(ColorOsSymbols.NAME_GET_BATTERY_ICON);
+            batteryStyle = meterType.getMethod(ColorOsSymbols.NAME_GET_BATTERY_ICON_STYLE);
+            nativeDrawable = meterType.getMethod(ColorOsSymbols.NAME_GET_BATTERY_STYLE_DRAWABLE);
+            powerLevel = type(UI + ColorOsSymbols.CLASS_MODEL_STAT_BATTERY_ICON).getMethod(ColorOsSymbols.NAME_GET_POWER_LEVEL);
+            tintColor = type(UI + ColorOsSymbols.CLASS_MODEL_STAT_BATTERY_ICON).getMethod(ColorOsSymbols.NAME_GET_TINT_COLOR);
+            contentDescription = type(UI + ColorOsSymbols.CLASS_MODEL_STAT_BATTERY_ICON).getMethod(ColorOsSymbols.NAME_GET_CONTENT_DESCRIPTION);
+            iconStyle = type(UI + ColorOsSymbols.CLASS_MODEL_BATTERY_ICON_STYLE).getMethod(ColorOsSymbols.NAME_GET_ICON_STYLE);
+            moduleTag = type(UI + ColorOsSymbols.CLASS_VIEWMODEL_LOCATION_BASED_BATTERY_VIEW_MODEL).getMethod(ColorOsSymbols.NAME_GET_MODULE_TAG);
+            hidden = Refl.field(meterType, ColorOsSymbols.NAME_HIDDEN);
+            disabled = Refl.field(meterType, ColorOsSymbols.NAME_DISABLE);
             boolean valid = hidden != null && disabled != null;
-            valid &= hook(meterType, "bindViewModel", null, chain -> {
+            valid &= hook(meterType, ColorOsSymbols.NAME_BIND_VIEW_MODEL, null, chain -> {
                 View meter = (View) chain.getThisObject();
                 String scene = String.valueOf(moduleTag.invoke(chain.getArg(0)));
                 if (!knownScene(scene)) return;
-                View target = child(meter, "battery_icon_view");
+                View target = child(meter, ColorOsSymbols.ID_BATTERY_ICON_VIEW);
                 if (!(target instanceof ImageView)) return;
                 Host previous = hosts.get(meter);
                 if (previous != null) { unwatchVisibility(previous); release(previous, "rebind"); }
@@ -148,17 +148,18 @@ final class ColorOsBatteryAdapter {
                 hosts.put(meter, host);
                 watchVisibility(host);
                 config.registerReceiver(meter.getContext());
+                SystemUiCompatibilityReporter.register(meter.getContext());
                 syncPower();
                 reconcile(host);
-            }, type(UI + "viewmodel.LocationBasedBatteryViewModel"));
-            valid &= hook(meterType, "onAttachedToWindow", null, chain -> {
+            }, type(UI + ColorOsSymbols.CLASS_VIEWMODEL_LOCATION_BASED_BATTERY_VIEW_MODEL));
+            valid &= hook(meterType, ColorOsSymbols.NAME_ON_ATTACHED_TO_WINDOW, null, chain -> {
                 Host host = hosts.get(chain.getThisObject());
                 if (host != null) {
                     host.generation++; host.attached = true;
                     watchVisibility(host); syncPower(); reconcile(host);
                 }
             });
-            valid &= hook(meterType, "onDetachedFromWindow", chain -> {
+            valid &= hook(meterType, ColorOsSymbols.NAME_ON_DETACHED_FROM_WINDOW, chain -> {
                 Host host = hosts.get(chain.getThisObject());
                 if (host != null) {
                     host.generation++;
@@ -169,7 +170,7 @@ final class ColorOsBatteryAdapter {
                     syncPower();
                 }
             }, null);
-            valid &= hook(meterType, "onConfigurationChanged", chain -> {
+            valid &= hook(meterType, ColorOsSymbols.NAME_ON_CONFIGURATION_CHANGED, chain -> {
                 Host host = hosts.get(chain.getThisObject());
                 if (host != null) {
                     View meter = host.meter.get();
@@ -201,16 +202,16 @@ final class ColorOsBatteryAdapter {
                     }
                 }
             }, null, Configuration.class);
-            valid &= hook(meterType, "onLayout", null, chain -> {
+            valid &= hook(meterType, ColorOsSymbols.NAME_ON_LAYOUT, null, chain -> {
                 Host host = hosts.get(chain.getThisObject());
                 if (host != null) { host.awaitLayout = false; host.resizing = false; reconcile(host); }
             }, boolean.class, int.class, int.class, int.class, int.class);
-            valid &= hook(meterType, "onHiddenChanged", null, chain -> refresh(chain.getThisObject()),
+            valid &= hook(meterType, ColorOsSymbols.NAME_ON_HIDDEN_CHANGED, null, chain -> refresh(chain.getThisObject()),
                     ArrayList.class, boolean.class);
-            valid &= hook(meterType, "onDarkChanged", null, chain -> refresh(chain.getThisObject()),
+            valid &= hook(meterType, ColorOsSymbols.NAME_ON_DARK_CHANGED, null, chain -> refresh(chain.getThisObject()),
                     ArrayList.class, float.class, int.class);
-            Class<?> binder = type(UI + "binder.BatteryViewBinder");
-            valid &= hook(binder, "bind$updateBatteryContentView", null,
+            Class<?> binder = type(UI + ColorOsSymbols.CLASS_BINDER_BATTERY_VIEW_BINDER);
+            valid &= hook(binder, ColorOsSymbols.NAME_BIND_UPDATE_BATTERY_CONTENT_VIEW, null,
                     chain -> {
                         Host host = hosts.get(chain.getArg(0));
                         if (host != null) {
@@ -218,22 +219,24 @@ final class ColorOsBatteryAdapter {
                             captureIcon(host, chain.getArg(1));
                             reconcile(host);
                         }
-                    }, meterType, type(UI + "model.StatBatteryIcon"));
+                    }, meterType, type(UI + ColorOsSymbols.CLASS_MODEL_STAT_BATTERY_ICON));
             valid &= installStyleHook(binder);
-            valid &= hook(binder, "bind$updateChargingView", null, chain -> {
+            valid &= hook(binder, ColorOsSymbols.NAME_BIND_UPDATE_CHARGING_VIEW, null, chain -> {
                 Host host = hosts.get(chain.getArg(1));
                 if (host != null && chain.getArg(2) != null && chain.getArg(0) instanceof ImageView) {
                     ColorOsChargeIcon icon = chargeIcon(host, (ImageView) chain.getArg(0));
                     icon.onNativeUpdate();
                     reconcile(host);
                 }
-            }, ImageView.class, meterType, type(UI + "model.ChargeIcon"));
+            }, ImageView.class, meterType, type(UI + ColorOsSymbols.CLASS_MODEL_CHARGE_ICON));
             capable = valid;
+            ColorOsProfile.note(CompatibilitySnapshot.Capability.BATTERY_HOOK, valid, "HookUnavailable");
             installDump();
             log("install", "stage=" + BuildConfig.COLOROS_STAGE + " coreReady=" + capable);
             config.start();
         } catch (Throwable failure) {
             capable = false;
+            ColorOsProfile.note(CompatibilitySnapshot.Capability.BATTERY_HOOK, false, failure.getClass().getSimpleName());
             log("install", "coreReady=false reason=" + failure.getClass().getSimpleName());
         }
     }
@@ -244,7 +247,7 @@ final class ColorOsBatteryAdapter {
 
     private void installDump() {
         try {
-            Method dump = meterType.getDeclaredMethod("dump", java.io.PrintWriter.class, String[].class);
+            Method dump = meterType.getDeclaredMethod(ColorOsSymbols.NAME_DUMP, java.io.PrintWriter.class, String[].class);
             dump.setAccessible(true);
             module.hook(dump).setId("colorduo-coloros-battery-dump")
                     .setExceptionMode(XposedInterface.ExceptionMode.PASSTHROUGH).intercept(chain -> {
@@ -273,16 +276,16 @@ final class ColorOsBatteryAdapter {
                         } catch (Throwable ignored) {}
                         return result;
                     });
-        } catch (Throwable failure) { log("dump", "diagnostics unavailable=" + failure.getClass().getSimpleName()); }
+        } catch (Throwable failure) { log(ColorOsSymbols.NAME_DUMP, "diagnostics unavailable=" + failure.getClass().getSimpleName()); }
     }
 
     /** The OEM replacement is synchronous: restore our drawn frame before the next traversal. */
     private boolean installStyleHook(Class<?> binder) {
         try {
-            Method method = binder.getDeclaredMethod("bind$updateBatteryIconStyle", ImageView.class,
-                    meterType, type(UI + "viewmodel.LocationBasedBatteryViewModel"),
+            Method method = binder.getDeclaredMethod(ColorOsSymbols.NAME_BIND_UPDATE_BATTERY_ICON_STYLE, ImageView.class,
+                    meterType, type(UI + ColorOsSymbols.CLASS_VIEWMODEL_LOCATION_BASED_BATTERY_VIEW_MODEL),
                     android.widget.FrameLayout.class, android.widget.TextView.class,
-                    type(UI + "model.BatteryIconStyle"));
+                    type(UI + ColorOsSymbols.CLASS_MODEL_BATTERY_ICON_STYLE));
             method.setAccessible(true);
             module.hook(method).setId("colorduo-coloros-battery-bind$updateBatteryIconStyle")
                     .setExceptionMode(XposedInterface.ExceptionMode.PASSTHROUGH).intercept(chain -> {
@@ -536,7 +539,7 @@ final class ColorOsBatteryAdapter {
             release(host, model.reason()); return;
         }
         ColorOsNetworkAdapter.Plan rawPlan = network == null ? ColorOsNetworkAdapter.Plan.EMPTY : network.prepare(meter, settings);
-        View nativePercent = child(meter, "battery_percentage_view");
+        View nativePercent = child(meter, ColorOsSymbols.ID_BATTERY_PERCENTAGE_VIEW);
         boolean outsidePercent = nativePercent != null && nativePercent.getVisibility() == View.VISIBLE;
 
         if (font != null) font.prepareRenderer();
@@ -717,7 +720,7 @@ final class ColorOsBatteryAdapter {
     }
 
     private void commitCharge(View meter, Host host, ColorOsBatteryDrawable.Frame frame) {
-        View view = child(meter, "battery_charge_icon");
+        View view = child(meter, ColorOsSymbols.ID_BATTERY_CHARGE_ICON);
         if (!(view instanceof ImageView)) return;
         ColorOsPowerSource.State current = power == null ? ColorOsPowerSource.State.UNKNOWN : power.get();
         // A delayed draw callback must never hide a newer native charging state.
