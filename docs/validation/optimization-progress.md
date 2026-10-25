@@ -17,14 +17,14 @@
 | --- | --- | --- |
 | O-01 | 代码与密钥已接入 | 受保护云任务 40204334588 成功生成独立 RSA/P-256 私钥，环境 Secret 已核对，一次性凭据已删除；只导出公钥。更新校验签名清单、字节摘要、包名/版本/当前证书，拒绝降级/调试包；正式构建 unsigned。Gradle 9 组 app 测试和 7 组 JVM 测试、Lint 通过；真实正式 APK 签名/公开下载随 O-02 发布验收。见 SIGNING.md。 |
 | O-02 | 代码就绪，待正式发布验收 | 独立 build/sign/publish 工作流，生产密钥仅 sign step 获取；签名清单、四附件 draft 回读、幂等拒绝覆盖、显式清理和凭据重定向保护。6 项发布边界测试通过；旧 PowerShell 改薄封装，默认不删除历史。模块仓组织授权仍需专用凭据或官方网页回退。最后统一执行新版本发布/旧版清理。 |
-| O-03 | 已实现 | release/debug 构建通过；直接检查 DEX，正式 APK 不含观察 Hook ID，debug 保留。手机 debug instrumentation 283 项通过，配置已备份。显式 observe release 在最终工具链检查时补验。 |
+| O-03 | 已实现 | 正常 release/debug 通过，直接检查 DEX：正常正式包无 Observer Hook ID；显式 observe release 严格依赖校验构建成功且包含观察 Hook ID。debug 保留观察能力，真机检查随后续项扩大至 304 项。 |
 | O-04 | 已实现 | 内存预览 + 80ms 合并，松手/停止 flush、重连重放，按 ROM 单一路径且先写后通知；6 组队列/事务测试证明合并、并发、失败与各一次写入。Gradle/Lint 通过；真机 292 项通过。旧工装首次暴露同步恢复假设，已改独立测试文件，用户配置已对照备份恢复并核对。见 CONFIGURATION.md；突发测试不充当真人拖动流畅性证明。 |
 | O-05 | 已实现 | `lintRelease` 成功，0 error；82 项 Java 检查通过。CI 显式运行 Lint，abortOnError=true。权限误报仅在 SystemUI 方法局部说明；旧系统 receiver 分支局部说明。其余 warning 分配到对应后续优化项。 |
 | O-06 | 已建立基础门禁 | 82 项原断言已迁到 app/src/test，JUnit 另加插电事件序列；render-tests 4 组真实配置/绘制测试通过。真机工具已实跑，283 项 Android 检查通过。保留旧 PowerShell 工装，未声称全量迁移；状态机/Schema/更新测试随对应项补入。见 TESTING.md。 |
 | O-07 | 已实现并真机复测 | HostDecision 提取不可变阶段决策；适配器执行副作用，保留先绘制后接管。7 组事件单测、Gradle/Lint 及 292 项 Android 检查通过。首轮真人发现插电瞬间折叠会清除样式2桥接，独立修复后用户确认正常；ledger 记录 configuration retained=true 4 次（含样式2），mount 仍1次、无 home/native 释放，随后样式1保留并绘制。见 HOST-STATE.md。 |
 | O-08 | 注册表与一致性门禁已实现 | 61 个字段集中登记类型/默认值/范围/样式及充电维度；驱动 Bundle/JSON 序列化与输入校验，保留历史迁移。5 组测试自动逐字段核对两种样式的存储、传输、copy/equality/hash/局部更新和越界/旧配置。Gradle/Lint/292 项真机检查通过。历史读取及直接字段模型按方案保留，后续可逐组提取，未声称全模型一次重写。旧 PowerShell 源文件清单同步补依赖；本机无 pwsh，未将它们计为实跑通过。 |
 | O-09 | UI 与纯辅助边界已提取 | 设置/绘制页提取 7 个文件，101 个声明函数体保持相同；原文件约 2434/1890 行缩为 905/606 行。HyperOS 5 个无副作用辅助实现提到 HostTree/Diagnostics，保留原委托入口，12 项 Android View/反射检查覆盖新增边界，总计 304 项真机通过。Gradle/Lint 与配置/绘制测试通过。网络/时钟/lease 的 OEM Hook 时序继续保持，后续有对应回归后再提取；Renderer/Geometry 按方案保持绘制数学，未宣称完成 GPU golden 或全 Hook 重写。见 ARCHITECTURE.md。 |
-| O-10 | 已实现 | 当前窗口高度驱动弹层，2 组单元测试覆盖外/内/分屏尺寸及 1.0/1.3/1.5 字体倍率；Lint/Debug 构建通过。资源读取在 O-05 修正；箭头已有描述/键盘 Button 语义，补 48dp 触控和 RTL 镜像。实际折叠/大字截图组合待最终真机验收，不把纯逻辑测试算作视觉验收。 |
+| O-10 | 已实现并真机验收 | 当前窗口高度驱动弹层，2 组逻辑测试；箭头 48dp 触控、描述/按钮语义及 RTL。外屏 1140×2616、内屏 2248×2480 完成三档字体截图，发现并修复窄窗大字状态卡截字。维护者在 1.5 倍真实分屏确认版本/统计完整、弹层可滚动关闭，最后取证模块窗口 1111×2480；恢复字体 1.0。Lint/debug/304 项检查通过；未声称完成 TalkBack 语音验收。见 window-fonts-2026-10-26.md。 |
 | O-11 | 已实现 | 93 个生产符号集中为 ColorOsSymbols；能力探测与实际 Hook 状态分别报告。“关于”可复制固定字段脱敏报告，指定 SystemUI 有序请求受签名权限及 API34+ UID/包名校验；不开放 app 回复端点、不上传。5 组画像/边界单测、Gradle/Lint/304 项真机通过；真实请求返回 9 项能力均 true，匹配 Find N5 已测画像。见 COMPATIBILITY.md。 |
 | O-12 | 已实现 | Wrapper 9.8.0 固定官方发行包/JAR 摘要，CI/发布统一 ./gradlew。445 组件/707 artifact 启用 strict 校验（含 Linux/Windows AAPT2）；篡改插件摘要后 Gradle 拒绝，逐字节恢复后正常构建。27+12 JUnit、Lint、debug/release、6 项发布测试通过；正常 release 无 Observer。降低正式状态日志，保留安装/fallback/异常类型及可选 debug ledger；原开发长文完整归档，当前文档分开维护。清理 5 个已确认无引用字符串、修复注释乱码/LF，新增 v33 monochrome 和明确备份排除规则。见 TOOLCHAIN.md。 |
 

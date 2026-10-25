@@ -34,6 +34,18 @@ python3 scripts/github-release.py publish --repo Xposed-Modules-Repo/io.github.f
 若组织仍只允许网页发布，则使用已经登录的官方 GitHub 网页上传这四个同源附件；对照本地及两仓公开下载的 SHA-256，
 确认公开发布完成。该回退只解决组织授权差异，APK 仍必须取自受保护的 Actions 签名产物。
 
+macOS 可使用受跟踪的网页适配器（需要 Chrome 已登录且允许 Apple Events 执行 JavaScript）：
+
+```sh
+python3 scripts/module-browser-upload.py inspect
+python3 scripts/module-browser-upload.py upload --dist dist
+python3 scripts/module-browser-upload.py publish --dist dist
+```
+
+先把模块仓 README 与版本 tag 推好，打开其 `releases/new?tag=10100-1.1.0` 页面。
+脚本只允许这个模块仓，先验证本地签名清单、源码提交与主仓公开附件字节，再分两步上传 draft、发布；
+不会读取浏览器凭据或 CSRF 值。中断后先 inspect，拒绝重复上传已有附件。发布后仍须回读模块仓公开附件。
+
 ## 显式清理历史版本
 
 清理器先核对新稳定版及其签名产物，再列出精确的旧 Release ID/tag；默认只预览，显式 `--execute` 才删除。
