@@ -58,13 +58,19 @@ class HttpsRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, request, fp, code, message, headers, newurl):
         if not newurl.startswith("https://"):
             raise RuntimeError("Refusing insecure release download redirect")
-        return super().redirect_request(request, fp, code, message, headers, newurl)
+        result = super().redirect_request(request, fp, code, message, headers, newurl)
+        if urllib.parse.urlsplit(newurl).netloc != urllib.parse.urlsplit(request.full_url).netloc:
+            result.remove_header("Authorization")
+        return result
 
 
 def public_main(files, tag):
     opener = urllib.request.build_opener(HttpsRedirect)
     url = "https://api.github.com/repos/fengwenhua/ColorDuo/releases/tags/" + tag
-    with opener.open(urllib.request.Request(url, headers={"User-Agent": "ColorDuo-release"}), timeout=30) as response:
+    headers = {"User-Agent": "ColorDuo-release"}
+    if os.environ.get("GITHUB_TOKEN"):
+        headers["Authorization"] = "Bearer " + os.environ["GITHUB_TOKEN"]
+    with opener.open(urllib.request.Request(url, headers=headers), timeout=30) as response:
         release = json.load(response)
     if release["draft"] or release["prerelease"]:
         raise RuntimeError("Main Release must already be public and stable")
