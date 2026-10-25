@@ -13,6 +13,18 @@ final class HostDecision {
     record Attachment(boolean mounted, boolean nativeOwned, boolean dimensionsTested) {}
     record Presentation(boolean current, boolean configEnabled, boolean layoutReady,
                         boolean attached, boolean shown, boolean planMatches) {}
+    record Configuration(boolean enabled, boolean attached, boolean shown, boolean imageOwned,
+                         boolean drawn, boolean failed, boolean nativePending, boolean policyVisible,
+                         int style, boolean popup) {}
+
+    static Decision configuration(Configuration state) {
+        boolean supported = state.style == 1 || state.style == 3 || state.style == 4
+                || (state.style == 2 && state.popup);
+        if (state.enabled && state.attached && state.shown && state.imageOwned && state.drawn
+                && !state.failed && !state.nativePending && state.policyVisible && supported)
+            return waitFor("configuration-handoff", false);
+        return release("configuration");
+    }
 
     static Decision gate(Gate state) {
         if (!state.hostPresent) return waitFor("host-missing", false);

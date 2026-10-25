@@ -54,4 +54,36 @@ public final class HostDecisionTest {
         assertEquals(WAIT, HostDecision.presented(new HostDecision.Presentation(true, true, true, true, false, true)).action());
         assertEquals(COMMIT_LEASES, HostDecision.presented(new HostDecision.Presentation(true, true, true, true, true, true)).action());
     }
+
+    @Test public void plugThenFoldKeepsDrawnPopupUntilNewLayoutAndFrame() {
+        ColorOsPlugBridge bridge = new ColorOsPlugBridge();
+        bridge.power(false, 0); bridge.power(true, 100);
+        assertTrue(bridge.style(2, true, 200));
+        for (int fold = 0; fold < 2; fold++) {
+            HostDecision.Decision transition = HostDecision.configuration(new HostDecision.Configuration(
+                    true, true, true, true, true, false, false, true, 2, bridge.active()));
+            assertEquals(WAIT, transition.action()); assertFalse(transition.releaseLeases());
+            assertTrue(bridge.active());
+            assertFalse(HostDecision.gate(new HostDecision.Gate(true, false, true, true, true)).releaseLeases());
+            assertEquals(PREFLIGHT, HostDecision.attach(new HostDecision.Attachment(true, true, false)).action());
+            assertEquals(UPDATE, HostDecision.mount(true).action());
+            assertEquals(WAIT, HostDecision.presented(new HostDecision.Presentation(true, true, false, true, true, true)).action());
+            assertEquals(COMMIT_LEASES, HostDecision.presented(new HostDecision.Presentation(true, true, true, true, true, true)).action());
+        }
+        assertFalse(bridge.style(1, true, 6_100));
+        assertEquals(UPDATE, HostDecision.model(model(1, false, 85)).action());
+    }
+
+    @Test public void configurationCannotKeepDisabledHiddenFailedOrForeignFrames() {
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(false, true, true, true, true, false, false, true, 2, true)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, true, true, true, true, true, false, true, 2, true)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, false, true, true, true, false, false, true, 2, true)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, true, false, true, true, false, false, true, 2, true)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, true, true, false, true, false, false, true, 2, true)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, true, true, true, false, false, false, true, 2, true)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, true, true, true, true, false, true, true, 2, true)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, true, true, true, true, false, false, false, 2, true)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, true, true, true, true, false, false, true, 2, false)).releaseLeases());
+        assertTrue(HostDecision.configuration(new HostDecision.Configuration(true, true, true, true, true, false, false, true, 5, true)).releaseLeases());
+    }
 }

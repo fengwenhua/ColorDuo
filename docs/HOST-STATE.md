@@ -16,3 +16,15 @@
 `HostDecisionTest` 覆盖首次帧、折叠尺寸、1→2→1、无桥接样式 2、关闭/不支持、第三方替换、
 旧帧回调及网络计划切换。Android Canvas 探针验证实际 Drawable 绘制状态、失败恢复和 leases。
 这些测试不代表其他 ColorOS/HyperOS 机型已验证。
+
+## 插电后立即折叠
+
+Find N5 实测暴露了组合场景：样式 2 已由新插电事件确认，但紧接着的 configuration 回调会
+释放 Drawable、清除桥接，并按 OEM 样式 2 将电池 ImageView 隐藏，直至约数秒后恢复样式 1。
+JADX 确认该固件 `StatBatteryMeterView.onConfigurationChanged` 仅调用父类；
+`BatteryViewBinder.bind$hideBatteryIcon` 会清空原生 Drawable 并 GONE ImageView。
+
+修复在同一宿主、配置启用、没有失败/隐藏策略、且图标确实已绘制并仍归模块所有时，保留旧帧等待新布局。
+新的尺寸仍要 preflight，新帧仍要实际绘制后才能提交 leases。等待期间的必要 resize 不销毁桥接；
+原生样式更新仍照常运行。关闭功能、detach、绘制失败、未知样式和第三方替换继续恢复原生。
+`HostDecisionTest` 新增插电→样式2→展开→合上→样式1序列及各项拒绝条件。

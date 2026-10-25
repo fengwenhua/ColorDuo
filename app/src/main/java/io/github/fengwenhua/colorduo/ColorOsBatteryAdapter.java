@@ -65,6 +65,7 @@ final class ColorOsBatteryAdapter {
         long mountToken;
         boolean awaitLayout;
         boolean resizing;
+        boolean configurationHandoff;
         boolean needsNativeStyle;
         int nativeStyleDepth;
         boolean failed;
@@ -171,12 +172,33 @@ final class ColorOsBatteryAdapter {
             valid &= hook(meterType, "onConfigurationChanged", chain -> {
                 Host host = hosts.get(chain.getThisObject());
                 if (host != null) {
+                    View meter = host.meter.get();
+                    ImageView image = host.image.get();
+                    HostDecision.Decision transition = HostDecision.configuration(new HostDecision.Configuration(
+                            capable && config.ready() && config.get().enabled,
+                            meter != null && meter.isAttachedToWindow(),
+                            meter != null && image != null && meter.isShown() && image.isShown(),
+                            image != null && image.getDrawable() == host.preview,
+                            host.preview != null && host.preview.hasDrawn(), host.failed, host.needsNativeStyle,
+                            meter != null && !Refl.getBool(hidden, meter, true) && !Refl.getBool(disabled, meter, true),
+                            host.latestStyle, host.plugBridge.active()));
                     host.generation++; // Folding may retain both View identity and displayId 0.
                     host.awaitLayout = true;
                     host.failed = false;
                     host.paintSettings = null;
                     host.testedWidth = host.testedHeight = 0;
-                    release(host, "configuration");
+                    if (transition.releaseLeases()) release(host, transition.reason());
+                    else {
+                        // Do not destroy a proven style-2 popup while the same host changes its layout.
+                        // The old frame can scale safely; new leases still wait for the new frame's draw.
+                        host.configurationHandoff = true;
+                        host.resizing = true;
+                        host.refreshQueued = false;
+                        host.refreshSequence++;
+                        log(host.key + "/configuration", "retained=true nativeStyle=" + host.latestStyle
+                                + " generation=" + host.generation);
+                        scheduleReconcile(host);
+                    }
                 }
             }, null, Configuration.class);
             valid &= hook(meterType, "onLayout", null, chain -> {
@@ -531,7 +553,7 @@ final class ColorOsBatteryAdapter {
                 capsuleStage && host.size.resizeNeeded(meter, config.get(), outside.reserve),
                 outside.reserve <= 0 || (width >= base[0] + outside.reserve && height >= base[1])));
         if (preparation.reason().equals("resize")) {
-            release(host, preparation.reason());
+            if (!host.configurationHandoff) release(host, preparation.reason());
             host.awaitLayout = true;
             host.resizing = true;
             host.size.apply(meter, config.get(), outside.reserve);
@@ -603,6 +625,7 @@ final class ColorOsBatteryAdapter {
                             commitClock(readyMeter, host, presented);
                             commitCharge(readyMeter, host, presented);
                             host.presentationPending = false;
+                            host.configurationHandoff = false;
                         } else {
                             host.presentationPending = true;
                             scheduleReconcile(host);
@@ -624,6 +647,7 @@ final class ColorOsBatteryAdapter {
                 commitClock(meter, host, frame);
                 commitCharge(meter, host, frame);
                 host.presentationPending = false;
+                host.configurationHandoff = false;
             }
         }
     }
@@ -701,6 +725,7 @@ final class ColorOsBatteryAdapter {
     }
 
     private void release(Host host, String reason) throws Throwable {
+        host.configurationHandoff = false;
         boolean popup = host.plugBridge.active();
         host.plugBridge.clear();
         host.presentationPending = false;
