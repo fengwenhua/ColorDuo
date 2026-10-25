@@ -26,6 +26,6 @@
 | O-09 | UI 与纯辅助边界已提取 | 设置/绘制页提取 7 个文件，101 个声明函数体保持相同；原文件约 2434/1890 行缩为 905/606 行。HyperOS 5 个无副作用辅助实现提到 HostTree/Diagnostics，保留原委托入口，12 项 Android View/反射检查覆盖新增边界，总计 304 项真机通过。Gradle/Lint 与配置/绘制测试通过。网络/时钟/lease 的 OEM Hook 时序继续保持，后续有对应回归后再提取；Renderer/Geometry 按方案保持绘制数学，未宣称完成 GPU golden 或全 Hook 重写。见 ARCHITECTURE.md。 |
 | O-10 | 已实现并真机验收 | 当前窗口高度驱动弹层，2 组逻辑测试；箭头 48dp 触控、描述/按钮语义及 RTL。外屏 1140×2616、内屏 2248×2480 完成三档字体截图，发现并修复窄窗大字状态卡截字。维护者在 1.5 倍真实分屏确认版本/统计完整、弹层可滚动关闭，最后取证模块窗口 1111×2480；恢复字体 1.0。Lint/debug/304 项检查通过；未声称完成 TalkBack 语音验收。见 window-fonts-2026-10-26.md。 |
 | O-11 | 已实现 | 93 个生产符号集中为 ColorOsSymbols；能力探测与实际 Hook 状态分别报告。“关于”可复制固定字段脱敏报告，指定 SystemUI 有序请求受签名权限及 API34+ UID/包名校验；不开放 app 回复端点、不上传。5 组画像/边界单测、Gradle/Lint/304 项真机通过；真实请求返回 9 项能力均 true，匹配 Find N5 已测画像。见 COMPATIBILITY.md。 |
-| O-12 | 已实现 | Wrapper 9.8.0 固定官方发行包/JAR 摘要，CI/发布统一 ./gradlew。445 组件/707 artifact 启用 strict 校验（含 Linux/Windows AAPT2）；篡改插件摘要后 Gradle 拒绝，逐字节恢复后正常构建。27+12 JUnit、Lint、debug/release、6 项发布测试通过；正常 release 无 Observer。降低正式状态日志，保留安装/fallback/异常类型及可选 debug ledger；原开发长文完整归档，当前文档分开维护。清理 5 个已确认无引用字符串、修复注释乱码/LF，新增 v33 monochrome 和明确备份排除规则。见 TOOLCHAIN.md。 |
+| O-12 | 已实现；云端复验进行中 | Wrapper 9.8.0 固定官方发行包/JAR 摘要，CI/发布统一 ./gradlew。448 组件/714 artifact 启用 strict（含 Linux/Windows AAPT2）；篡改插件摘要会拒绝。首次 Linux CI 因 5 份缺失描述文件停止；干净依赖缓存构建后补齐 7 份 Maven Central 描述文件，独立核对摘要且既有707份不变，待重跑云端。27+12 JUnit、Lint、debug/release、6 项发布测试通过；正常 release 无 Observer。正式日志降频，文档分离归档，清理5个无引用字符串、修复注释/LF，补 v33 monochrome 与备份规则。见 TOOLCHAIN.md。 |
 
 状态仅在对应代码与验证完成后更新。未实测的设备/场景不计为通过。
