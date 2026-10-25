@@ -2738,8 +2738,7 @@ final class TrioHooks {
      * Reads {@code ModernStatusBarView.getSlot()} (or the displayable one).
      */
     private static String slotOf(View child) {
-        final Object slot = Refl.callByName(child, "getSlot");
-        return (slot instanceof String) ? (String) slot : null;
+        return HyperOsHostTree.slotOf(child);
     }
 
     /**
@@ -2802,13 +2801,7 @@ final class TrioHooks {
     }
 
     private static boolean isDescendant(View child, View ancestor) {
-        for (ViewParent p = child.getParent(); p != null;
-             p = (p instanceof View) ? ((View) p).getParent() : null) {
-            if (p == ancestor) {
-                return true;
-            }
-        }
-        return false;
+        return HyperOsHostTree.isDescendant(child, ancestor);
     }
 
     /**
@@ -2925,44 +2918,11 @@ final class TrioHooks {
 
     /** One compact token per child, used both for logging and for change detection. */
     private static String childrenOf(ViewGroup container) {
-        final StringBuilder sb = new StringBuilder();
-        final int count;
-        try {
-            count = container.getChildCount();
-        } catch (Throwable t) {
-            return sb.toString();
-        }
-        for (int i = 0; i < count; i++) {
-            final View child;
-            try {
-                child = container.getChildAt(i);
-            } catch (Throwable t) {
-                continue;
-            }
-            if (child == null) {
-                continue;
-            }
-            sb.append(" | ").append(i)
-                    .append(' ').append(child.getClass().getSimpleName())
-                    .append(" slot=").append(slotOf(child))
-                    .append(" l=").append(child.getLeft())
-                    .append(" r=").append(child.getRight())
-                    .append(" w=").append(child.getWidth())
-                    .append(" mw=").append(child.getMeasuredWidth())
-                    .append(" tx=").append(child.getTranslationX())
-                    .append(" a=").append(child.getAlpha())
-                    .append(" v=").append(child.getVisibility());
-        }
-        return sb.toString();
+        return HyperOsDiagnostics.childrenOf(container);
     }
 
     private static String pathOf(View v) {
-        final StringBuilder sb = new StringBuilder();
-        for (ViewParent p = v.getParent(); p != null;
-             p = (p instanceof View) ? ((View) p).getParent() : null) {
-            sb.append(p.getClass().getSimpleName()).append('<');
-        }
-        return sb.toString();
+        return HyperOsDiagnostics.pathOf(v);
     }
 
 
@@ -5093,18 +5053,7 @@ final class TrioHooks {
      * classes.
      */
     private static View meterIn(View host, View container) {
-        View child = host;
-        for (ViewParent p = host.getParent(); p != null;
-             p = (p instanceof View) ? ((View) p).getParent() : null) {
-            if (p == container) {
-                return child;
-            }
-            if (!(p instanceof View)) {
-                return null;
-            }
-            child = (View) p;
-        }
-        return null;
+        return HyperOsHostTree.meterIn(host, container);
     }
 
     /** A registered glyph host living under {@code container}, or null. */

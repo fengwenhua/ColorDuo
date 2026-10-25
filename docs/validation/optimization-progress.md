@@ -23,7 +23,7 @@
 | O-06 | 已建立基础门禁 | 82 项原断言已迁到 app/src/test，JUnit 另加插电事件序列；render-tests 4 组真实配置/绘制测试通过。真机工具已实跑，283 项 Android 检查通过。保留旧 PowerShell 工装，未声称全量迁移；状态机/Schema/更新测试随对应项补入。见 TESTING.md。 |
 | O-07 | 已实现并真机复测 | HostDecision 提取不可变阶段决策；适配器执行副作用，保留先绘制后接管。7 组事件单测、Gradle/Lint 及 292 项 Android 检查通过。首轮真人发现插电瞬间折叠会清除样式2桥接，独立修复后用户确认正常；ledger 记录 configuration retained=true 4 次（含样式2），mount 仍1次、无 home/native 释放，随后样式1保留并绘制。见 HOST-STATE.md。 |
 | O-08 | 注册表与一致性门禁已实现 | 61 个字段集中登记类型/默认值/范围/样式及充电维度；驱动 Bundle/JSON 序列化与输入校验，保留历史迁移。5 组测试自动逐字段核对两种样式的存储、传输、copy/equality/hash/局部更新和越界/旧配置。Gradle/Lint/292 项真机检查通过。历史读取及直接字段模型按方案保留，后续可逐组提取，未声称全模型一次重写。旧 PowerShell 源文件清单同步补依赖；本机无 pwsh，未将它们计为实跑通过。 |
-| O-09 | UI 拆分完成；Hook 边界继续渐进提取 | 设置页与绘制页提取 7 个职责文件，101 个顶层声明函数体保持相同；原文件从约 2434/1890 行缩为 905/606 行。Gradle/Lint、配置/绘制测试及 292 项真机检查通过。下一步只提取有回归保护的 HyperOS 辅助边界；Renderer/Geometry 按方案保持绘制数学，未宣称完成 GPU golden 或全 Hook 重写。见 ARCHITECTURE.md。 |
+| O-09 | UI 与纯辅助边界已提取 | 设置/绘制页提取 7 个文件，101 个声明函数体保持相同；原文件约 2434/1890 行缩为 905/606 行。HyperOS 5 个无副作用辅助实现提到 HostTree/Diagnostics，保留原委托入口，12 项 Android View/反射检查覆盖新增边界，总计 304 项真机通过。Gradle/Lint 与配置/绘制测试通过。网络/时钟/lease 的 OEM Hook 时序继续保持，后续有对应回归后再提取；Renderer/Geometry 按方案保持绘制数学，未宣称完成 GPU golden 或全 Hook 重写。见 ARCHITECTURE.md。 |
 | O-10 | 已实现 | 当前窗口高度驱动弹层，2 组单元测试覆盖外/内/分屏尺寸及 1.0/1.3/1.5 字体倍率；Lint/Debug 构建通过。资源读取在 O-05 修正；箭头已有描述/键盘 Button 语义，补 48dp 触控和 RTL 镜像。实际折叠/大字截图组合待最终真机验收，不把纯逻辑测试算作视觉验收。 |
 | O-11 | 待实施 | 兼容性画像与脱敏报告 |
 | O-12 | 待实施 | 工具链、依赖校验、文档整理 |

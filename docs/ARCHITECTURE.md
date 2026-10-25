@@ -24,6 +24,8 @@ ColorOS 主线程负责采样与执行，`HostDecision` 作纯决策；网络、
 只有实际已绘制的当前帧可以提交接管。细节见 [宿主状态](HOST-STATE.md)。
 
 HyperOS 继续沿用 `TrioHooks`、`TrioState` 和既有原生图标恢复策略。
+无副作用的实时视图查找提取为 `HyperOsHostTree`，视图诊断格式化提取为 `HyperOsDiagnostics`；
+原私有方法保留委托入口，避免破坏现有工装。12 项 Android View/反射检查覆盖嵌套、脱离、外来宿主及 slot。
 后续只在有对应回归保护时提取具体职责，不把大文件拆分与 OEM 行为改写捆绑。
 `TrioRenderer`/`TrioGeometry` 的绘制数学保持原实现；桌面 shim 和真实 Android Canvas 是互补检查，
 当前没有跨系统/字体环境统一的 GPU golden，因此不宣称桌面快照可代替真机像素验收。
