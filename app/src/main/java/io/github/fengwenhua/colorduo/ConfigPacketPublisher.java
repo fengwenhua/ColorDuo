@@ -41,8 +41,8 @@ public final class ConfigPacketPublisher {
             if (epoch == null) epoch = UUID.randomUUID().toString();
             long previous = frozen.getLong(Prefs.KEY_SNAPSHOT_REVISION, 0);
             if (previous < 0 || previous == Long.MAX_VALUE) throw new IllegalStateException("invalid local revision");
-            String packet = ConfigPacket.encode(epoch, previous + 1, settings,
-                    ColorOsFontPublisher.forSnapshot(context, service, frozen));
+            String fontFile = ColorOsFontPublisher.forSnapshot(frozen);
+            String packet = ConfigPacket.encode(epoch, previous + 1, settings, fontFile);
             edit.putString(Prefs.KEY_SNAPSHOT_EPOCH, epoch).putLong(Prefs.KEY_SNAPSHOT_REVISION, previous + 1)
                     .putString(Prefs.KEY_SNAPSHOT, packet);
             SharedPreferences.Editor remote = service.getRemotePreferences(Prefs.NAME).edit().putString(Prefs.KEY_SNAPSHOT, packet);
@@ -50,7 +50,8 @@ public final class ConfigPacketPublisher {
                     () -> broadcast(context, new Intent(Prefs.ACTION_SNAPSHOT)
                             .setPackage(Prefs.SYSTEMUI_PACKAGE).putExtra(Prefs.KEY_SNAPSHOT, packet)))) return false;
             if (settings.debugLog) Log.i("ColorDuo", "snapshot persisted revision=" + (previous + 1));
-            ColorOsFontPublisher.afterPublished(context, service, ConfigPacket.decode(packet).fontFile);
+            ColorOsFontPublisher.afterPublished(context, service, fontFile);
+            if (fontFile.isEmpty()) ColorOsFontPublisher.requestCommitted(context, service, frozen);
             return true;
         } catch (Exception failure) {
             Log.w("ColorDuo", "settings pending framework sync: " + failure.getClass().getSimpleName());

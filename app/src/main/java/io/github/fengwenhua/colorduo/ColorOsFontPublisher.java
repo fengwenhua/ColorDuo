@@ -34,15 +34,21 @@ public final class ColorOsFontPublisher {
         return Build.VERSION.SDK_INT >= 34 && (maker.equals("oppo") || maker.equals("oneplus") || maker.equals("realme"));
     }
 
-    static String forSnapshot(Context context, XposedService service, PreferencesSnapshot frozen) {
+    /** Pure lookup: a pending font cannot start exporting before its settings transaction commits. */
+    static String forSnapshot(PreferencesSnapshot frozen) {
         String path = frozen.getString(Prefs.KEY_FONT_PATH, "");
         if (!supportedDevice() || path.isEmpty()) return "";
         String revision = frozen.getString(REVISION, "legacy");
         String cached = frozen.getString(NAME, "");
         if (path.equals(frozen.getString(SOURCE, "")) && revision.equals(frozen.getString(SOURCE_REVISION, ""))
                 && !cached.isEmpty() && RemoteFontKey.valid(cached)) return cached;
-        request(context, service, path, revision, false);
         return "";
+    }
+
+    static void requestCommitted(Context context, XposedService service, PreferencesSnapshot frozen) {
+        String path = frozen.getString(Prefs.KEY_FONT_PATH, "");
+        if (supportedDevice() && !path.isEmpty())
+            request(context, service, path, frozen.getString(REVISION, "legacy"), false);
     }
 
     public static void onServiceBound(Context context, XposedService service) {

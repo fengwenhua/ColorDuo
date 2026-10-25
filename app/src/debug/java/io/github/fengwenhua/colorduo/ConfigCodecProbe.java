@@ -20,6 +20,7 @@ public final class ConfigCodecProbe {
         checks += UpdateRegressionProbe.run();
         checks += SettingsBufferProbe.run(context);
         checks += HostTreeProbe.run(context);
+        checks += FontBindingProbe.run(context);
         checks += ChargeRegressionProbe.run(context);
         checks += BatteryStyleRegressionProbe.run(context);
         String epoch = UUID.randomUUID().toString();

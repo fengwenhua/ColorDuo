@@ -83,33 +83,39 @@ public final class BufferedSettings implements SharedPreferences {
         running = true;
         flushAgain = false;
         worker.execute(() -> {
-            boolean retryNeeded = false;
-            Map<String, Object> inFlight = null;
             try {
-                Map<String, Object> patch;
-                while ((patch = queue.take()) != null) {
-                    inFlight = patch;
-                    lastSuccess = sink.persist(patch);
-                    if (!lastSuccess) { queue.failed(patch); retryNeeded = true; break; }
-                    queue.acknowledged(patch);
-                    inFlight = null;
-                }
-            } catch (RuntimeException failure) {
-                lastSuccess = false;
-                if (inFlight != null) queue.failed(inFlight);
-                Log.w("ColorDuo", "Settings sync pending: " + failure.getClass().getSimpleName());
+                // One scheduled batch only. Draining edits that arrive during a slow Binder
+                // write would bypass their 80ms timer and turn coalescing into a tight loop.
+                persistOne();
             } finally {
                 boolean requested;
                 synchronized (BufferedSettings.this) { running = false; requested = flushAgain; flushAgain = false; }
-                // A subsequent edit/service bind retries a failure; never spin on a dead binder.
-                if (requested || (!retryNeeded && lastSuccess && queue.pending())) schedule(0);
+                // New edits already own a timer. Only an explicit flush/bind may override it.
+                if (requested) schedule(0);
             }
         });
     }
 
+    private boolean persistOne() {
+        Map<String, Object> patch = queue.take();
+        if (patch == null) return lastSuccess;
+        try {
+            lastSuccess = sink.persist(patch);
+            if (lastSuccess) queue.acknowledged(patch);
+            else queue.failed(patch);
+        } catch (RuntimeException failure) {
+            lastSuccess = false;
+            queue.failed(patch);
+            Log.w("ColorDuo", "Settings sync pending: " + failure.getClass().getSimpleName());
+        }
+        return lastSuccess;
+    }
+
     public boolean flushBlocking() {
         flush();
-        try { worker.submit(() -> {}).get(2, TimeUnit.SECONDS); return lastSuccess && !queue.pending(); }
+        // Also consume edits staged while the in-flight transaction was finishing.
+        // A failed Binder is retried at most once here, never drained in a busy loop.
+        try { return worker.submit(() -> persistOne() && !queue.pending()).get(2, TimeUnit.SECONDS); }
         catch (Exception failure) { return false; }
     }
 

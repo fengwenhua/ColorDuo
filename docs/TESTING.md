@@ -36,3 +36,7 @@ Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。�
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。
 
 Wrapper 与依赖校验规则见 [TOOLCHAIN.md](TOOLCHAIN.md)。
+
+持续输入探针会打开设置页并暂时保持亮屏，运行前请解锁设备。它在约两秒内发送 240 次编辑，
+以 20ms 的慢持久化验证 80ms 合并上限，并与突发合并、字体绑定等检查合计为 Find N5 上的 312 项断言。
+所有缓冲测试使用独立偏好文件，结束后清理；不改真实用户配置。
