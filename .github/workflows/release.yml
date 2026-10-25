@@ -7,6 +7,10 @@ on:
         description: Existing source tag to release (for example v1.1.0)
         required: true
         type: string
+      publish_release:
+        description: Publish after signing (disable for a same-key device test artifact only)
+        default: true
+        type: boolean
       prune_old_releases:
         description: Explicitly remove previous Releases after both repositories publish
         default: false
@@ -83,6 +87,7 @@ jobs:
           path: dist/*
           if-no-files-found: error
   publish:
+    if: inputs.publish_release
     needs: sign
     environment: release
     permissions:

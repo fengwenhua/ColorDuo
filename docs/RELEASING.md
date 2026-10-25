@@ -7,7 +7,7 @@
 
 1. 更新 `version.properties` 和 `docs/release-notes/release-notes-版本.md`，完成各项检查并提交、推送 main。
 2. 创建并推送对应的 `v版本` tag；tag 必须指向 main 历史内的干净提交，版本号和版本构建号需一致且递增。
-3. 在 Actions 的 release 页面传入 tag。`prune_old_releases` 默认 false；只有明确需要清理旧版时才勾选。
+3. 在 Actions 的 release 页面传入 tag。`publish_release` 默认 true；`prune_old_releases` 默认 false，只有明确需要清理旧版时才勾选。
 4. 审核 `release` 环境任务。build job 不接触正式密钥；sign job 只签该次构建的 unsigned APK，生成清单/签名；
    publish job 回读四个远端附件校验后才将 draft 发布。
 
@@ -17,6 +17,14 @@ gh workflow run release.yml --ref main -f tag=v1.1.0 -f prune_old_releases=false
 
 四个附件为 APK、APK.sha256、release-manifest.json、release-manifest.sig。两仓必须上传同一组附件。
 同 tag 重试只接受一致的标题、说明和附件，不覆盖已发布的不同内容，不删除同名 APK 后重传。
+
+需要在已安装生产签名的手机上测试修复时，可设置 `publish_release=false`：
+仍通过完整 build 门禁和受保护 sign job，仅生成 `signed-release` artifact，跳过发布、同步与清理。
+从该 artifact 核验签名后安装，避免为了测试再换回公开 debug 签名或卸载用户配置。
+
+```sh
+gh workflow run release.yml --ref main -f tag=v1.1.1 -f publish_release=false -f prune_old_releases=false
+```
 
 ## 模块仓权限
 
