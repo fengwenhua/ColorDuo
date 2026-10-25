@@ -19,7 +19,7 @@ tasks.named<JavaCompile>("compileTestJava") {
     source(fileTree(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo")) {
         include("Prefs.java", "ChargeLayout.java", "TrioSettings.java", "TrioAppearance.java",
             "TrioGeometry.java", "TrioZones.java", "TrioRenderer.java", "ConfigPacket.java",
-            "RemoteFontKey.java", "FirstRunDefaults.java", "PreferencesSnapshot.java")
+            "RemoteFontKey.java", "FirstRunDefaults.java", "PreferencesSnapshot.java", "UpdateManifest.java")
     })
 }
 tasks.test {

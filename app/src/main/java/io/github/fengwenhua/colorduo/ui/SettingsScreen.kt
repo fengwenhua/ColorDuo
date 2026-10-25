@@ -1697,6 +1697,7 @@ private fun UpdateCard(updater: UpdateController, showMessage: (String) -> Unit)
             // composable context, and the snackbar is raised from a lambda.
             val refusedHint = stringResource(R.string.update_permission_needed)
             val failedHint = stringResource(R.string.update_install_failed)
+            val invalidHint = stringResource(R.string.update_invalid_package)
             ArrowPreference(
                 title = stringResource(R.string.update_install),
                 summary = stringResource(R.string.update_ready_summary),
@@ -1716,6 +1717,7 @@ private fun UpdateCard(updater: UpdateController, showMessage: (String) -> Unit)
                         // Granting a permission the app already holds would lead to
                         // a settings page with nothing to change.
                         InstallResult.NoInstaller -> showMessage(failedHint)
+                        InstallResult.InvalidPackage -> showMessage(invalidHint)
                     }
                 },
             )

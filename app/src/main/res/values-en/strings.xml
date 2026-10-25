@@ -262,6 +262,7 @@
     <string name="update_no_release">No release has been published yet</string>
     <string name="update_permission_needed">ColorDuo needs permission to install apps; the settings page has been opened for you.</string>
     <string name="update_install_failed">No app on this device can handle the install.</string>
+    <string name="update_invalid_package">Update verification failed. Download again or open the official release page.</string>
     <string name="update_release_page">Open release page</string>
     <string name="update_repo">View repository</string>
     <string name="update_repo_summary">Read the source and the docs on GitHub.</string>

@@ -280,6 +280,7 @@
     <string name="update_no_release">作者尚未发布任何正式版本</string>
     <string name="update_permission_needed">需要先允许本应用安装应用，已为你打开对应设置。</string>
     <string name="update_install_failed">系统里找不到能处理安装的应用。</string>
+    <string name="update_invalid_package">更新包验证失败，请重新下载或打开官方发布页。</string>
     <string name="update_release_page">打开发布页面</string>
     <string name="update_repo">查看仓库</string>
     <string name="update_repo_summary">在 GitHub 上查看源码与说明。</string>

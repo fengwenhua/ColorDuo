@@ -17,6 +17,7 @@ public final class ConfigCodecProbe {
     }
     public static void run(android.content.Context context) throws Exception {
         checks = 0;
+        checks += UpdateRegressionProbe.run();
         checks += ChargeRegressionProbe.run(context);
         checks += BatteryStyleRegressionProbe.run(context);
         String epoch = UUID.randomUUID().toString();

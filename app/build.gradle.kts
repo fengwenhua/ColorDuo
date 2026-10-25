@@ -13,6 +13,9 @@ val releaseVersion = Properties().apply {
 val tagVersionName = (findProperty("colorduoVersionName") as String?)?.takeIf { it.isNotBlank() }
 val tagVersionCode = (findProperty("colorduoVersionCode") as String?)?.toIntOrNull()
 val colorOsStage = (findProperty("colorOsStage") as String?) ?: "outside"
+val releaseTrust = Properties().apply {
+    rootProject.file("release-trust.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
 require(colorOsStage in setOf("observe", "battery", "network", "ring", "type", "capsule", "font", "outside")) { "Unsupported ColorOS validation stage" }
 
 android {
@@ -29,6 +32,7 @@ android {
         versionCode = tagVersionCode ?: releaseVersion.getProperty("versionCode").toInt()
         versionName = tagVersionName ?: releaseVersion.getProperty("versionName")
         buildConfigField("String", "COLOROS_STAGE", "\"$colorOsStage\"")
+        buildConfigField("String", "RELEASE_CERT_SHA256", "\"${releaseTrust.getProperty("certificateSha256", "")}\"")
     }
 
     signingConfigs {
@@ -53,7 +57,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("colorduo")
+            // Production keys exist only in the protected Actions signing job.
+            // Local/PR builds must never fall back to the public test certificate.
+            signingConfig = null
         }
     }
 
