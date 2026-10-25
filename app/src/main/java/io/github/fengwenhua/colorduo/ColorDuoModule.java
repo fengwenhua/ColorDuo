@@ -55,7 +55,11 @@ public final class ColorDuoModule extends XposedModule {
                     TrioHooks.install(this, cl);
                     break;
                 case COLOR_OS:
-                    ColorOsObserver.install(this, cl);
+                    // R8 removes the observer and its sampling hooks from normal releases.
+                    // An explicit observe release remains useful for OEM compatibility work.
+                    if (BuildConfig.DEBUG || "observe".equals(BuildConfig.COLOROS_STAGE)) {
+                        ColorOsObserver.install(this, cl);
+                    }
                     if ("battery".equals(BuildConfig.COLOROS_STAGE) || "network".equals(BuildConfig.COLOROS_STAGE)
                             || "ring".equals(BuildConfig.COLOROS_STAGE) || "type".equals(BuildConfig.COLOROS_STAGE)
                             || "capsule".equals(BuildConfig.COLOROS_STAGE) || "font".equals(BuildConfig.COLOROS_STAGE)

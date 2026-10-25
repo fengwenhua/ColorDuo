@@ -17,7 +17,7 @@
 | --- | --- | --- |
 | O-01 | 待实施 | 新签名、更新真实性和安装身份校验 |
 | O-02 | 待实施 | Actions 发布、双仓同产物、旧 Release 显式清理 |
-| O-03 | 待实施 | 正式版观察 Hook 门控 |
+| O-03 | 已实现 | release/debug 构建通过；直接检查 DEX，正式 APK 不含观察 Hook ID，debug 保留。手机 debug instrumentation 283 项通过，配置已备份。显式 observe release 在最终工具链检查时补验。 |
 | O-04 | 待实施 | UI 即时预览、合并配置写入 |
 | O-05 | 已实现 | `lintRelease` 成功，0 error；82 项 Java 检查通过。CI 显式运行 Lint，abortOnError=true。权限误报仅在 SystemUI 方法局部说明；旧系统 receiver 分支局部说明。其余 warning 分配到对应后续优化项。 |
 | O-06 | 待实施 | Gradle 测试入口与真机检查工具 |

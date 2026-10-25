@@ -117,6 +117,7 @@ jobs:
 
       - name: Collect
         run: |
+          python3 scripts/check-observer.py app/build/outputs/apk/release/app-release.apk --expect absent
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk \
              "dist/ColorDuo-${{ steps.stamp.outputs.name }}.apk"
