@@ -1482,6 +1482,7 @@ $preview = Get-ChildItem -Recurse -Filter *.java $shims | ForEach-Object { $_.Fu
 $shared = @(
     (Join-Path $trio 'Prefs.java'),
     (Join-Path $trio 'ChargeLayout.java'),
+    (Join-Path $trio 'SettingsSchema.java'),
     (Join-Path $trio 'TrioSettings.java'),
     (Join-Path $trio 'TrioGeometry.java'),
     (Join-Path $trio 'TrioAppearance.java'),

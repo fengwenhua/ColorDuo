@@ -263,7 +263,7 @@ public final class TrioSettings {
      * view away entirely, and turning either on brings back the same view with
      * only the requested segment drawn.
      */
-    public boolean perfTemp;
+    public boolean perfTemp;
     /** Drops the temperature unless charging; see {@link Prefs#KEY_PERF_TEMP_CHARGING_ONLY}. */
     public boolean perfTempChargingOnly;
 
@@ -1175,77 +1175,7 @@ public final class TrioSettings {
      * hooked process after every write.
      */
     public Bundle toBundle() {
-        Bundle b = new Bundle();
-        // The style first: the component switches below are written under the CURRENT
-        // arrangement's key, so the hooked process has to be able to pick them out.
-        b.putInt(Prefs.KEY_NAV_STYLE, Prefs.normalizeNavStyle(navStyle));
-        b.putInt(Prefs.KEY_NAV_LABELS, Prefs.normalizeNavLabels(navLabels));
-        b.putInt(Prefs.KEY_TRIO_STYLE, Prefs.normalizeTrioStyle(trioStyle));
-        final int style = Prefs.normalizeTrioStyle(trioStyle);
-        b.putBoolean(Prefs.KEY_ENABLED, enabled);
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_WIFI, style), showWifi);
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_MOBILE, style), showMobile);
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_VALUE, style), showValue);
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_BOLT, style), showBolt);
-        b.putInt(Prefs.styledKey(Prefs.KEY_MOBILE_TYPE_MODE, style), mobileTypeMode);
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_VALUE_CENTRED, style), valueCentred);
-        b.putString(Prefs.styledKey(Prefs.KEY_RING_LAYOUT, style),
-                Prefs.encodeLayout(ringZones));
-        b.putString(Prefs.styledKey(Prefs.KEY_CHARGING_LAYOUT, style), chargingLayout);
-        b.putString(Prefs.styledKey(Prefs.KEY_QUICK_CHARGING_LAYOUT, style), quickChargingLayout);
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_DUAL_SIM, style), dualSim);
-        b.putInt(Prefs.styledKey(Prefs.KEY_SIGNAL_MODE, style), Prefs.clamp(signalMode,
-                Prefs.MIN_SIGNAL_MODE, Prefs.MAX_SIGNAL_MODE));
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_STACKED_SIGNAL, style), stackedSignal);
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_SIM_1, style), showSim1);
-        b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_SIM_2, style), showSim2);
-        b.putBoolean(Prefs.KEY_DATA_SIM_ONLY, dataSimOnly);
-        b.putBoolean(Prefs.KEY_PERF_POWER, perfPower);
-        b.putBoolean(Prefs.KEY_PERF_TEMP, perfTemp);
-        b.putBoolean(Prefs.KEY_PERF_TEMP_CHARGING_ONLY, perfTempChargingOnly);
-        b.putInt(Prefs.KEY_PERF_SCALE, perfScale);
-        b.putInt(Prefs.KEY_PERF_WEIGHT, perfWeight);
-        b.putInt(Prefs.KEY_GLYPH_SCALE, glyphScale);
-        b.putInt(Prefs.KEY_CAPSULE_LEFT_DX, capsuleLeftDx);
-        b.putInt(Prefs.KEY_CAPSULE_LEFT_DY, capsuleLeftDy);
-        b.putInt(Prefs.KEY_CAPSULE_RIGHT_DX, capsuleRightDx);
-        b.putInt(Prefs.KEY_CAPSULE_RIGHT_DY, capsuleRightDy);
-        b.putInt(Prefs.KEY_CAPSULE_LENGTH, capsuleLength);
-
-        b.putBoolean(Prefs.KEY_ROLE_COLORS, roleColors);
-        b.putInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, criticalOnDark);
-        b.putInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, criticalOnLight);
-        b.putInt(Prefs.KEY_COLOR_CHARGING_ON_DARK, chargingOnDark);
-        b.putInt(Prefs.KEY_COLOR_CHARGING_ON_LIGHT, chargingOnLight);
-        b.putInt(Prefs.KEY_COLOR_LOW_ON_DARK, lowOnDark);
-        b.putInt(Prefs.KEY_COLOR_LOW_ON_LIGHT, lowOnLight);
-        b.putInt(Prefs.KEY_LOW_THRESHOLD, lowThreshold);
-
-        b.putInt(Prefs.KEY_RING_STROKE, ringStroke);
-        b.putInt(Prefs.KEY_ARC_STROKE, arcStroke);
-        b.putInt(Prefs.KEY_VALUE_SIZE, valueSize);
-        b.putInt(Prefs.KEY_VALUE_WEIGHT, valueWeight);
-        b.putInt(Prefs.KEY_CLOCK_SIZE, clockSize);
-        b.putInt(Prefs.KEY_CLOCK_WEIGHT, clockWeight);
-        b.putInt(Prefs.KEY_TYPE_SIZE, typeSize);
-        b.putInt(Prefs.KEY_OUT_TYPE_SIZE_DP, outTypeSize);
-        b.putInt(Prefs.KEY_OUT_SIGNAL_SIZE, outSignalSize);
-        b.putInt(Prefs.KEY_OUT_TYPE_MARGIN_LEFT, outTypeMarginLeft);
-        b.putInt(Prefs.KEY_OUT_TYPE_MARGIN_RIGHT, outTypeMarginRight);
-        b.putInt(Prefs.KEY_OUT_SIGNAL_MARGIN, outSignalMargin);
-        b.putInt(Prefs.KEY_TYPE_SUFFIX_SCALE, typeSuffixScale);
-        b.putInt(Prefs.KEY_BOLT_SCALE, boltScale);
-        b.putInt(Prefs.KEY_WIFI_SCALE, wifiScale);
-        b.putBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI, typeHideOnWifi);
-        b.putBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, chargingShowsValue);
-        b.putString(Prefs.KEY_FONT_PATH, fontPath);
-        b.putInt(Prefs.KEY_DOT_SCALE, dotScale);
-        b.putString(Prefs.KEY_OUT_ORDER, Prefs.encodeOutOrder(outOrder));
-        b.putInt(Prefs.KEY_TYPE_WEIGHT, typeWeight);
-        b.putInt(Prefs.KEY_TRACK_ALPHA, trackAlpha);
-
-        b.putBoolean(Prefs.KEY_DEBUG_LOG, debugLog);
-        return b;
+        return SettingsSchema.encode(this);
     }
 
     /**
@@ -1253,7 +1183,7 @@ public final class TrioSettings {
      * {@code TrioConfig}, which must not notify the listeners (and re-fold every
      * container) when the delayed read saw the same values the first one did -
      * but a full comparison is also what a snapshot type ought to answer.
-     */
+     */
     /**
      * Normalises a stored font path to a non-null string.
      *

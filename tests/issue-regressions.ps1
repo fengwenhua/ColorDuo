@@ -40,7 +40,7 @@ $clockVisibility = Read-Method $hooks 'static void applyClockVisibility()'
 foreach ($name in @('TrioZones.java','TrioTint.java','OutRingLayout.java')) {
     Write-Source "io/github/fengwenhua/colorduo/$name" ([IO.File]::ReadAllText((Join-Path $SourceDirectory $name)))
 }
-foreach ($name in @('Prefs.java','ChargeLayout.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java')) {
+foreach ($name in @('Prefs.java','ChargeLayout.java','SettingsSchema.java','TrioSettings.java','TrioAppearance.java','TrioGeometry.java')) {
     Write-Source "io/github/fengwenhua/colorduo/$name" ([IO.File]::ReadAllText((Join-Path $trio $name)))
 }
 foreach ($name in @('android/content/SharedPreferences.java','android/os/Bundle.java')) {

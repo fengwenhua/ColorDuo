@@ -31,7 +31,7 @@ final class ConfigPacket {
         JSONObject payload = new JSONObject();
         Bundle bundle = settings.toBundle();
         for (String key : bundle.keySet()) payload.put(key, bundle.get(key));
-        String result = new JSONObject().put("schema", 1).put("epoch", epoch)
+        String result = new JSONObject().put("schema", SettingsSchema.VERSION).put("epoch", epoch)
                 .put("revision", revision).put("fontFile", fontFile).put("payload", payload).toString();
         if (result.length() > MAX_LENGTH) throw new JSONException("configuration too large");
         return result;
@@ -40,7 +40,7 @@ final class ConfigPacket {
     static ConfigPacket decode(String raw) throws JSONException {
         if (raw == null || raw.length() > MAX_LENGTH) throw new JSONException("invalid packet size");
         JSONObject root = new JSONObject(raw);
-        if (!(root.get("schema") instanceof Integer) || root.getInt("schema") != 1) {
+        if (!(root.get("schema") instanceof Integer) || root.getInt("schema") != SettingsSchema.VERSION) {
             throw new JSONException("unsupported schema");
         }
         String epoch = root.getString("epoch");
@@ -56,11 +56,17 @@ final class ConfigPacket {
             throw new JSONException("invalid payload");
         }
         Bundle values = new Bundle();
+        int style = Prefs.normalizeTrioStyle(payload.optInt(Prefs.KEY_TRIO_STYLE, Prefs.DEF_TRIO_STYLE));
         Iterator<String> keys = payload.keys();
         while (keys.hasNext()) {
             String key = keys.next();
             if (key.length() > 128) throw new JSONException("invalid key");
             Object value = payload.get(key);
+            SettingsSchema.Entry entry = SettingsSchema.find(key);
+            if (entry != null) {
+                try { value = entry.normalize(value, style); }
+                catch (IllegalArgumentException invalid) { throw new JSONException("invalid setting type"); }
+            }
             if (value instanceof Boolean) values.putBoolean(key, (Boolean) value);
             else if (value instanceof Integer) values.putInt(key, (Integer) value);
             else if (value instanceof String && ((String) value).length() <= 8192) values.putString(key, (String) value);
