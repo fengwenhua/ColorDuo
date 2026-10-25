@@ -11,52 +11,33 @@
 package io.github.fengwenhua.colorduo.ui
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
-import android.util.Log
 import android.os.Bundle
 import io.github.fengwenhua.colorduo.ChargeLayout
 import androidx.core.content.edit
-import io.github.fengwenhua.colorduo.ColorDuoApp
-import io.github.fengwenhua.colorduo.ConfigPacketPublisher
 import io.github.fengwenhua.colorduo.Prefs
 import io.github.fengwenhua.colorduo.TrioSettings
-import io.github.libxposed.service.XposedService
 
-/**
- * Reads and writes every setting, and mirrors each write to the Xposed
- * framework so the hooked SystemUI process sees it immediately.
- *
- * <p>Two stores are involved and only one of them is authoritative for the
- * hooked process:
- *
- * <ul>
- *   <li>the app's own {@link SharedPreferences} file, which drives this UI and
- *       survives while the framework is absent;
- *   <li>the framework's remote-preference group of the same name, which is what
- *       the hooked process actually reads.
- * </ul>
- *
- * <p>The mirror is therefore not "sync on connect and forget": every single
- * write is pushed, otherwise a value the user changes while the service is
- * bound would never reach SystemUI.
- */
-class SettingsRepository @JvmOverloads constructor(context: Context, private val chargeScene: Int = ChargeLayout.BASE) {
+/** Immediate preview reads with coalesced, ordered persistence on the settings worker. */
+class SettingsRepository @JvmOverloads constructor(
+    context: Context,
+    private val chargeScene: Int = ChargeLayout.BASE,
+    private val store: io.github.fengwenhua.colorduo.BufferedSettings =
+        io.github.fengwenhua.colorduo.BufferedSettings.get(context.applicationContext),
+) {
 
-    fun forChargeScene(scene: Int) = SettingsRepository(appContext, scene)
+    fun forChargeScene(scene: Int) = SettingsRepository(appContext, scene, store)
 
     private val appContext = context.applicationContext
-    private val service: XposedService? get() = ColorDuoApp.xposedService
 
     /** The display density, needed to migrate the retired raw-pixel size key. */
     private val density: Float
         get() = appContext.resources.displayMetrics.density
 
-    private fun preferences() =
-        appContext.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+    private fun preferences() = store
 
     /** The current values, as the preview should render them. */
-    fun read(): TrioSettings = ChargeLayout.forScene(TrioSettings.from(preferences(), density), chargeScene)
+    fun read(): TrioSettings = ChargeLayout.forScene(TrioSettings.from(preferences().snapshot(), density), chargeScene)
 
     /**
      * The snapshot for a style the user is <em>not</em> currently in.
@@ -69,7 +50,7 @@ class SettingsRepository @JvmOverloads constructor(context: Context, private val
      * nothing observes a transient state and no write is pushed to the hooked process.
      */
     fun readForStyle(style: Int): TrioSettings =
-        ChargeLayout.forScene(TrioSettings.from(preferences(), density, Prefs.normalizeTrioStyle(style)), chargeScene)
+        ChargeLayout.forScene(TrioSettings.from(preferences().snapshot(), density, Prefs.normalizeTrioStyle(style)), chargeScene)
 
     // ------------------------------------------------------------- appearance
 
@@ -113,9 +94,7 @@ class SettingsRepository @JvmOverloads constructor(context: Context, private val
                 is Int -> e.putInt(key, value)
             }
         }
-        preferences().edit(commit = true) { write(this) }
-        push(write)
-        notifyModule()
+        preferences().edit() { write(this) }
     }
 
     /** Publish one layout edit as a single local/remote transaction and one broadcast. */
@@ -127,9 +106,7 @@ class SettingsRepository @JvmOverloads constructor(context: Context, private val
             if (layoutEdit) snapshot.chargingShowsValue = false
             val key = Prefs.styledKey(ChargeLayout.key(scene), next.trioStyle)
             val encoded = ChargeLayout.encode(snapshot)
-            preferences().edit(commit = true) { putString(key, encoded) }
-            push { it.putString(key, encoded) }
-            notifyModule()
+            preferences().edit() { putString(key, encoded) }
             return
         }
         // The arrangement being written is the snapshot's own, not the stored one: the caller
@@ -149,9 +126,7 @@ class SettingsRepository @JvmOverloads constructor(context: Context, private val
         }
         val editor = preferences().edit()
         write(editor)
-        editor.commit()
-        push(write)
-        notifyModule()
+        editor.apply()
     }
 
     /**
@@ -308,10 +283,8 @@ class SettingsRepository @JvmOverloads constructor(context: Context, private val
         synchronized(io.github.fengwenhua.colorduo.ColorOsFontPublisher::class.java) {
             val editor = preferences().edit().putString(Prefs.KEY_FONT_PATH, value)
             io.github.fengwenhua.colorduo.ColorOsFontPublisher.bind(editor, value, revision, remoteName)
-            check(editor.commit()) { "font selection not persisted" }
+            editor.apply()
         }
-        push { it.putString(Prefs.KEY_FONT_PATH, value) }
-        notifyModule()
     }
 
     // ----------------------------------------------------------------- colours
@@ -326,7 +299,7 @@ class SettingsRepository @JvmOverloads constructor(context: Context, private val
 
     /** Restores all six role colours to their defaults in one write. */
     fun resetRoleColors() {
-        preferences().edit(commit = true) {
+        preferences().edit() {
             putInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, Prefs.DEF_COLOR_CRITICAL_ON_DARK)
             putInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, Prefs.DEF_COLOR_CRITICAL_ON_LIGHT)
             putInt(Prefs.KEY_COLOR_CHARGING_ON_DARK, Prefs.DEF_COLOR_CHARGING_ON_DARK)
@@ -334,15 +307,6 @@ class SettingsRepository @JvmOverloads constructor(context: Context, private val
             putInt(Prefs.KEY_COLOR_LOW_ON_DARK, Prefs.DEF_COLOR_LOW_ON_DARK)
             putInt(Prefs.KEY_COLOR_LOW_ON_LIGHT, Prefs.DEF_COLOR_LOW_ON_LIGHT)
         }
-        push { prefs ->
-            prefs.putInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, Prefs.DEF_COLOR_CRITICAL_ON_DARK)
-            prefs.putInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, Prefs.DEF_COLOR_CRITICAL_ON_LIGHT)
-            prefs.putInt(Prefs.KEY_COLOR_CHARGING_ON_DARK, Prefs.DEF_COLOR_CHARGING_ON_DARK)
-            prefs.putInt(Prefs.KEY_COLOR_CHARGING_ON_LIGHT, Prefs.DEF_COLOR_CHARGING_ON_LIGHT)
-            prefs.putInt(Prefs.KEY_COLOR_LOW_ON_DARK, Prefs.DEF_COLOR_LOW_ON_DARK)
-            prefs.putInt(Prefs.KEY_COLOR_LOW_ON_LIGHT, Prefs.DEF_COLOR_LOW_ON_LIGHT)
-        }
-        notifyModule()
     }
 
     // ------------------------------------------------------------------ sizing
@@ -379,176 +343,14 @@ class SettingsRepository @JvmOverloads constructor(context: Context, private val
 
     fun setDebugLog(value: Boolean) = writeBoolean(Prefs.KEY_DEBUG_LOG, value)
 
-    // ----------------------------------------------------------- remote mirror
-
-    /**
-     * Pushes every value currently in the app's own file to the framework.
-     *
-     * <p>Called once when the service binds: while the framework is not
-     * connected writes only land in the app's file, so a plain "push on write"
-     * would leave SystemUI running with stale values from a previous session.
-     */
-    fun syncAllToFramework() {
-        val current = preferences()
-        val snapshot = TrioSettings.from(current, density)
-        // The component switches go out under the CURRENT arrangement's key. The hooked
-        // process reads the same way, so both sides agree about which set is live without
-        // having to exchange two snapshots.
-        val style = Prefs.normalizeTrioStyle(snapshot.trioStyle)
-        push { prefs ->
-            prefs.putBoolean(Prefs.KEY_ENABLED, snapshot.enabled)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_WIFI, style), snapshot.showWifi)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_MOBILE, style), snapshot.showMobile)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_VALUE, style), snapshot.showValue)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_BOLT, style), snapshot.showBolt)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_DUAL_SIM, style), snapshot.dualSim)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_SIM_1, style), snapshot.showSim1)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_SIM_2, style), snapshot.showSim2)
-            prefs.putInt(Prefs.styledKey(Prefs.KEY_MOBILE_TYPE_MODE, style),
-                snapshot.mobileTypeMode)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_VALUE_CENTRED, style),
-                snapshot.valueCentred)
-            prefs.putInt(Prefs.KEY_TRIO_STYLE, snapshot.trioStyle)
-            prefs.putInt(Prefs.KEY_NAV_STYLE, snapshot.navStyle)
-            prefs.putInt(Prefs.KEY_NAV_LABELS, snapshot.navLabels)
-            prefs.putString(Prefs.styledKey(Prefs.KEY_RING_LAYOUT, style),
-                Prefs.encodeLayout(snapshot.ringZones))
-            prefs.putString(Prefs.styledKey(Prefs.KEY_CHARGING_LAYOUT, style), snapshot.chargingLayout)
-            prefs.putString(Prefs.styledKey(Prefs.KEY_QUICK_CHARGING_LAYOUT, style), snapshot.quickChargingLayout)
-            prefs.putBoolean(Prefs.KEY_DATA_SIM_ONLY, snapshot.dataSimOnly)
-            prefs.putBoolean(Prefs.KEY_PERF_POWER, snapshot.perfPower)
-                prefs.putBoolean(Prefs.KEY_PERF_TEMP, snapshot.perfTemp)
-            prefs.putBoolean(Prefs.KEY_PERF_TEMP_CHARGING_ONLY, snapshot.perfTempChargingOnly)
-            // The two signal switches and the four capsule nudges. They were writable and
-            // they reached SystemUI on every individual write, so nothing looked wrong
-            // until the framework rebound: syncAllToFramework() is the ONLY path that
-            // replays values chosen while it was unbound, and a key missing from here is
-            // simply never restored - the status bar keeps drawing whatever it last heard.
-            prefs.putInt(Prefs.styledKey(Prefs.KEY_SIGNAL_MODE, style), snapshot.signalMode)
-            prefs.putBoolean(Prefs.styledKey(Prefs.KEY_STACKED_SIGNAL, style),
-                snapshot.stackedSignal)
-            prefs.putInt(Prefs.KEY_CAPSULE_LEFT_DX, snapshot.capsuleLeftDx)
-            prefs.putInt(Prefs.KEY_CAPSULE_LEFT_DY, snapshot.capsuleLeftDy)
-            prefs.putInt(Prefs.KEY_CAPSULE_RIGHT_DX, snapshot.capsuleRightDx)
-            prefs.putInt(Prefs.KEY_CAPSULE_RIGHT_DY, snapshot.capsuleRightDy)
-            prefs.putInt(Prefs.KEY_CAPSULE_LENGTH, snapshot.capsuleLength)
-            prefs.putInt(Prefs.KEY_PERF_SCALE, snapshot.perfScale)
-            prefs.putInt(Prefs.KEY_PERF_WEIGHT, snapshot.perfWeight)
-            prefs.putInt(Prefs.KEY_GLYPH_SCALE, snapshot.glyphScale)
-            // A key missing from this list is re-pushed as its default after every
-            // framework reconnect, so a chosen font would silently revert on the
-            // next bind. This is the list DEVELOPMENT.md calls out for exactly that
-            // reason.
-            prefs.putString(Prefs.KEY_FONT_PATH, snapshot.fontPath)
-
-            prefs.putBoolean(Prefs.KEY_ROLE_COLORS, snapshot.roleColors)
-            prefs.putInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, snapshot.criticalOnDark)
-            prefs.putInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, snapshot.criticalOnLight)
-            prefs.putInt(Prefs.KEY_COLOR_CHARGING_ON_DARK, snapshot.chargingOnDark)
-            prefs.putInt(Prefs.KEY_COLOR_CHARGING_ON_LIGHT, snapshot.chargingOnLight)
-            prefs.putInt(Prefs.KEY_COLOR_LOW_ON_DARK, snapshot.lowOnDark)
-            prefs.putInt(Prefs.KEY_COLOR_LOW_ON_LIGHT, snapshot.lowOnLight)
-            prefs.putInt(Prefs.KEY_LOW_THRESHOLD, snapshot.lowThreshold)
-
-            prefs.putInt(Prefs.KEY_RING_STROKE, snapshot.ringStroke)
-            prefs.putInt(Prefs.KEY_ARC_STROKE, snapshot.arcStroke)
-            prefs.putInt(Prefs.KEY_VALUE_SIZE, snapshot.valueSize)
-            prefs.putInt(Prefs.KEY_VALUE_WEIGHT, snapshot.valueWeight)
-            // The clock's own pair. No migration is needed here even though the two
-            // keys are new: TrioSettings reads them with the value's size and weight
-            // as the fallback, so writing the snapshot's own clockSize - which the
-            // repository has already defaulted to the value's - reproduces exactly
-            // the look an install had when the two readings shared one size.
-            prefs.putInt(Prefs.KEY_CLOCK_SIZE, snapshot.clockSize)
-            prefs.putInt(Prefs.KEY_CLOCK_WEIGHT, snapshot.clockWeight)
-            prefs.putInt(Prefs.KEY_TYPE_SIZE, snapshot.typeSize)
-            prefs.putInt(Prefs.KEY_OUT_TYPE_SIZE_DP, snapshot.outTypeSize)
-            prefs.putInt(Prefs.KEY_OUT_SIGNAL_SIZE, snapshot.outSignalSize)
-            prefs.putInt(Prefs.KEY_OUT_TYPE_MARGIN_LEFT, snapshot.outTypeMarginLeft)
-            prefs.putInt(Prefs.KEY_OUT_TYPE_MARGIN_RIGHT, snapshot.outTypeMarginRight)
-            prefs.putInt(Prefs.KEY_OUT_SIGNAL_MARGIN, snapshot.outSignalMargin)
-            prefs.putInt(Prefs.KEY_TYPE_SUFFIX_SCALE, snapshot.typeSuffixScale)
-            prefs.putInt(Prefs.KEY_TYPE_WEIGHT, snapshot.typeWeight)
-            prefs.putInt(Prefs.KEY_TRACK_ALPHA, snapshot.trackAlpha)
-
-            // Sent on connect as well as on write, because both are drawing sizes the
-            // hooked process cannot re-derive: a value changed while the framework was
-            // unbound would otherwise never reach SystemUI.
-            prefs.putInt(Prefs.KEY_BOLT_SCALE, snapshot.boltScale)
-            prefs.putInt(Prefs.KEY_WIFI_SCALE, snapshot.wifiScale)
-            prefs.putBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI, snapshot.typeHideOnWifi)
-            prefs.putBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, snapshot.chargingShowsValue)
-            prefs.putInt(Prefs.KEY_DOT_SCALE, snapshot.dotScale)
-            prefs.putString(Prefs.KEY_OUT_ORDER, Prefs.encodeOutOrder(snapshot.outOrder))
-
-            prefs.putBoolean(Prefs.KEY_DEBUG_LOG, current.getBoolean(Prefs.KEY_DEBUG_LOG, Prefs.DEF_DEBUG_LOG))
-        }
-        notifyModule()
-    }
-
+    /** Replays the whole snapshot, including edits made while the service was absent. */
+    fun syncAllToFramework() = preferences().sync()
+    fun flushPending() = preferences().flush()
     private fun writeBoolean(key: String, value: Boolean) {
-        preferences().edit(commit = true) { putBoolean(key, value) }
-        push { it.putBoolean(key, value) }
-        notifyModule()
+        preferences().edit { putBoolean(key, value) }
     }
-
-    private fun writeInt(key: String, value: Int) {
-        preferences().edit(commit = true) { putInt(key, value) }
-        push { it.putInt(key, value) }
-        notifyModule()
-    }
-
+    private fun writeInt(key: String, value: Int) = preferences().putInt(key, value)
     private fun writeString(key: String, value: String) {
-        preferences().edit(commit = true) { putString(key, value) }
-        push { it.putString(key, value) }
-        notifyModule()
-    }
-
-
-    /**
-     * Tells the hooked process to re-read the settings, carrying the whole
-     * snapshot in the intent.
-     *
-     * <p>This is a second, callback-independent path: the framework's
-     * remote-preference change callback is the intended mechanism, but it has
-     * been observed to stop reaching SystemUI on device - the daemon database
-     * held the new value while the status bar kept drawing the old one. The
-     * broadcast is sent even when the service is not bound, because the hooked
-     * process is up regardless and only needs the extras.
-     *
-     * <p>Delivery is asynchronous, so no ordering against [push] is needed; both
-     * carry the same values.
-     */
-    private fun notifyModule() {
-        ConfigPacketPublisher.publish(appContext, service)
-        runCatching {
-            val intent = Intent(Prefs.ACTION_RELOAD)
-                .setPackage(Prefs.SYSTEMUI_PACKAGE)
-                .putExtras(TrioSettings.from(preferences(), density).toBundle())
-            appContext.sendBroadcast(intent)
-        }.onFailure { Log.w(TAG, "cannot notify the hooked process", it) }
-    }
-
-    /** Applies [block] to the framework's remote preferences, if connected. */
-    private fun push(block: (SharedPreferences.Editor) -> Unit) {
-        val bound = service
-        if (bound == null) {
-            // Not fatal: onServiceBind replays every value through
-            // syncAllToFramework(), so the write is not lost. Logged because a
-            // silent return here looks exactly like "live updates are broken".
-            Log.w(TAG, "framework not bound, settings will sync on connect")
-            return
-        }
-        runCatching {
-            val editor = bound.getRemotePreferences(Prefs.NAME).edit()
-            block(editor)
-            // commit() rather than apply(): the value has to be visible in the
-            // hooked process before the next status-bar frame is drawn.
-            editor.commit()
-        }.onFailure { Log.e(TAG, "cannot push settings to framework", it) }
-    }
-
-    private companion object {
-        const val TAG = "ColorDuo"
+        preferences().edit { putString(key, value) }
     }
 }

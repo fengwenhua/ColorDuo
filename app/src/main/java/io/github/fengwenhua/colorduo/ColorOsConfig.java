@@ -74,7 +74,7 @@ final class ColorOsConfig {
                         accept(intent.getStringExtra(Prefs.KEY_SNAPSHOT), false);
                     } catch (Exception failure) { log("snapshot rejected: invalid broadcast"); }
                 }
-            }, new IntentFilter(Prefs.ACTION_SNAPSHOT), Context.RECEIVER_EXPORTED);
+            }, new IntentFilter(Prefs.ACTION_SNAPSHOT), Prefs.CONFIG_PERMISSION, null, Context.RECEIVER_EXPORTED);
             receiverInstalled = true;
             log("snapshot receiver ready; UID/package identity required");
         } catch (RuntimeException failure) { log("cannot register snapshot receiver"); }

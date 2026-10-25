@@ -26,6 +26,11 @@ import top.yukonga.miuix.kmp.theme.ThemeController
  */
 class MainActivity : ComponentActivity() {
 
+    override fun onStop() {
+        io.github.fengwenhua.colorduo.BufferedSettings.get(applicationContext).flushBlocking()
+        super.onStop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

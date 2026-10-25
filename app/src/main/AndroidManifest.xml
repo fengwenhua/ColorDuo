@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <permission android:name="${applicationId}.permission.CONFIG" android:protectionLevel="signature" />
+    <uses-permission android:name="${applicationId}.permission.CONFIG" />
+
     <!-- Only the settings app talks to the network, to ask GitHub for the newest
          release. The hooked SystemUI process never gets this permission because
          it is granted per-package, and the hooks make no network calls. -->

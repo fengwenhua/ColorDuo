@@ -219,14 +219,10 @@ public final class TrioConfig {
             };
             final IntentFilter filter = new IntentFilter(Prefs.ACTION_RELOAD);
             if (Build.VERSION.SDK_INT >= 33) {
-                // The sender is a different app, so the receiver has to be
-                // exported. That does mean any app can forge this intent; the
-                // worst it can do is change how this user's own status bar is
-                // drawn, which is the same thing the settings app is allowed to
-                // do, so no further guard is warranted here.
-                target.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
+                // Cross-UID channel, restricted to senders with our signature permission.
+                target.registerReceiver(receiver, filter, Prefs.CONFIG_PERMISSION, null, Context.RECEIVER_EXPORTED);
             } else {
-                target.registerReceiver(receiver, filter);
+                target.registerReceiver(receiver, filter, Prefs.CONFIG_PERMISSION, null);
             }
             TrioHooks.log(TrioHooks.LOG_INFO, "reload receiver registered");
         } catch (Throwable t) {
@@ -250,7 +246,7 @@ public final class TrioConfig {
      * intact instead of reverting it.
      */
     private static void onReloadBroadcast(Intent intent) {
-        if (intent == null) {
+        if (intent == null || !Prefs.ACTION_RELOAD.equals(intent.getAction())) {
             return;
         }
         try {

@@ -177,10 +177,31 @@ final class ChargeRegressionProbe {
         return checks;
     }
 
-    /** Exercise the actual editor repository, restoring user settings without rolling back revisions. */
+    /** Exercise the actual editor repository against a private test file and sink. */
     private static void repository(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
-        SettingsRepository repository = new SettingsRepository(context);
+        String name = "colorduo_repository_probe";
+        SharedPreferences prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE);
+        prefs.edit().clear().commit();
+        BufferedSettings buffer = new BufferedSettings(prefs, patch -> {
+            SharedPreferences.Editor edit = prefs.edit();
+            patch.forEach((key, value) -> {
+                if (value == null) edit.remove(key);
+                else if (value instanceof String) edit.putString(key, (String) value);
+                else if (value instanceof Boolean) edit.putBoolean(key, (Boolean) value);
+                else if (value instanceof Integer) edit.putInt(key, (Integer) value);
+                else throw new AssertionError("unexpected probe value");
+            });
+            return edit.commit();
+        });
+        try { repository(context, buffer); }
+        finally {
+            buffer.flushBlocking(); buffer.closeForProbe();
+            context.deleteSharedPreferences(name);
+        }
+    }
+
+    private static void repository(Context context, BufferedSettings prefs) {
+        SettingsRepository repository = new SettingsRepository(context, ChargeLayout.BASE, prefs);
         TrioSettings before = repository.read();
         Map<String, Object> saved = new HashMap<>();
         Map<String, ?> all = prefs.getAll();
@@ -223,7 +244,7 @@ final class ChargeRegressionProbe {
                 else throw new AssertionError("unexpected component preference type");
             }
             if (!edit.commit()) throw new AssertionError("could not restore component preferences");
-            repository.syncAllToFramework();
+            check(prefs.flushBlocking(), "isolated repository edits flushed");
         }
         check(repository.read().equals(before), "repository probe restores all original user settings");
     }

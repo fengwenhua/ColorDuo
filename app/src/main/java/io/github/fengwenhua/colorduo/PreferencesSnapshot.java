@@ -12,8 +12,9 @@ import java.util.Set;
 final class PreferencesSnapshot implements SharedPreferences {
     private final Map<String, ?> values;
     PreferencesSnapshot(SharedPreferences source) {
-        values = Collections.unmodifiableMap(new HashMap<>(source.getAll()));
+        this(source.getAll());
     }
+    PreferencesSnapshot(Map<String, ?> source) { values = Collections.unmodifiableMap(new HashMap<>(source)); }
     @Override public Map<String, ?> getAll() { return values; }
     @Override public boolean contains(String key) { return values.containsKey(key); }
     @Override public boolean getBoolean(String key, boolean fallback) {

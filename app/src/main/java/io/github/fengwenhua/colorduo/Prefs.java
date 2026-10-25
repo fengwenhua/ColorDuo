@@ -65,6 +65,7 @@ public final class Prefs {
      * process on the device.
      */
     public static final String SYSTEMUI_PACKAGE = "com.android.systemui";
+    public static final String CONFIG_PERMISSION = "io.github.fengwenhua.colorduo.permission.CONFIG";
 
     // ------------------------------------------------------------------ keys
     public static final String KEY_ENABLED = "enabled";

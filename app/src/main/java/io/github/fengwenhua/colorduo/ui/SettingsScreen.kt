@@ -2219,6 +2219,7 @@ internal fun IntSlider(
     step: Int = 1,
     valueTextSuffix: String? = null,
 ) {
+    val sliderContext = LocalContext.current.applicationContext
     SliderPreference(
         value = value.toFloat(),
         // Rounded here rather than stored rounded: the slider reports floats,
@@ -2240,6 +2241,9 @@ internal fun IntSlider(
         // continuously. The value is rounded to the step in onValueChange anyway, so
         // the coarse result is the same without the snapping.
         steps = 0,
+        onValueChangeFinished = {
+            io.github.fengwenhua.colorduo.BufferedSettings.get(sliderContext).flush()
+        },
         insideMargin = SettingsItemMargin,
     )
 }
