@@ -44,7 +44,10 @@ def main():
             subprocess.run(["keytool", "-exportcert", "-rfc", "-keystore", str(key), "-alias", "colorduo",
                 "-storepass:env", "KEYSTORE_PASSWORD", "-file", str(cert)], env=env, check=True, capture_output=True)
             manifest_key = private / "manifest.pem"
-            subprocess.run(["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(manifest_key)], check=True)
+            # Android's platform Ed25519 verifier starts at API 33. P-256 ECDSA
+            # keeps verified updates available across the project's API 29+ floor.
+            subprocess.run(["openssl", "genpkey", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-256",
+                "-out", str(manifest_key)], check=True)
             subprocess.run(["openssl", "pkey", "-in", str(manifest_key), "-pubout", "-out",
                 str(public / "update-signing-public.pem")], check=True)
             der = subprocess.check_output(["openssl", "x509", "-in", str(cert), "-outform", "DER"])
