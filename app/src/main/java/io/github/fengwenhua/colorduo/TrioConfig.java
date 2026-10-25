@@ -195,6 +195,9 @@ public final class TrioConfig {
      * @param context a SystemUI context, which is only reachable from inside a
      *                hook callback - not from {@code install}.
      */
+    // The flag-less branch is only reachable below API 33; modern registration
+    // explicitly declares the cross-UID channel. Payload trust is handled separately.
+    @android.annotation.SuppressLint("UnspecifiedRegisterReceiverFlag")
     static void installReceiver(Context context) {
         if (context == null || sReceiverInstalled) {
             return;

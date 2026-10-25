@@ -106,6 +106,9 @@ jobs:
       - name: ColorOS policy and configuration checks
         run: bash tests/coloros-observer.sh
 
+      - name: Android Lint gate
+        run: gradle --no-daemon :app:lintRelease
+
       - name: Build release APK
         run: |
           gradle --no-daemon assembleRelease \

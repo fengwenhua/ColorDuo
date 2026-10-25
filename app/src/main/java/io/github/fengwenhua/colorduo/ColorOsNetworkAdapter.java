@@ -583,7 +583,7 @@ final class ColorOsNetworkAdapter {
     }
 
     private static boolean isNamed(View view, String name) {
-        if (view == null || view.getId() <= 0) return false;
+        if (view == null || view.getId() == View.NO_ID || view.getId() == 0) return false;
         try { return name.equals(view.getResources().getResourceEntryName(view.getId())); }
         catch (RuntimeException ignored) { return false; }
     }

@@ -19,7 +19,7 @@
 | O-02 | 待实施 | Actions 发布、双仓同产物、旧 Release 显式清理 |
 | O-03 | 待实施 | 正式版观察 Hook 门控 |
 | O-04 | 待实施 | UI 即时预览、合并配置写入 |
-| O-05 | 待实施 | Lint error 修复与 CI 门禁 |
+| O-05 | 已实现 | `lintRelease` 成功，0 error；82 项 Java 检查通过。CI 显式运行 Lint，abortOnError=true。权限误报仅在 SystemUI 方法局部说明；旧系统 receiver 分支局部说明。其余 warning 分配到对应后续优化项。 |
 | O-06 | 待实施 | Gradle 测试入口与真机检查工具 |
 | O-07 | 待实施 | 可测试 Host 决策与事件序列 |
 | O-08 | 待实施 | 配置 Schema 与映射一致性 |

@@ -397,6 +397,9 @@ final class TrioState {
      * subscription leaves the corresponding slot at {@code -1}, and the caller
      * then falls back to a single row rather than drawing empty dots.
      */
+    // Runs in the hooked SystemUI UID, not the settings app. ROM permission failures
+    // are caught below and retain the native single-row fallback.
+    @android.annotation.SuppressLint("MissingPermission")
     private static void sampleSims(Context context) {
         if (context == null) {
             return;

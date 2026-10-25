@@ -40,6 +40,8 @@ final class WifiPresence {
         return live != null ? live.booleanValue() : iconVisible || cachedLevel >= 0;
     }
 
+    // Uses SystemUI's network permissions; rejected ROM calls are handled below.
+    @android.annotation.SuppressLint("MissingPermission")
     static synchronized void start(final Context context) {
         if (!watchdogStarted) {
             watchdogStarted = true;
@@ -110,6 +112,7 @@ final class WifiPresence {
     }
 
     @SuppressWarnings("deprecation")
+    @android.annotation.SuppressLint("MissingPermission") // Hooked SystemUI UID; RuntimeException fallback below.
     private static void refresh(Context context) {
         try {
             final WifiManager wifi = context.getSystemService(WifiManager.class);

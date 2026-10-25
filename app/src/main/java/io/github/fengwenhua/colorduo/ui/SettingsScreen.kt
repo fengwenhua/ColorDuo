@@ -88,6 +88,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -385,6 +386,7 @@ fun SettingsScreen(repository: SettingsRepository) {
     // copy runs first, and the setting is only written once it succeeded.
     var installingFont by remember { mutableStateOf(false) }
     val fontContext = LocalContext.current
+    val fontResources = LocalResources.current
 
     val fontPicker = rememberLauncherForActivityResult(
         // OpenDocument rather than GetContent: it hands back a document URI that
@@ -406,13 +408,13 @@ fun SettingsScreen(repository: SettingsRepository) {
                         FontInstaller.remove(previous)
                     }
                     update { it.setFontPath(result.path, result.remoteName, result.revision) }
-                    showMessage(fontContext.getString(R.string.font_applied, result.name))
+                    showMessage(fontResources.getString(R.string.font_applied, result.name))
                 }
                 FontInstaller.Result.NotAFont ->
-                    showMessage(fontContext.getString(R.string.font_not_a_font))
+                    showMessage(fontResources.getString(R.string.font_not_a_font))
                 is FontInstaller.Result.Failed -> {
                     android.util.Log.w("ColorDuo", "font install failed: " + result.detail)
-                    showMessage(fontContext.getString(R.string.font_failed))
+                    showMessage(fontResources.getString(R.string.font_failed))
                 }
             }
             installingFont = false
