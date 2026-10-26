@@ -99,8 +99,7 @@ final class ColorOsReadoutSource {
                     int voltage = battery.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0);
                     int current = manager == null ? Integer.MIN_VALUE : manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW);
                     boolean attached = battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0;
-                    float watts = current == Integer.MIN_VALUE || voltage <= 0 ? Float.NaN
-                            : Math.abs((long) current) * (voltage / 1000f) / 1_000_000f;
+                    float watts = ColorOsReadout.wattsOf(current, voltage);
                     result = new State(attached, watts, temperature == Integer.MIN_VALUE ? Integer.MIN_VALUE : Math.round(temperature / 10f));
                 }
             } catch (RuntimeException ignored) {}
