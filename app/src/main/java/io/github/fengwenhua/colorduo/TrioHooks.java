@@ -89,8 +89,6 @@ import io.github.libxposed.api.XposedModule;
 final class TrioHooks {
 
     private static final String TAG = "ColorDuo";
-    private static final Map<View, Boolean> KEYGUARD_ROWS = new WeakHashMap<>();
-    private static final Map<Object, List<String>> KEYGUARD_ADDED = new WeakHashMap<>();
     static final int LOG_INFO = 4;
     static final int LOG_WARN = 5;
     static final int LOG_ERROR = 6;
@@ -161,32 +159,8 @@ final class TrioHooks {
      * <p>The bolt is not here: it is not a status-bar icon slot but a child of
      * the battery view, handed back through {@link #BOLT_STYLE}.
      */
-    private static List<String> foldedSlots() {
-        final TrioAppearance a = TrioConfig.appearance();
-        if (!a.glyph) {
-            return Collections.emptyList();
-        }
-        final List<String> slots = new ArrayList<>(MANAGED_SLOTS.size());
-        if (a.ownsWifi()) {
-            // The island is the one state that hands Wi-Fi back while the module
-            // draws it: the battery is hidden, so the glyph cannot carry the
-            // arcs and the user asked for the native icon to take over.
-            if (!islandHideBattery()) {
-                slots.addAll(WIFI_SLOTS);
-            }
-        }
-        // The mobile slot is folded exactly while the module draws the signal
-        // itself: as the glyph's dots, or as the out-of-ring reading. Leaving it
-        // in place out of ring with the stacked switch off is what keeps MIUI's
-        // own icon on screen, which is the whole difference the switch makes.
-        // The island does not change this: what it changes is *where* the
-        // module draws the signal (out of ring, since the glyph is gone), not
-        // whether the user asked for it - so the fold condition is untouched and
-        // the reading takes over in syncOutSignal.
-        if (a.foldsMobile()) {
-            slots.addAll(MOBILE_SLOTS);
-        }
-        return slots;
+private static List<String> foldedSlots() {
+        return ICON_LEASE.foldedSlots();
     }
 
     /**
@@ -311,8 +285,15 @@ final class TrioHooks {
      * every layout - the zero-size {@code layout()} in {@link #settle} already
      * keeps the child undrawn.
      */
-    private static final Map<View, Boolean> COLLAPSED =
-            Collections.synchronizedMap(new WeakHashMap<View, Boolean>());
+    private static final HyperOsIconLease ICON_LEASE = new HyperOsIconLease(
+            TrioConfig::appearance, TrioHooks::islandHideBattery, WIFI_SLOTS, MOBILE_SLOTS,
+            TrioHooks::slotOf, TrioHooks::foldContainers,
+            () -> new HyperOsIconLease.MeterFields(sChargingViewField, sBatteryStyleField,
+                    sBatteryIconViewField, sHollowBatteryIconViewField, sPercentContainerField,
+                    sUpdateChargeAndTextField, BOLT_STYLE),
+            TrioHooks::debugLog, message -> log(sModule, message));
+    private static final Map<View, Boolean> KEYGUARD_ROWS = ICON_LEASE.keyguardRows;
+    private static final Map<View, Boolean> COLLAPSED = ICON_LEASE.collapsed;
 
     /** Last child dump per container, so a steady layout logs at most once. */
     private static final Map<Object, String> DIAG_SIG =
@@ -609,56 +590,12 @@ final class TrioHooks {
      * module is on it can only ever be hidden. It is shown again whenever the
      * native text is wanted, so switching the module off leaves MIUI in charge.
      */
-    private static void applyMeterText(List<View> meters) {
-        for (int i = 0; i < meters.size(); i++) {
-            final View meter = meters.get(i);
-            meter.post(new Runnable() {
-                @Override
-                public void run() {
-                    final TrioAppearance a = TrioConfig.appearance();
-                    final Object charging = Refl.get(sChargingViewField, meter);
-                    // The PR's repair, kept under main's predicate. Both sides ask
-                    // hidesNativeBolt(); the difference is only how the hand-back is
-                    // performed - a bare showIfHidden leaves the bolt dark whenever MIUI
-                    // has not happened to re-run its own style pass, because
-                    // updateChargeAndText only reveals the charging view while
-                    // mBatteryStyle is 1 or 2 and the module forces it to 0.
-                    if (!a.hidesNativeBolt()) {
-                        Refl.set(sBatteryStyleField, meter, Integer.valueOf(BOLT_STYLE));
-                        showIfHidden(charging);
-                        // Asking for the bolt is what performs MIUI's view swap: the
-                        // style-1 branch hides mBatteryIconView - the view the trio is
-                        // painted on - and shows the hollow outline. Put the pair back.
-                        showIfHidden(Refl.get(sBatteryIconViewField, meter));
-                        hide(Refl.get(sHollowBatteryIconViewField, meter));
-                    } else {
-                        hide(charging);
-                    }
-                    // The percentage text is ours to hide the whole time the
-                    // module is on, whichever sub-toggles are set.
-                    final Object percent = Refl.get(sPercentContainerField, meter);
-                    if (a.glyph && !a.handsBackPercentage()) {
-                        hide(percent);
-                    } else {
-                        showIfHidden(percent);
-                    }
-                    // Let MIUI re-derive the bolt from the battery state. It only
-                    // runs the text refresh on its own battery callbacks, and this
-                    // is a settings change, so without the call the hand-back
-                    // would wait for the next charge event.
-                    Refl.invoke(sUpdateChargeAndTextField, meter);
-                }
-            });
-        }
+private static void applyMeterText(List<View> meters) {
+        ICON_LEASE.applyMeterText(meters);
     }
 
-    private static void showIfHidden(Object view) {
-        if (view instanceof View) {
-            final View v = (View) view;
-            if (v.getVisibility() != View.VISIBLE) {
-                v.setVisibility(View.VISIBLE);
-            }
-        }
+private static void showIfHidden(Object view) {
+        HyperOsIconLease.showIfHidden(view);
     }
 
     /** Asks every known {@code MiuiBatteryMeterView} to re-apply its real style. */
@@ -2155,58 +2092,13 @@ final class TrioHooks {
      * the row attaches, and it skips exactly the slots on this list. Folding them
      * after the fact is what the log shows being undone.
      */
-    private static void blockIcons(Object bar) {
-        try {
-            final Object manager = Refl.get(Refl.field(bar.getClass(), "mTintedIconManager"), bar);
-            if (manager == null) {
-                log(sModule, "keyguard: no tinted icon manager");
-                return;
-            }
-            final List<String> wanted = new ArrayList<>();
-            final Object current = Refl.get(Refl.field(manager.getClass(), "mBlockList"), manager);
-            if (current instanceof List<?>) {
-                for (Object slot : (List<?>) current) if (slot instanceof String) wanted.add((String) slot);
-            }
-            synchronized (KEYGUARD_ADDED) {
-                final List<String> previous = KEYGUARD_ADDED.get(manager);
-                if (previous != null) wanted.removeAll(previous);
-                final List<String> added = new ArrayList<>();
-                for (String slot : foldedSlots()) if (!wanted.contains(slot)) {
-                    wanted.add(slot);
-                    added.add(slot);
-                }
-                KEYGUARD_ADDED.put(manager, added);
-            }
-            // IconManager.setBlockList(List) clears the list, fills it and calls
-            // refreshIconGroup in one go, and refreshIconGroup is what makes MIUI
-            // lay the row's icons out again without the named slots. Writing the
-            // list by hand and asking for the refresh separately does not work:
-            // both the list and the controller that would be asked are on
-            // IconManager, one level up from the manager the row holds.
-            final Method[] methods = manager.getClass().getMethods();
-            for (int i = 0; i < methods.length; i++) {
-                final Method m = methods[i];
-                if ("setBlockList".equals(m.getName()) && m.getParameterTypes().length == 1) {
-                    m.invoke(manager, wanted);
-                    if (debugLog()) {
-                        log(sModule, "keyguard block list set: " + wanted);
-                    }
-                    return;
-                }
-            }
-            log(sModule, "keyguard: setBlockList missing");
-        } catch (Throwable t) {
-            log(sModule, "keyguard block list failed: " + t);
-        }
+private static void blockIcons(Object bar) {
+        ICON_LEASE.blockIcons(bar);
     }
 
     /** Refresh the lockscreen's own suppression whenever component ownership changes. */
-    private static void syncKeyguardRows() {
-        synchronized (KEYGUARD_ROWS) {
-            for (View row : new ArrayList<>(KEYGUARD_ROWS.keySet())) {
-                row.post(() -> { blockIcons(row); foldContainers(row); });
-            }
-        }
+private static void syncKeyguardRows() {
+        ICON_LEASE.syncKeyguardRows();
     }
 
     /**
@@ -2268,34 +2160,8 @@ final class TrioHooks {
      * a GONE there changes nothing, and MIUI restores the state on its own
      * schedule, which is what kept putting the lock screen's signal icons back.
      */
-    private static void hideIcon(final View icon) {
-        try {
-            icon.post(new Runnable() {
-                @Override
-                public void run() {
-                    // Ownership can change between addHolder and this posted work.
-                    if (!foldedSlots().contains(slotOf(icon))) return;
-                    if (icon.getVisibility() == View.VISIBLE) markCollapsed(icon);
-                    try {
-                        if (icon.getWidth() != 0 || icon.getHeight() != 0) {
-                            icon.layout(0, 0, 0, 0);
-                        }
-                        icon.setVisibility(View.GONE);
-                    } catch (Throwable ignored) {
-                        // never let one icon abort the pass
-                    }
-                    try {
-                        final Method state = icon.getClass()
-                                .getMethod("setVisibleState", int.class, boolean.class);
-                        state.invoke(icon, Integer.valueOf(0), Boolean.TRUE);
-                    } catch (Throwable ignored) {
-                        // the old pipeline views have no such method
-                    }
-                }
-            });
-        } catch (Throwable ignored) {
-            // posting is best-effort; the fold path still runs on layout
-        }
+private static void hideIcon(final View icon) {
+        ICON_LEASE.hideIcon(icon);
     }
 
     /** Folds every icon container inside {@code view}. */
@@ -2597,10 +2463,8 @@ final class TrioHooks {
      * call is a no-op for the framework but would re-enter layout if MIUI keeps
      * restoring the child.
      */
-    private static boolean markCollapsed(View child) {
-        synchronized (COLLAPSED) {
-            return COLLAPSED.put(child, Boolean.TRUE) == null;
-        }
+private static boolean markCollapsed(View child) {
+        return ICON_LEASE.markCollapsed(child);
     }
 
     /**
@@ -2609,10 +2473,8 @@ final class TrioHooks {
      * the opposite direction. Without it, re-showing a child on every pass would
      * schedule a new layout each time MIUI hid it again.
      */
-    private static boolean unmarkCollapsed(View child) {
-        synchronized (COLLAPSED) {
-            return COLLAPSED.remove(child) != null;
-        }
+private static boolean unmarkCollapsed(View child) {
+        return ICON_LEASE.unmarkCollapsed(child);
     }
 
     /**
@@ -5068,10 +4930,8 @@ final class TrioHooks {
         return null;
     }
 
-    private static void hide(Object view) {
-        if (view instanceof View) {
-            ((View) view).setVisibility(View.GONE);
-        }
+private static void hide(Object view) {
+        HyperOsIconLease.hide(view);
     }
 
     /** Resources handle for resolving signal icon entry names. */

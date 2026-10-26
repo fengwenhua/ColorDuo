@@ -30,13 +30,18 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 历史 `RingSlotsTest` 的过期三分区、聚合信号及中部信号行预期已在新 `FreeRingTest` 中按当前规则迁移；
 原脚本仍保留，不能据此宣称原脚本本身已通过。
 状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
-Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前共 28+19 个 JUnit 测试方法，
+Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前共 28+28 个 JUnit 测试方法，
 每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
 
 `GlyphScaleTest` 将旧脚本的 17 项真实像素断言迁为 1 个 Gradle/JUnit 方法；
 `FreeRingTest` 的 6 个方法覆盖 624 项当前配置/渲染断言，其中 126 个合法组件/区域/尺寸帧进行像素隔离检查。
 整体缩放分别用忽略缩放、取消限幅和重复缩放故障对照验证；组件测试另验证反向优先级、丢失旧信号迁移、组件偏移三种故障可检出。
 历史脚本迁移状态及下一步边界见 [优化续作清单](validation/optimization-follow-up-2026-10-26.md)。
+
+`HyperOsIconLeaseTest` 的 9 个方法直接执行生产 lease 类，覆盖排队后换配置、只撤回模块增加的屏蔽项、
+多个 manager 隔离、灵动岛切换、两个移动 slot 别名、原生电池子视图恢复、延迟字段解析和 OEM 失败。
+17 项原交接断言在提取前后均通过。旧 ring-handoff 脚本的源码列表/fixture 已同步；
+macOS 没有 pwsh，本轮通过等价 Java 编译/执行核对工装，未声称执行过 PowerShell 引擎。
 
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。

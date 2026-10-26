@@ -20,7 +20,7 @@ tasks.named<JavaCompile>("compileTestJava") {
         include("Prefs.java", "ChargeLayout.java", "TrioSettings.java", "TrioAppearance.java",
             "TrioGeometry.java", "TrioZones.java", "TrioRenderer.java", "ConfigPacket.java",
             "RemoteFontKey.java", "FirstRunDefaults.java", "PreferencesSnapshot.java", "UpdateManifest.java",
-            "SettingsSchema.java")
+            "SettingsSchema.java", "HyperOsIconLease.java", "Refl.java")
     })
 }
 tasks.test {

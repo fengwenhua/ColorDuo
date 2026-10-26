@@ -32,7 +32,7 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | --- | --- | --- |
 | glyph-scale | 新增 GlyphScaleTest，17 项原像素断言，main 方法体保持一致 | 原 PS 源码结构检查保留，尚未删除旧脚本 |
 | ring-slots | 新增 FreeRingTest：6 个方法、624 项断言 | 原脚本保留；更新过期预期的依据及像素隔离修复见下文 |
-| ring-handoff | 待迁移 | 旧脚本用源码片段和特殊 View 替身；不能用模型替身冒充真实 lease |
+| ring-handoff | 新增 HyperOsIconLeaseTest：9 个方法直接执行生产类 | 17 项历史断言提取前后相同；View/OEM 模型不代表 HyperOS 固件实机 |
 | capsule / capsule-zones / drawing-zones | 待迁移 | 固定胶囊历史规则与当前自由布局有差异，需要区分历史与现行断言 |
 | glyph-drawable | 待迁移 | 三种宿主形态与恢复时序需保留 |
 | wifi-presence / battery-presence | 待迁移 | 源码注入工装需迁到生产纯逻辑边界或合适的隔离测试项目 |
@@ -58,3 +58,19 @@ JUnit 输出 17 项断言。仅在 `.local` 临时源码中注入三种故障，
 六组共 624 项断言，其中 126 个合法区域/组件/描边/字号组合各检查 occupant、非空像素、区域边界及电池弧重叠。
 完整 `:render-tests:test` 共 19 个方法全部通过。临时副本中将新增项改为追加、取消 MOBILE→SIM 1 迁移、
 将组件垂直偏移 12 单位，三种故障均被测试拒绝；没有把故障代码写入生产源文件。
+
+### 原生图标 lease 边界提取
+
+为迁移交接测试，将 TrioHooks 中的 9 个实现提到 HyperOsIconLease，保留原委托方法及 Hook 调用点。
+生产弱引用 map 仍由同一实例持有，KEYGUARD_ROWS/COLLAPSED 兼容入口与新类引用同一集合；
+meter 回调执行时才读取配置和解析后的字段，避免把排队前状态固定下来。
+TrioHooks 由 5123 行降至 4983 行，未变更 ColorOS 接管、绘制数学、网络采样、时钟或布局时机。
+
+直接 JUnit 验证 9 组事件，包括原 17 项交接契约及多个 manager、stacked_mobile 别名、字段延后解析、
+原生 setter/post 失败与一次性 acquire/release。
+另将修改前/修改后的真实方法分别交给更新后的历史 Java fixture，均输出 `PASS: 17 production handoff assertions`。
+旧脚本补新类编译依赖；旧 fixture 的聚合信号预期按现行 SIM 1 设置表达，旧 id 的迁移另由 FreeRingTest 验证。
+
+完整检查：28 个 app 方法、28 个 render 方法、Lint、release/debug 构建全部通过；正常 release 无 Observer。
+未安装到手机，没有更换签名、改配置或重载 SystemUI。尚无 HyperOS 第二台设备，桌面队列检查不计为固件实机验收。
+接下来的职责仍包括网络采样、时钟/性能读数和更完整的历史渲染工装迁移。

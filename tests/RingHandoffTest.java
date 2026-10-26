@@ -21,6 +21,7 @@ public final class RingHandoffTest {
     }
     public static void main(String[] args) {
         TrioSettings s = TrioSettings.defaults(); s.enabled = true;
+        s.showSim1 = true;
         s.ringZones = Prefs.decodeLayout("1||");
         TrioConfig.settings = s;
         View wifi = new View(); wifi.slot = "wifi";
@@ -70,7 +71,7 @@ public final class RingHandoffTest {
         // the same question in two switches, which is why it is gone.
         s.ringZones = Prefs.decodeLayout("||");
         ok(!HandoffHooks.foldedSlots().contains("mobile"), "an unplaced card does not fold the native slot");
-        s.ringZones = Prefs.decodeLayout("2||");
+        s.ringZones = Prefs.decodeLayout("7||");
         ok(HandoffHooks.foldedSlots().contains("mobile"), "placing the meter claims the native slot");
 
         Meter meter = new Meter();
@@ -97,6 +98,8 @@ public final class RingHandoffTest {
     }
     public static final class Meter extends View {
         public View charging = new View(), percent = new View();
+        public View battery = new View(), hollow = new View();
+        public int style;
         boolean nativePercent;
         public void refresh() {
             charging.setVisibility(TrioConfig.appearance().hidesNativeBolt() ? View.GONE : View.VISIBLE);
@@ -116,12 +119,19 @@ final class HandoffHooks {
     static final List<String> WIFI_SLOTS = Arrays.asList("wifi");
     static final List<String> MOBILE_SLOTS = Arrays.asList("mobile");
     static final List<String> MANAGED_SLOTS = Arrays.asList("wifi", "mobile");
-    static final Map<Object, List<String>> KEYGUARD_ADDED = new WeakHashMap<>();
-    static final Map<View, Boolean> KEYGUARD_ROWS = new WeakHashMap<>();
-    static final Map<View, Boolean> COLLAPSED = new WeakHashMap<>();
+    static final HyperOsIconLease ICON_LEASE = new HyperOsIconLease(TrioConfig::appearance,
+            HandoffHooks::islandHideBattery, WIFI_SLOTS, MOBILE_SLOTS, HandoffHooks::slotOf,
+            HandoffHooks::foldContainers, HandoffHooks::nativeFields, () -> false, message -> {});
+    static final Map<View, Boolean> KEYGUARD_ROWS = ICON_LEASE.keyguardRows;
+    static final Map<View, Boolean> COLLAPSED = ICON_LEASE.collapsed;
     static final Field sChargingViewField = Refl.field(RingHandoffTest.Meter.class, "charging");
     static final Field sPercentContainerField = Refl.field(RingHandoffTest.Meter.class, "percent");
     static final Method sUpdateChargeAndTextField = Refl.method(RingHandoffTest.Meter.class, "refresh");
+    static HyperOsIconLease.MeterFields nativeFields() {
+        return new HyperOsIconLease.MeterFields(sChargingViewField,
+                Refl.field(RingHandoffTest.Meter.class, "style"), Refl.field(RingHandoffTest.Meter.class, "battery"),
+                Refl.field(RingHandoffTest.Meter.class, "hollow"), sPercentContainerField, sUpdateChargeAndTextField, 1);
+    }
     static boolean islandHideBattery() { return island; }
     static String slotOf(View view) { return view.slot; }
     static void log(Object module, String text) {}
