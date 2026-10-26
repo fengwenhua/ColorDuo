@@ -29,6 +29,11 @@ public final class GlyphScaleTest {
     private static final int STYLE_RING = Prefs.STYLE_RING;
     private static final int STYLE_RECT = Prefs.STYLE_RECT;
 
+    @org.junit.Test public void declaredRangeContainsTheUnscaledDefault() {
+        org.junit.Assert.assertTrue(MAX_GLYPH > MIN_GLYPH);
+        org.junit.Assert.assertTrue(DEF_GLYPH >= MIN_GLYPH && DEF_GLYPH <= MAX_GLYPH);
+    }
+
     @org.junit.Test public void overallSizeReachesPixelsWithUniformClampedFit() {
         checks = 0;
         main(new String[0]);

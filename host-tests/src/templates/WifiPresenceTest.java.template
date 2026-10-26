@@ -1,0 +1,44 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package io.github.fengwenhua.colorduo;
+
+public class WifiPresenceTest {
+ @org.junit.Before public void reset() {
+  connected=null; TrioState.sWifiLevel=4; TrioState.present=true; TrioHooks.invalidations=0;
+ }
+ @org.junit.Test public void liveConnectivityWinsAndReconnectInvalidatesOnce() { main(new String[0]); }
+
+ static Boolean connected;
+ static class TrioState {
+  static int sWifiLevel=4; static boolean present=true;
+  static boolean setWifiPresent(boolean next){boolean changed=present!=next;present=next;return changed;}
+ }
+ static class TrioHooks {static int invalidations;static void invalidateHosts(){invalidations++;}}
+ @RESOLVE@
+ @PUBLISH@
+ public static void main(String[] args){
+  int count=0;
+  for(Boolean live:new Boolean[]{null,false,true})for(boolean icon:new boolean[]{false,true})for(int level:new int[]{-1,0,4}){
+   connected=live;boolean want=live==null?(icon||level>=0):live;
+   if(resolve(icon,level)!=want)throw new AssertionError("stale icon overrides live state");count++;
+  }
+  connected=false;if(resolve(true,4))throw new AssertionError("disabled wifi stale cache");
+  connected=true;if(!resolve(false,-1))throw new AssertionError("reconnected wifi");
+  connected=false;if(resolve(true,4))throw new AssertionError("disconnected again");
+  publish(false);
+  if(TrioState.sWifiLevel!=-1||TrioState.present||TrioHooks.invalidations!=1)throw new AssertionError("off must clear and repaint");
+  publish(false);
+  if(TrioHooks.invalidations!=1)throw new AssertionError("unchanged off must not repaint");
+  publish(true);
+  if(!TrioState.present||TrioHooks.invalidations!=2)throw new AssertionError("reconnect must repaint");
+  System.out.println("PASS: "+count+" live/icon/cache cases and 3 reconnect transitions");
+ }
+}

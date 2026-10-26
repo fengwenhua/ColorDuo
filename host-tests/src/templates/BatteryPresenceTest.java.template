@@ -1,0 +1,163 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package io.github.fengwenhua.colorduo;
+
+public class BatteryPresenceTest {
+ @org.junit.Before public void reset() {
+  checks=0; TrioState.sChargingAttached=false; TrioState.sChargePowerW=0f;
+  TrioState.sBatteryTempC=TrioState.TEMP_UNKNOWN; TrioHooks.invalidations=0;
+ }
+ @org.junit.Test public void originalPowerTemperatureAndPublicationCases() { main(new String[0]); }
+ @org.junit.Test public void chargingOnlyTemperatureFollowsAttachmentWithoutAnEmptyLine() {
+  TrioState.sBatteryTempC=31; TrioAppearance a=cfg(false,true); a.perfTempChargingOnly=true;
+  org.junit.Assert.assertEquals("", perfText(a));
+  TrioState.sChargingAttached=true; org.junit.Assert.assertEquals("31\u00B0C", perfText(a));
+  org.junit.Assert.assertEquals(1, perfLines(perfText(a)));
+  TrioState.sChargingAttached=false; a.perfTempChargingOnly=false;
+  org.junit.Assert.assertEquals("31\u00B0C", perfText(a));
+  TrioState.sBatteryTempC=TrioState.TEMP_UNKNOWN; org.junit.Assert.assertEquals("", perfText(a));
+ }
+
+ static class TrioState {
+  static final int TEMP_UNKNOWN = Integer.MIN_VALUE;
+  static final float POWER_UNKNOWN = Float.NaN;
+  static boolean sChargingAttached = false;
+  static float sChargePowerW = 0f;
+  static int sBatteryTempC = TEMP_UNKNOWN;
+ }
+ static class TrioHooks { static int invalidations; static void invalidateHosts(){ invalidations++; } }
+ static class TrioAppearance {
+  boolean perfPower; boolean perfTemp; boolean perfTempChargingOnly;
+  boolean perfAnywhere(){ return perfPower || perfTemp; }
+ }
+ static final char PERF_BREAK = '@PERF_BREAK@';
+
+ @WATTS@
+ @PUBLISH@
+ @POWER_TEXT@
+ @PERF_TEXT@
+ @PERF_LINES@
+
+ static TrioAppearance cfg(boolean power, boolean temp){
+  TrioAppearance a = new TrioAppearance(); a.perfPower = power; a.perfTemp = temp; return a;
+ }
+ static int checks;
+ static void eq(String what, Object got, Object want){
+  checks++;
+  if(!String.valueOf(got).equals(String.valueOf(want))){
+   throw new AssertionError(what + ": got <" + got + "> want <" + want + ">");
+  }
+ }
+
+ public static void main(String[] args){
+  // ---- wattsOf: the arithmetic, the sign, and the two ways of not knowing.
+  // The device's own observed numbers: 44000 uA at 4381 mV is 0.19 W.
+  eq("live charging current", Math.round(wattsOf(44000, 4381) * 100), 19L);
+  eq("typical fast charge", Math.round(wattsOf(2500000, 4400) * 10), 110L);
+  // The exact shape this phone reports WHILE CHARGING, measured on it:
+  // current_now = -204000 uA at 4008 mV with USB powered and status charging.
+  // The sign is not portable, so the magnitude is the reading; treating the
+  // minus as "discharging" is what pinned the status bar on 0.0W.
+  eq("charging answers negative here", Math.round(wattsOf(-204000, 4008) * 100), 82L);
+  eq("a negative current is the same watts as its magnitude",
+     wattsOf(-204000, 4008), wattsOf(204000, 4008));
+  eq("the 100 percent shape is no longer zero", Math.round(wattsOf(-164000, 4400) * 100), 72L);
+  eq("zero current is a real zero", wattsOf(0, 4400), 0f);
+  // NaN is never equal to itself, so the sentinel is probed with isNaN.
+  eq("unknown current", Float.isNaN(wattsOf(Integer.MIN_VALUE, 4400)), true);
+  eq("absent voltage", Float.isNaN(wattsOf(1000000, 0)), true);
+  eq("negative voltage", Float.isNaN(wattsOf(1000000, -1)), true);
+  // A real zero and the sentinel must be distinguishable, or the two readings
+  // below are the same string and the distinction is decorative.
+  eq("zero is not the sentinel", Float.isNaN(wattsOf(0, 4400)), false);
+
+  // ---- perfText: the segment rules.
+  eq("both off", perfText(cfg(false, false)), "");
+  eq("power on, nothing attached", perfText(cfg(true, false)), "");
+  // The documented promise: no charger drops the segment instead of a 0W.
+  TrioState.sChargingAttached = false; TrioState.sChargePowerW = 6.1f;
+  eq("attached false hides power", perfText(cfg(true, false)), "");
+  // Attached but the platform would not answer: the regression this test is
+  // for. Before the sentinel was honoured this rendered "0.0W".
+  TrioState.sChargingAttached = true; TrioState.sChargePowerW = TrioState.POWER_UNKNOWN;
+  eq("attached but unknown hides power", perfText(cfg(true, false)), "");
+  eq("attached but unknown, with temp", perfText(cfg(true, true)) , "");
+  // A genuine zero is still drawn: the charger has stopped pushing, and the
+  // reading must not blink out at recharge-full.
+  TrioState.sChargePowerW = 0f;
+  eq("attached at a real zero", perfText(cfg(true, false)), "0.0W");
+  TrioState.sChargePowerW = 6.1f;
+  eq("under ten keeps a decimal", perfText(cfg(true, false)), "6.1W");
+  TrioState.sChargePowerW = 18f;
+  eq("ten and up is whole", perfText(cfg(true, false)), "18W");
+  TrioState.sChargePowerW = 9.95f;
+  eq("rounds to ten", perfText(cfg(true, false)), "10W");
+  TrioState.sChargePowerW = 0.04f;
+  eq("tiny stays one decimal", perfText(cfg(true, false)), "0.0W");
+
+  // ---- perfText: the pairing, one reading per line.
+  TrioState.sChargePowerW = 6.1f; TrioState.sBatteryTempC = 31;
+  eq("both on", perfText(cfg(true, true)), "6.1W" + PERF_BREAK + "31" + "\u00B0C");
+  eq("both on is two lines", perfLines(perfText(cfg(true, true))), 2);
+  eq("temp only", perfText(cfg(false, true)), "31" + "\u00B0C");
+  eq("temp only is one line", perfLines(perfText(cfg(false, true))), 1);
+  eq("power only is one line", perfLines(perfText(cfg(true, false))), 1);
+  // No charger with both switches on: the temperature must not inherit a
+  // leading break and the view must stay one line tall.
+  TrioState.sChargingAttached = false;
+  eq("temp alone after power drops out", perfText(cfg(true, true)), "31" + "\u00B0C");
+  eq("and it is one line", perfLines(perfText(cfg(true, true))), 1);
+  // Unknown temperature must never be formatted as a number.
+  TrioState.sChargingAttached = true; TrioState.sBatteryTempC = TrioState.TEMP_UNKNOWN;
+  eq("unknown temp drops its segment", perfText(cfg(true, true)), "6.1W");
+  eq("power alone after temp drops out", perfLines(perfText(cfg(true, true))), 1);
+  eq("both unknown", perfText(cfg(false, true)), "");
+  eq("empty text is one line", perfLines(perfText(cfg(false, false))), 1);
+  // The separator's value is locked here rather than trusted: every two-line
+  // case above is built from it, so a change back to a space would silently turn
+  // them all into one-line cases.
+  eq("the two readings are separated by a line break", (int) PERF_BREAK, (int) '\n');
+  // The string must never open or close with a separator.
+  eq("no leading break", perfText(cfg(false, true)).startsWith("" + PERF_BREAK), false);
+  eq("no trailing break", perfText(cfg(false, true)).endsWith("" + PERF_BREAK), false);
+
+  // ---- publish: the change test, including the NaN trap.
+  // Seeded away from the first call so it is a change: the point of the first
+  // two checks is the de-duplication, not the initial state.
+  TrioState.sChargingAttached = true; TrioState.sChargePowerW = 5f;
+  TrioState.sBatteryTempC = 30; TrioHooks.invalidations = 0;
+  publish(false, 0f, TrioState.TEMP_UNKNOWN);
+  eq("first publish repaints", TrioHooks.invalidations, 1);
+  publish(false, 0f, TrioState.TEMP_UNKNOWN);
+  eq("an unchanged publish does not", TrioHooks.invalidations, 1);
+  publish(true, 6.1f, 31);
+  eq("a real change repaints", TrioHooks.invalidations, 2);
+  publish(true, 6.1f, 31);
+  eq("the same reading does not", TrioHooks.invalidations, 2);
+  publish(true, 6.2f, 31);
+  eq("watts moving repaints", TrioHooks.invalidations, 3);
+  publish(true, 6.2f, 32);
+  eq("temperature moving repaints", TrioHooks.invalidations, 4);
+  publish(false, 6.2f, 32);
+  eq("detaching repaints", TrioHooks.invalidations, 5);
+  // The NaN trap: NaN != NaN is true, so a plain comparison would call every
+  // frame a change and repaint the status bar forever on a device that cannot
+  // report power.
+  publish(true, TrioState.POWER_UNKNOWN, 31);
+  eq("unknown power repaints once", TrioHooks.invalidations, 6);
+  publish(true, TrioState.POWER_UNKNOWN, 31);
+  eq("and not again while it stays unknown", TrioHooks.invalidations, 6);
+  publish(true, TrioState.POWER_UNKNOWN, 31);
+  eq("still not", TrioHooks.invalidations, 6);
+
+  System.out.println("PASS: " + checks + " cases over wattsOf, perfText, perfLines and publish");
+ }
+}

@@ -30,12 +30,12 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 
 | 历史测试组 | 当前 Gradle 覆盖 | 尚存边界 |
 | --- | --- | --- |
-| glyph-scale | 新增 GlyphScaleTest，17 项原像素断言，main 方法体保持一致 | 原 PS 源码结构检查保留，尚未删除旧脚本 |
+| glyph-scale | GlyphScaleTest：17 项原像素断言及范围/default 契约 | 旧入口转发 Gradle；单次缩放/限幅以像素故障对照验证 |
 | ring-slots | 新增 FreeRingTest：6 个方法、624 项断言 | 原脚本保留；更新过期预期的依据及像素隔离修复见下文 |
 | ring-handoff | 新增 HyperOsIconLeaseTest：9 个方法直接执行生产类 | 17 项历史断言提取前后相同；View/OEM 模型不代表 HyperOS 固件实机 |
 | capsule / capsule-zones / drawing-zones | 待迁移 | 固定胶囊历史规则与当前自由布局有差异，需要区分历史与现行断言 |
 | glyph-drawable | 新增 host-tests：5 种形态保留 156 项断言，另加写槽失败回退 | Hook 方法体来自当前源码的隔离生成；不代替 Xposed/OEM/GPU 验证 |
-| wifi-presence / battery-presence | 待迁移 | 源码注入工装需迁到生产纯逻辑边界或合适的隔离测试项目 |
+| wifi-presence / battery-presence | host-tests：18 组 Wi-Fi 组合+3 次转换、44 项电池断言及温度过滤 | 当前实际方法体生成；不能代替真实 Android 服务/广播 |
 | os4-layout / perf-layout / issue-regressions | 待迁移 | 多套 Android 替身有冲突，需要隔离而非修改生产代码迁就替身 |
 
 GlyphScaleTest 的验证：`:render-tests:test --tests io.github.fengwenhua.colorduo.GlyphScaleTest` 成功，
@@ -85,3 +85,19 @@ TrioHooks 由 5123 行降至 4983 行，未变更 ColorOS 接管、绘制数学�
 临时源码中删除“仅释放自身 Drawable”的 guard，或将卸载移到原生 draw 之后，均被新的测试拒绝。
 所有 app/render/host 测试、Lint、release 构建通过；普通与正式发布 CI 都加入 host-tests。
 实际测试数为 28/28/6，未运行 PowerShell 引擎，未操作手机。
+
+### Presence 与旧启动器统一
+
+host-tests 继续读取当前真实 resolve/publish/功率/文本方法，保留 18 组 Wi-Fi 组合、3 次重连转换，
+以及原 44 项功率/温度/NaN 去重断言，另补温度“仅充电显示”过滤。
+旧 Java 夹具在本机独立编译运行，输出计数与 JUnit 相同；旧 battery fixture 缺少现行的温度过滤字段，
+补默认 false 后保持原运行时断言不变。两项源集成约束保留 Wi-Fi 特权 UID 接收/关机跳过查询及 TextView 两行设置。
+
+四个原 PS 入口改为 tests/gradle-test.ps1 的兼容启动器，移除重复的 Java 字符串与编译逻辑。
+Drawable 的 SourceDirectory 参数映射为 hostTestProductionSources，使用仅有三个原源文件的目录实跑通过。
+原 GlyphDrawable 三项源码约束进入 JUnit；GlyphScale 的字面实现约束以 17 项像素断言、范围/default 契约及三个故障对照覆盖。
+原生成断言未因删除旧生成器而丢失，未将已淘汰的实现拼写当作新的产品约束。
+
+临时取消 NaN-safe 去重、或忽略实时 Wi-Fi 状态后，测试分别因重复刷新/旧缓存覆盖实时状态失败。
+完整 app/render/host、Lint、release 门禁成功，当前方法/实例数为 28/29/14。
+PowerShell 文件保持 CRLF；未执行 pwsh，也未操作手机。
