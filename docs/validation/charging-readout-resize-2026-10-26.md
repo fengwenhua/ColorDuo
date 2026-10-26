@@ -2,7 +2,7 @@
 
 设备：Find N5（PKH110），ColorOS 16 / SystemUI 16.99.12。
 候选版本：1.1.5（10105）；源提交 `27d2dcb0e767b472aeed7e433db01beffbd92a89`。
-本轮只生成并安装同签名候选包，未创建公开 Release。
+真机验收阶段只生成并安装同签名候选包；验收通过后按用户授权公开发布，见文末。
 
 ## 故障依据与修复
 
@@ -46,3 +46,15 @@ APK SHA-256：`eda5a04f65796446598d04a3a48a0695747a09504e73ce48aa7bb732aa230dd1`
 本记录不把所有 NATIVE 日志等同于该故障，也不宣称对所有固件验证了任意时序的零回退。
 原始偏好、裁剪状态栏截图和模块限定日志仅保存在忽略目录 `.local/charging-power-device`。
 用户最后手动切为胶囊，未自动覆盖其新选择；测试前后没有修改网络或常亮设置。
+
+## 正式发布
+
+维护者确认圆环、胶囊验证通过后授权发布。正式发布沿用同一份 Actions 签名产物，源 tag 未移动，未重新构建 APK。
+发布说明与两个仓库 README 均明确关联 [issue #4：启用读数组后，充电会导致聚合失效](https://github.com/fengwenhua/ColorDuo/issues/4)，
+保留低于 1.1.0（不包含 1.1.0）须卸载重装的提示。主仓说明提交 `393b4c0` 的 CI 40316130162 成功。
+
+- [主仓 1.1.5](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.5)，Release ID 424175359。
+- [模块仓 1.1.5](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10105-1.1.5)，Release ID 424182546。
+
+两边均为公开稳定版、Latest；4×2 个公开附件重新下载后与候选文件摘要逐一一致，正文与当前维护的 1.1.5 发布说明一致。
+没有删除既有正式版历史，手机无需再次安装。
