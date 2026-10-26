@@ -273,11 +273,11 @@ public final class ConfigCodecProbe {
         external.setPerfPower(external.setPerfTemp(true));
         check(ColorOsReadoutSource.State.UNKNOWN.text(external).isEmpty(), "unknown readings never invent zero watts");
         ColorOsReadoutSource.State readings = new ColorOsReadoutSource.State(true, 0.7f, 30);
-        check(readings.text(external).equals("0.7W\n30\u00b0C"), "attached known readings form two lines");
+        check(readings.text(external).equals("0.7W\n30\u00b0C"), "known charging readings form two lines");
         ColorOsReadoutSource.State unplugged = new ColorOsReadoutSource.State(false, 0.7f, 30);
         check(unplugged.text(external).equals("30\u00b0C"), "unplugged power disappears while temperature remains");
         external.setPerfTempChargingOnly(true);
-        check(unplugged.text(external).isEmpty(), "temperature charging-only filter follows attachment");
+        check(unplugged.text(external).isEmpty(), "temperature charging-only filter follows actual charging");
         ColorOsOutsideLayout readoutStrip = ColorOsOutsideLayout.create(external, externalSource, 52, 240, 3.25f, false, readings);
         check(readoutStrip.description().contains("0.7W") && readoutStrip.description().contains("30\u00b0C"), "drawn readouts have accessibility text");
         ColorOsBatteryDrawable.preflight(85 + readoutStrip.reserve, 52, new ColorOsBatteryDrawable.Frame(67, Color.BLACK,

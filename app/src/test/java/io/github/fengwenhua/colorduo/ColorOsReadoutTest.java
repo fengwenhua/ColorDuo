@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 package io.github.fengwenhua.colorduo;
 
+import android.os.BatteryManager;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -46,5 +47,60 @@ public final class ColorOsReadoutTest {
     @Test public void hyperOsStillUsesMicroamps() {
         assertEquals(ColorOsReadout.wattsOf(-651, 4415), HyperOsReadout.wattsOf(-651000, 4415), 0.00001f);
         assertEquals(0.002874165f, HyperOsReadout.wattsOf(-651, 4415), 0.0000001f);
+    }
+
+    @Test public void chargingOnlyReadoutsDisappearAtFullAndReturnWhenChargingResumes() {
+        TrioSettings settings = TrioSettings.defaults();
+        settings.setPerfPower(true); settings.setPerfTemp(true); settings.setPerfTempChargingOnly(true);
+        // Keep the last current/temperature unchanged: a status transition alone must clear the strip.
+        ColorOsReadoutSource.State charging = new ColorOsReadoutSource.State(
+                ColorOsReadout.charging(BatteryManager.BATTERY_STATUS_CHARGING, 2), 0.9f, 34);
+        ColorOsReadoutSource.State full = new ColorOsReadoutSource.State(
+                ColorOsReadout.charging(BatteryManager.BATTERY_STATUS_FULL, 2), 0.9f, 34);
+        assertEquals("0.9W\n34\u00b0C", charging.text(settings));
+        assertFalse(charging.same(full));
+        assertEquals("", full.text(settings));
+        assertFalse(full.same(charging));
+        assertEquals("0.9W\n34\u00b0C", charging.text(settings));
+    }
+
+    @Test public void fullOrPausedStateKeepsTemperatureOnlyWhenTheFilterIsOff() {
+        TrioSettings settings = TrioSettings.defaults();
+        settings.setPerfPower(true); settings.setPerfTemp(true);
+        for (int status : new int[]{BatteryManager.BATTERY_STATUS_FULL, BatteryManager.BATTERY_STATUS_NOT_CHARGING,
+                BatteryManager.BATTERY_STATUS_DISCHARGING, BatteryManager.BATTERY_STATUS_UNKNOWN}) {
+            ColorOsReadoutSource.State stopped = new ColorOsReadoutSource.State(ColorOsReadout.charging(status, 2), 0.9f, 34);
+            settings.setPerfTempChargingOnly(true);
+            assertEquals("", stopped.text(settings));
+            settings.setPerfTempChargingOnly(false);
+            assertEquals("34\u00b0C", stopped.text(settings));
+        }
+    }
+
+    @Test public void acUsbAndWirelessRequireAnActualChargingStatus() {
+        for (int plugged : new int[]{1, 2, 4}) {
+            assertTrue(ColorOsReadout.charging(BatteryManager.BATTERY_STATUS_CHARGING, plugged));
+            assertFalse(ColorOsReadout.charging(BatteryManager.BATTERY_STATUS_FULL, plugged));
+        }
+        assertFalse(ColorOsReadout.charging(BatteryManager.BATTERY_STATUS_CHARGING, 0));
+    }
+
+    @Test public void repeatedStoppedSamplesDeduplicateButNewTemperatureStillRefreshes() {
+        ColorOsReadoutSource.State stopped = new ColorOsReadoutSource.State(false, Float.NaN, 34);
+        assertTrue(stopped.same(new ColorOsReadoutSource.State(false, Float.NaN, 34)));
+        assertFalse(stopped.same(new ColorOsReadoutSource.State(true, Float.NaN, 34)));
+        assertFalse(stopped.same(new ColorOsReadoutSource.State(false, Float.NaN, 33)));
+    }
+
+    @Test public void chargingOnlyPairWaitsForBothReadingsAndHonorsIndependentSwitches() {
+        TrioSettings settings = TrioSettings.defaults();
+        settings.setPerfPower(true); settings.setPerfTemp(true); settings.setPerfTempChargingOnly(true);
+        assertEquals("", new ColorOsReadoutSource.State(true, Float.NaN, 34).text(settings));
+        assertEquals("", new ColorOsReadoutSource.State(true, 0.9f, Integer.MIN_VALUE).text(settings));
+        assertEquals("0.9W\n34\u00b0C", new ColorOsReadoutSource.State(true, 0.9f, 34).text(settings));
+        settings.setPerfPower(false);
+        assertEquals("34\u00b0C", new ColorOsReadoutSource.State(true, Float.NaN, 34).text(settings));
+        settings.setPerfPower(true); settings.setPerfTemp(false);
+        assertEquals("0.9W", new ColorOsReadoutSource.State(true, 0.9f, Integer.MIN_VALUE).text(settings));
     }
 }

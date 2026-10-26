@@ -259,7 +259,7 @@ final class ColorOsBatteryAdapter {
                             if (font != null) out.println("    fontStatus=" + font.status());
                             if (readouts != null) {
                                 ColorOsReadoutSource.State readings = readouts.get();
-                                out.println("    readouts active=" + readouts.active() + " attached=" + readings.attached
+                                out.println("    readouts active=" + readouts.active() + " charging=" + readings.charging
                                         + " watts=" + readings.watts + " temperature=" + readings.temperature);
                             }
                             if (power != null) {

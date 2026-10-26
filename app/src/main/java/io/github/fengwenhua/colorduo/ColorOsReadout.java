@@ -1,9 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 package io.github.fengwenhua.colorduo;
 
+import android.os.BatteryManager;
+
 /** Battery-side power for the OPlus GKI battery supply used by this ColorOS adapter. */
 final class ColorOsReadout {
     private ColorOsReadout() {}
+
+    /** A connected cable is not enough: full, paused and unknown states are not charging. */
+    static boolean charging(int status, int plugged) {
+        return plugged != 0 && status == BatteryManager.BATTERY_STATUS_CHARGING;
+    }
 
     /**
      * OPlus exposes GAUGE_ITEM_CURR in milliamps through CURRENT_NOW, despite Android's

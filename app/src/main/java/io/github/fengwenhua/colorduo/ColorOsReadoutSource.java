@@ -14,20 +14,25 @@ import android.os.PowerManager;
 final class ColorOsReadoutSource {
     static final class State {
         static final State UNKNOWN = new State(false, Float.NaN, Integer.MIN_VALUE);
-        final boolean attached;
+        final boolean charging;
         final float watts;
         final int temperature;
-        State(boolean attached, float watts, int temperature) { this.attached = attached; this.watts = watts; this.temperature = temperature; }
+        State(boolean charging, float watts, int temperature) { this.charging = charging; this.watts = watts; this.temperature = temperature; }
         boolean same(State other) {
-            return other != null && attached == other.attached && Float.compare(watts, other.watts) == 0 && temperature == other.temperature;
+            return other != null && charging == other.charging && Float.compare(watts, other.watts) == 0 && temperature == other.temperature;
         }
         String text(TrioSettings settings) {
+            boolean powerReady = charging && Float.isFinite(watts) && watts >= 0;
+            boolean temperatureReady = temperature != Integer.MIN_VALUE;
+            // With both charging-only readouts enabled, publish the pair atomically.
+            if (settings.content.perfPower() && settings.content.perfTemp() && settings.content.perfTempChargingOnly()
+                    && (!powerReady || !temperatureReady)) return "";
             String power = "";
-            if (settings.content.perfPower() && attached && Float.isFinite(watts) && watts >= 0) {
+            if (settings.content.perfPower() && powerReady) {
                 int tenths = Math.round(watts * 10f);
                 power = tenths >= 100 ? tenths / 10 + "W" : tenths / 10 + "." + tenths % 10 + "W";
             }
-            String temp = settings.content.perfTemp() && temperature != Integer.MIN_VALUE && (!settings.content.perfTempChargingOnly() || attached)
+            String temp = settings.content.perfTemp() && temperatureReady && (!settings.content.perfTempChargingOnly() || charging)
                     ? temperature + "\u00b0C" : "";
             return power.isEmpty() ? temp : temp.isEmpty() ? power : power + "\n" + temp;
         }
@@ -97,10 +102,14 @@ final class ColorOsReadoutSource {
                 if (battery != null) {
                     int temperature = battery.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Integer.MIN_VALUE);
                     int voltage = battery.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0);
-                    int current = manager == null ? Integer.MIN_VALUE : manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW);
-                    boolean attached = battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0;
+                    boolean charging = ColorOsReadout.charging(
+                            battery.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN),
+                            battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0));
+                    // A full battery may retain its last nonzero current. Do not report it as charging power.
+                    int current = !charging || manager == null ? Integer.MIN_VALUE
+                            : manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW);
                     float watts = ColorOsReadout.wattsOf(current, voltage);
-                    result = new State(attached, watts, temperature == Integer.MIN_VALUE ? Integer.MIN_VALUE : Math.round(temperature / 10f));
+                    result = new State(charging, watts, temperature == Integer.MIN_VALUE ? Integer.MIN_VALUE : Math.round(temperature / 10f));
                 }
             } catch (RuntimeException ignored) {}
             State ready = result;
