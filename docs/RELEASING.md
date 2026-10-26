@@ -16,7 +16,7 @@ gh workflow run release.yml --ref main -f tag=v1.1.0 -f prune_old_releases=false
 ```
 
 四个附件为 APK、APK.sha256、release-manifest.json、release-manifest.sig。两仓必须上传同一组附件。
-同 tag 重试只接受一致的标题、说明和附件，不覆盖已发布的不同内容，不删除同名 APK 后重传。
+同 tag 重试只接受一致的标题、说明和附件（网页说明的 CRLF 统一为 LF 后比较），不覆盖已发布的不同内容，不删除同名 APK 后重传。
 
 上传报错后，先确认上一次任务已经结束，再用相同 tag 和同源 dist 重试。发布器会先查已发布版本，
 再分页查找该 tag 的已有草稿；有且只有一个匹配项时复用原 Release ID。

@@ -142,6 +142,17 @@ class ReleasePipelineTest(unittest.TestCase):
         self.assertEqual(4, len(api.calls))
         self.assertTrue(all(method == "GET" for _, method in api.calls))
 
+    def test_web_published_module_notes_allow_crlf_without_modifying_the_release(self):
+        notes = NOTES + "\n\nFixes https://github.com/fengwenhua/ColorDuo/issues/4\n"
+        api = API(draft=False)
+        api.current["tag_name"] = "10100-1.1.0"
+        api.current["body"] = notes.replace("\n", "\r\n")
+        api.current["assets"] = [{"name": f.name, "id": n + 1, "state": "uploaded"} for n, f in enumerate(FILES)]
+        with patch.object(Path, "read_text", return_value=notes):
+            release.publish(api, "Xposed-Modules-Repo/io.github.fengwenhua.colorduo", "10100-1.1.0", Path("dist"))
+        self.assertEqual(4, len(api.calls))
+        self.assertTrue(all(method == "GET" for _, method in api.calls))
+
     def test_unexpected_or_duplicate_assets_stop_before_uploading(self):
         for assets in [[{"name": "unverified.apk", "id": 5}],
                        [{"name": FILES[0].name, "id": 1}, {"name": FILES[0].name, "id": 5}]]:

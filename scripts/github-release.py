@@ -114,7 +114,7 @@ def publish(api, repo, tag, directory):
             "target_commitish": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
                 if repo == "fengwenhua/ColorDuo" else "main"})
     if (current["tag_name"] != tag or current["name"] != stamp["versionName"]
-            or current["body"] != notes or current["prerelease"]):
+            or (current["body"] or "").replace("\r\n", "\n") != notes or current["prerelease"]):
         raise RuntimeError("Existing release differs; refusing replacement")
     existing = {a["name"]: a for a in current["assets"]}
     if len(existing) != len(current["assets"]) or set(existing) - {file.name for file in files}:
