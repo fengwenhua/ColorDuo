@@ -253,8 +253,12 @@ public final class TrioZones {
             default:
                 // Full width: the level dots sit along the arc's own opening,
                 // which is the full width of the glyph at that height.
+                // The ink box is centred on B_CY, slightly below the SVG midpoint.
+                // At the maximum stroke its bottom reaches past BOX; keep that
+                // visible edge tappable without moving either internal seam.
                 return new float[][] { {
-                        0f, RING_CENTRE_BOTTOM, TrioGeometry.BOX, TrioGeometry.BOX } };
+                        0f, RING_CENTRE_BOTTOM, TrioGeometry.BOX,
+                        Math.max(TrioGeometry.BOX, TrioGeometry.INK_Y + TrioGeometry.INK_H) } };
         }
     }
 

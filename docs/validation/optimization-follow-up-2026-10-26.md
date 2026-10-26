@@ -185,3 +185,17 @@ post 队列及可见性/几何模型。21 项绑定读取当前 14 个 Hook 方�
 最小四文件替代源码目录实跑成功，旧 -SourceDirectory 映射到独立 stripTestProductionSources，
 不干扰 Drawable 的三文件替代源测试。os4-layout.ps1 成为第八个统一启动器，未运行 PowerShell 引擎。
 完整门禁 app/render/host 28/37/21、Lint/release 均通过；没有操作手机，没有把桌面模型计为 HyperOS 4 实机验收。
+
+### 本轮收尾：圆环预览底边点击范围
+
+drawing-zones 原 Java 夹具能编译，但在最大描边的闭合圆环中发现实际遗漏：
+底部墨迹约到 y=120.987，而命中区只到旧 SVG BOX=120。新增 RingHitBoundaryTest 的两项检查先复现失败：
+96 像素宿主的 (38,95) 有墨迹却无命中区域，实际 ink 底边也无法命中 BOTTOM。
+
+只将圆环 BOTTOM 的外边界扩到 max(BOX, INK_Y+INK_H)，保留内部切线和其余样式规则。
+18 个极值描边/布局/宿主比例帧逐像素检查均通过，ink 外仍拒绝点击；
+修复前后 18 帧的像素摘要相同，未改变绘制输出。
+
+按维护者最新要求，本轮完成此修复、提交并通过 CI 后发布 1.1.2，不继续展开后续优化。
+drawing-zones 全组、issue-regressions、配置模型分组、剩余宿主职责提取、golden 与键盘/焦点验收仍留在本清单，
+不将两项新增边界测试视为整组历史工装迁移完成。
