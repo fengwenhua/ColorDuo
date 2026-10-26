@@ -101,3 +101,15 @@ Drawable 的 SourceDirectory 参数映射为 hostTestProductionSources，使用�
 临时取消 NaN-safe 去重、或忽略实时 Wi-Fi 状态后，测试分别因重复刷新/旧缓存覆盖实时状态失败。
 完整 app/render/host、Lint、release 门禁成功，当前方法/实例数为 28/29/14。
 PowerShell 文件保持 CRLF；未执行 pwsh，也未操作手机。
+
+### HyperOS 读数纯边界
+
+提取 HyperOsReadout：电流/电压换算、两行文本、温度充电过滤、功率舍入和行数。
+原 wattsOf/perfText/perfLines/powerText 委托入口保留，PERF_BREAK 保留原字符；
+perfText 调用前仍检查 appearance 可用性，格式化只接收当前标量，不持有 Context、View 或全局状态。
+未修改 ColorOS 的环外横排读数和真实功率采样。
+
+旧实现与新纯类对比 640 组固定输入（四种开关/接电维度、八种功率、五种温度），文本及行数均一致。
+现有 44 项电池读数断言、温度过滤新增检查和全部门禁均通过；app 28、render 29、host 14，
+Lint、debug/release 构建成功。perf-layout 旧入口补充了新类编译依赖。
+TrioHooks 当前为 4937 行；仍需进一步处理读数 View/尺寸、时钟与网络采样职责。

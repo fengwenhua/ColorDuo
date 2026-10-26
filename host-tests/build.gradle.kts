@@ -75,6 +75,7 @@ tasks.named<JavaCompile>("compileTestJava") {
     source(fileTree(glyphSources) {
         include("GlyphDrawable.java", "Refl.java")
     })
+    source(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/HyperOsReadout.java"))
 }
 tasks.test {
     maxHeapSize = "128m"

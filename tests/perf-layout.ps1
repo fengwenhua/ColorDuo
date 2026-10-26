@@ -252,6 +252,8 @@ function Emit([string]$rel,[string]$text){
     [System.IO.File]::WriteAllText($p,$text,(New-Object System.Text.UTF8Encoding($false)))
 }
 
+Emit 'io/github/fengwenhua/colorduo/HyperOsReadout.java' ([IO.File]::ReadAllText((Join-Path $trio 'HyperOsReadout.java')))
+
 # The typeface already has a real desktop stand-in and is copied, so a family
 # the renderer asks for resolves the same way it does in the preview workbenches.
 # It comes from tests\shims (tracked) and not from the preview workbench's copy

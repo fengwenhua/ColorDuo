@@ -181,11 +181,8 @@ final class BatteryPresence {
      * claims a reading the platform never gave. A real zero stays a real zero:
      * no current flowing is 0 W and is drawn as such.
      */
-    private static float wattsOf(int currentMicroAmps, int voltageMilliVolts) {
-        if (currentMicroAmps == Integer.MIN_VALUE || voltageMilliVolts <= 0) {
-            return TrioState.POWER_UNKNOWN;
-        }
-        return Math.abs(currentMicroAmps) * (voltageMilliVolts / 1000f) / 1000000f;
+private static float wattsOf(int currentMicroAmps, int voltageMilliVolts) {
+        return HyperOsReadout.wattsOf(currentMicroAmps, voltageMilliVolts);
     }
 
     private static void publish(boolean attached, float watts, int temperature) {

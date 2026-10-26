@@ -3732,58 +3732,16 @@ private static boolean unmarkCollapsed(View child) {
      * whatever the charger is doing. That asymmetry is why the two are separate
      * switches over one view.
      */
-    private static String perfText(TrioAppearance a) {
-        if (!a.perfAnywhere()) {
-            return "";
-        }
-        final StringBuilder text = new StringBuilder();
-        // Both halves of the question, because they say different things: a
-        // source being attached is not the same as the platform being able to
-        // say how much power is going in. Attached with no reading - the shape
-        // this had before the sentinel existed - renders a confident "0.0W"
-        // that is not a reading at all.
-        //
-        // isNaN and not != POWER_UNKNOWN: the sentinel is a NaN, so != answers
-        // true for it and the gate would let the very value it exists to
-        // exclude through. Math.round then turns that NaN into 0 and the row
-        // reads "0.0W" - the exact claim this test is here to prevent.
-        if (a.perfPower && TrioState.sChargingAttached
-                && !Float.isNaN(TrioState.sChargePowerW)) {
-            text.append(powerText(TrioState.sChargePowerW));
-        }
-        // The charging-only switch is a filter on the temperature, not a second reading:
-        // with it on, both halves of the strip appear and disappear together, which is the
-        // block a user watching a charge asked for (issue 45). Off - the default and the
-        // behaviour this shipped with - the temperature stands on its own, because it is a
-        // property of the battery rather than of the charger.
-        final boolean tempWanted = a.perfTemp
-                && TrioState.sBatteryTempC != TrioState.TEMP_UNKNOWN
-                && (!a.perfTempChargingOnly || TrioState.sChargingAttached);
-        if (tempWanted) {
-            if (text.length() > 0) {
-                // One reading per line: the pair stacks instead of running on,
-                // so the view never grows a second reading wide. With only the
-                // temperature on there is nothing to break from and the view
-                // stays one line tall.
-                text.append(PERF_BREAK);
-            }
-            // Written as a unicode escape so this file stays ASCII: the degree
-            // sign is the one character in the readout that no keyboard on the
-            // build machine is guaranteed to produce.
-            text.append(TrioState.sBatteryTempC).append("\u00B0C");
-        }
-        return text.toString();
+private static String perfText(TrioAppearance a) {
+        if (!a.perfAnywhere()) return "";
+        return HyperOsReadout.text(a.perfPower, a.perfTemp, a.perfTempChargingOnly,
+                TrioState.sChargingAttached, TrioState.sChargePowerW, TrioState.sBatteryTempC,
+                TrioState.TEMP_UNKNOWN, PERF_BREAK);
     }
 
     /** How many readings the string holds, one per {@link #PERF_BREAK}. */
-    private static int perfLines(String text) {
-        int lines = 1;
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == PERF_BREAK) {
-                lines++;
-            }
-        }
-        return lines;
+private static int perfLines(String text) {
+        return HyperOsReadout.lines(text, PERF_BREAK);
     }
 
     /**
@@ -3982,12 +3940,8 @@ private static boolean unmarkCollapsed(View child) {
      * characters wide at most, and a comma decimal separator would be wider than
      * the tenths are informative.
      */
-    private static String powerText(float watts) {
-        final int tenths = Math.round(watts * 10f);
-        if (tenths >= 100) {
-            return (tenths / 10) + "W";
-        }
-        return (tenths / 10) + "." + (tenths % 10) + "W";
+private static String powerText(float watts) {
+        return HyperOsReadout.powerText(watts);
     }
 
     /** The performance readout already mounted on {@code container}, or null. */
