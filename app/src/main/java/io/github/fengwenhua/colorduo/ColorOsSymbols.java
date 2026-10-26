@@ -57,7 +57,7 @@ final class ColorOsSymbols {
     static final String NAME_GET_PHONE_ID = "getPhoneId";
     static final String NAME_GET_POWER_LEVEL = "getPowerLevel";
     static final String NAME_GET_RES = "getRes";
-    static final String NAME_GET_SHOW_EXCLAMATION_MARK = "getShowExclamationMark";
+    static final String NAME_GET_INET_CONDITION = "getInetCondition";
     static final String NAME_GET_SLOT = "getSlot";
     static final String NAME_GET_TINT_COLOR = "getTintColor";
     static final String NAME_GET_VISIBLE_STATE = "getVisibleState";
@@ -116,7 +116,7 @@ final class ColorOsSymbols {
         result.put(NETWORK_SYMBOLS, probe(loader,
                 new Spec(WIFI_PREFIX + CLASS_MODEL_WIFI_NETWORK_MODEL_ACTIVE, new String[]{NAME_GET_LEVEL}, new String[]{NAME_IS_VALIDATED}),
                 new Spec(CLASS_MODEL_SIGNAL_ICON_MODEL_CELLULAR, new String[]{NAME_GET_LEVEL, NAME_GET_NUMBER_OF_LEVELS,
-                        NAME_GET_CARRIER_NETWORK_CHANGE, NAME_GET_SHOW_EXCLAMATION_MARK, NAME_GET_PHONE_ID},
+                        NAME_GET_CARRIER_NETWORK_CHANGE, NAME_GET_INET_CONDITION, NAME_GET_PHONE_ID},
                         new String[]{NAME_IS_IN_SERVICE, NAME_IS_SOFT_SIM_CARD}),
                 new Spec(CLASS_PHONE_STATUS_ICON_CONTAINER, new String[]{NAME_ADD_IGNORED_SLOT, NAME_REMOVE_IGNORED_SLOT}, new String[]{NAME_M_IGNORED_SLOTS})));
         result.put(POWER_SYMBOLS, probe(loader,

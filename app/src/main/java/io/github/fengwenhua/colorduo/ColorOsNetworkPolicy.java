@@ -7,9 +7,11 @@ final class ColorOsNetworkPolicy {
         return active && validated && visible && level >= 1 && level <= 4 ? level : -1;
     }
 
-    static int mobile(boolean cellular, boolean inService, boolean exclamation,
+    static int mobile(boolean cellular, boolean inService, int inetCondition,
                       boolean changing, boolean softSim, int level, int levels) {
-        return cellular && inService && !exclamation && !changing && !softSim
+        // OPlus renders Cellular with inetCondition, not AOSP's showExclamationMark.
+        // The latter also becomes true when data is deliberately disabled on working Wi-Fi.
+        return cellular && inService && inetCondition == 1 && !changing && !softSim
                 && levels == 5 && level >= 0 && level <= 4 ? level : -1;
     }
 }

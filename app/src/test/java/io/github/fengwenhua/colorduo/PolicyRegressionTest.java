@@ -11,6 +11,27 @@ public final class PolicyRegressionTest {
     @Test public void warningPreservation() { ColorOsNetworkPolicyTest.main(new String[0]); }
     @Test public void exactTypeLabels() { ColorOsTypeLabelsTest.main(new String[0]); }
 
+    @Test public void disablingMobileDataOnWifiKeepsTheSignalUntilTheOplusWarningChanges() {
+        // Captured ROM derivation: OPlus copies the AOSP Cellular model but derives
+        // inetCondition from defaultConnections. Disabling data changes the inherited
+        // showExclamationMark to true while native inetCondition stays 1 on Wi-Fi.
+        String[] states = {"wifi+data", "wifi, data off", "wifi lost, data off",
+                "wifi restored, data off", "wifi+data restored"};
+        int[] nativeConditions = {1, 1, 0, 1, 1};
+        int[] expected = {3, 3, -1, 3, 3};
+        for (int i = 0; i < states.length; i++) {
+            assertEquals(states[i], expected[i],
+                    ColorOsNetworkPolicy.mobile(true, true, nativeConditions[i], false, false, 3, 5));
+        }
+    }
+
+    @Test public void normalOplusSignalLevelsRemainRepresentableAndUnknownWarningsStayNative() {
+        for (int level = 0; level <= 4; level++)
+            assertEquals(level, ColorOsNetworkPolicy.mobile(true, true, 1, false, false, level, 5));
+        for (int unknown : new int[] {-1, 0, 2, Integer.MAX_VALUE})
+            assertEquals(-1, ColorOsNetworkPolicy.mobile(true, true, unknown, false, false, 4, 5));
+    }
+
     @Test public void chargingPopupConsumesOneFreshPlugEvent() {
         ColorOsPlugBridge bridge = new ColorOsPlugBridge();
         bridge.power(true, 0);

@@ -273,6 +273,7 @@ final class ColorOsBatteryAdapter {
                                 out.println("    chargeIcon owned=" + host.chargeIcon.owned()
                                         + " nativeVisibility=" + host.chargeIcon.nativeVisibility());
                             for (String line : ledger.snapshot()) out.println("    adapter/" + line);
+                            if (network != null) network.dump(out);
                         } catch (Throwable ignored) {}
                         return result;
                     });

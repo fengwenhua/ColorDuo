@@ -34,7 +34,7 @@ final class ColorOsNetworkAdapter {
     private final Map<ImageView, String> activityResources = new WeakHashMap<>();
     private final Map<View, Lease> leases = new WeakHashMap<>();
     private Class<?> activeType, visibleType, cellularType, containerType;
-    private Method wifiLevel, cellLevel, cellLevels, cellChanging, cellExclamation, cellSlot;
+    private Method wifiLevel, cellLevel, cellLevels, cellChanging, cellInetCondition, cellSlot;
     private Method iconVisible, iconBlocked, visibleState, slot, addIgnored, removeIgnored;
     private Field validated, inService, softSim, ignoredSlots;
     private boolean capable;
@@ -145,7 +145,7 @@ final class ColorOsNetworkAdapter {
             cellLevel = cellularType.getMethod(ColorOsSymbols.NAME_GET_LEVEL);
             cellLevels = cellularType.getMethod(ColorOsSymbols.NAME_GET_NUMBER_OF_LEVELS);
             cellChanging = cellularType.getMethod(ColorOsSymbols.NAME_GET_CARRIER_NETWORK_CHANGE);
-            cellExclamation = cellularType.getMethod(ColorOsSymbols.NAME_GET_SHOW_EXCLAMATION_MARK);
+            cellInetCondition = cellularType.getMethod(ColorOsSymbols.NAME_GET_INET_CONDITION);
             cellSlot = cellularType.getMethod(ColorOsSymbols.NAME_GET_PHONE_ID);
             inService = cellularType.getDeclaredField(ColorOsSymbols.NAME_IS_IN_SERVICE);
             softSim = cellularType.getDeclaredField(ColorOsSymbols.NAME_IS_SOFT_SIM_CARD);
@@ -205,13 +205,16 @@ final class ColorOsNetworkAdapter {
                 }
                 Object model = chain.getArg(1);
                 boolean cell = cellularType.isInstance(model);
+                int inetCondition = cell ? ((Number) cellInetCondition.invoke(model)).intValue() : -1;
                 int next = cell ? ColorOsNetworkPolicy.mobile(true, inService.getBoolean(model),
-                        (Boolean) cellExclamation.invoke(model), (Boolean) cellChanging.invoke(model),
+                        inetCondition, (Boolean) cellChanging.invoke(model),
                         softSim.getBoolean(model), ((Number) cellLevel.invoke(model)).intValue(),
                         ((Number) cellLevels.invoke(model)).intValue()) : -1;
                 int nextSlot = cell ? ((Number) cellSlot.invoke(model)).intValue() : -1;
                 if (row.level != next || row.slot != nextSlot) {
                     row.level = next; row.slot = nextSlot; requestRefresh();
+                    log("mobile/" + Integer.toHexString(System.identityHashCode(image)),
+                            "slot=" + nextSlot + " inetCondition=" + inetCondition + " acceptedLevel=" + next);
                 }
             }, ImageView.class, type(ColorOsSymbols.CLASS_MODEL_SIGNAL_ICON_MODEL));
             capable = valid;
@@ -594,6 +597,10 @@ final class ColorOsNetworkAdapter {
     }
 
     private boolean debugLog;
+
+    void dump(java.io.PrintWriter out) {
+        for (String line : ledger.snapshot()) out.println("    network/" + line);
+    }
 
     private void log(String key, String message) {
         try {
