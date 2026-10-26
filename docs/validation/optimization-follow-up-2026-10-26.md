@@ -31,7 +31,7 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | 历史测试组 | 当前 Gradle 覆盖 | 尚存边界 |
 | --- | --- | --- |
 | glyph-scale | 新增 GlyphScaleTest，17 项原像素断言，main 方法体保持一致 | 原 PS 源码结构检查保留，尚未删除旧脚本 |
-| ring-slots | 待迁移 | 旧三分区/全部组件可放中部等预期需要与当前规则核对 |
+| ring-slots | 新增 FreeRingTest：6 个方法、624 项断言 | 原脚本保留；更新过期预期的依据及像素隔离修复见下文 |
 | ring-handoff | 待迁移 | 旧脚本用源码片段和特殊 View 替身；不能用模型替身冒充真实 lease |
 | capsule / capsule-zones / drawing-zones | 待迁移 | 固定胶囊历史规则与当前自由布局有差异，需要区分历史与现行断言 |
 | glyph-drawable | 待迁移 | 三种宿主形态与恢复时序需保留 |
@@ -41,3 +41,20 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 GlyphScaleTest 的验证：`:render-tests:test --tests io.github.fengwenhua.colorduo.GlyphScaleTest` 成功，
 JUnit 输出 17 项断言。仅在 `.local` 临时源码中注入三种故障，忽略缩放、取消限幅、重复缩放均触发像素/边界断言失败；
 生产源码未改动。测试直接编译真实生产 Renderer/Appearance/Geometry，替身只在桌面测试项目中存在。
+
+### ring-slots 迁移说明
+
+新 FreeRingTest 保留空模型、编解码/迁移/传输、编辑、候选优先级、共享外观所有权和像素六组契约。
+按当前代码与已有 UI 规则修正以下历史预期，未修改生产源码：
+
+- 布局的规范输出是四格 `|||`，短输入 `||` 继续兼容；五格输入的多余部分忽略。
+- 旧聚合 MOBILE（2）迁为 SIM 1（7），同格去重保留优先级。
+- 圆环只绘制上、中、下三带；左格是胶囊专用，不计入圆环像素帧。
+- 信号行不能放圆环中部：增加拒绝放置/菜单排除检查，保留合法区域的绘制检查。
+  已退役聚合 MOBILE 仍验证旧布局/直接模型读取，菜单不再提供该项。
+- 组件像素参照改为真实 `drawBattery` 的同一帧背景。旧方法清空 parts 会关闭动态底部开口，
+  从而把电池弧变化误当作组件越界；新参照保持所有缺口参数一致。
+
+六组共 624 项断言，其中 126 个合法区域/组件/描边/字号组合各检查 occupant、非空像素、区域边界及电池弧重叠。
+完整 `:render-tests:test` 共 19 个方法全部通过。临时副本中将新增项改为追加、取消 MOBILE→SIM 1 迁移、
+将组件垂直偏移 12 单位，三种故障均被测试拒绝；没有把故障代码写入生产源文件。

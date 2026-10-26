@@ -27,13 +27,15 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 只保存模块自有状态与断言计数，报告权限 0600 且不覆盖已存在报告。新签名首次迁移不能使用覆盖安装参数。
 
 `tests/*.ps1` 保留为上游历史回归工装，不删除旧断言，也不把它们算成已由 Gradle 全量覆盖。
-历史 `RingSlotsTest` 的三分区空布局字符串预期落后于当前四分区编码，尚不计入通过集合。
+历史 `RingSlotsTest` 的过期三分区、聚合信号及中部信号行预期已在新 `FreeRingTest` 中按当前规则迁移；
+原脚本仍保留，不能据此宣称原脚本本身已通过。
 状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
-Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前共 27+12 个 JUnit 测试方法，
+Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前共 28+19 个 JUnit 测试方法，
 每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
 
-后续 `HostDecision` 暂停充电回归增加 1 个 app 方法；`GlyphScaleTest` 将旧脚本的 17 项真实像素断言
-迁为 1 个 Gradle/JUnit 方法，目前为 28+13 个方法。整体缩放分别用忽略缩放、取消限幅和重复缩放故障对照验证可检出。
+`GlyphScaleTest` 将旧脚本的 17 项真实像素断言迁为 1 个 Gradle/JUnit 方法；
+`FreeRingTest` 的 6 个方法覆盖 624 项当前配置/渲染断言，其中 126 个合法组件/区域/尺寸帧进行像素隔离检查。
+整体缩放分别用忽略缩放、取消限幅和重复缩放故障对照验证；组件测试另验证反向优先级、丢失旧信号迁移、组件偏移三种故障可检出。
 历史脚本迁移状态及下一步边界见 [优化续作清单](validation/optimization-follow-up-2026-10-26.md)。
 
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
