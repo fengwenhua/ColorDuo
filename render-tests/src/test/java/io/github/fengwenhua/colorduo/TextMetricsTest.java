@@ -19,8 +19,11 @@ public final class TextMetricsTest {
                     float base = paint.measureText(text);
                     for (float scale : new float[]{.5f, .9f, 1.3f}) {
                         paint.setTextSize(48.3f * scale);
+                        // Desktop font engines retain small subpixel differences.
+                        // Allow 1/8 px for the whole three-character run, far below
+                        // the 1.5+ px error caught with the old integer advances.
                         assertEquals(text + "/" + tracking + "/" + scale,
-                                base * scale, paint.measureText(text), .001f);
+                                base * scale, paint.measureText(text), .125f);
                     }
                 }
             }
