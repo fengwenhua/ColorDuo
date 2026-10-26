@@ -1,0 +1,49 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package io.github.fengwenhua.colorduo;
+
+import java.util.ArrayList;
+import java.util.List;
+import android.view.View;
+import android.graphics.Canvas;
+
+final class XposedInterface {
+ interface Hooker { Object intercept(Chain chain) throws Throwable; }
+ interface Chain { Object proceed(); Object getThisObject(); Object getArg(int index); }
+}
+
+/** Records what the drawable logs, so the one-shot notes can be asserted. */
+final class TrioHooks {
+
+    static final int LOG_INFO = 4;
+    static final int LOG_WARN = 5;
+    static final int LOG_ERROR = 6;
+
+    static final List<String> LOGGED = new ArrayList<String>();
+
+    private TrioHooks() { }
+
+    static void log(int priority, String msg) { LOGGED.add(priority + ":" + msg); }
+    static boolean island;
+    static boolean islandHideBattery(){return island;}
+    static TrioState stateFor(View host){return null;}
+    static TrioState registerHost(View host){return new TrioState();}
+    static void recolourOutRing(TrioState s,int ink){}
+    static Object draw(View host, Canvas canvas) throws Throwable {
+        return new XposedInterface.Hooker() {
+            /* PRODUCTION_DRAW_HOOK */
+        }.intercept(new XposedInterface.Chain(){
+            public Object proceed(){host.nativeDraw(canvas);return null;}
+            public Object getThisObject(){return host;}
+            public Object getArg(int index){return canvas;}
+        });
+    }
+}

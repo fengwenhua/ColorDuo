@@ -27,3 +27,4 @@ dependencyResolutionManagement {
 rootProject.name = "ColorDuo"
 include(":app")
 include(":render-tests")
+include(":host-tests")

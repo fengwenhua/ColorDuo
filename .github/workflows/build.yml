@@ -111,7 +111,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_*.py'
 
       - name: Android Lint gate
-        run: ./gradlew --no-daemon :app:testReleaseUnitTest :render-tests:test :app:lintRelease
+        run: ./gradlew --no-daemon :app:testReleaseUnitTest :render-tests:test :host-tests:test :app:lintRelease
 
       - name: Build release APK
         run: |

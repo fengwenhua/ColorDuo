@@ -49,7 +49,7 @@ jobs:
       - name: Test, lint and build unsigned release
         run: |
           python3 -m unittest discover -s tests -p 'test_*.py'
-          ./gradlew --no-daemon :app:testReleaseUnitTest :render-tests:test :app:lintRelease :app:assembleRelease
+          ./gradlew --no-daemon :app:testReleaseUnitTest :render-tests:test :host-tests:test :app:lintRelease :app:assembleRelease
       - name: Verify production packaging
         run: python3 scripts/check-observer.py app/build/outputs/apk/release/app-release-unsigned.apk --expect absent
       - name: Exercise release signature verification without production keys

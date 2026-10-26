@@ -3,7 +3,7 @@
 普通提交执行：
 
 ```sh
-./gradlew :app:testReleaseUnitTest :render-tests:test :app:lintRelease :app:assembleRelease
+./gradlew :app:testReleaseUnitTest :render-tests:test :host-tests:test :app:lintRelease :app:assembleRelease
 python3 scripts/check-observer.py app/build/outputs/apk/release/app-release-unsigned.apk --expect absent
 ```
 
@@ -42,6 +42,11 @@ Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。�
 多个 manager 隔离、灵动岛切换、两个移动 slot 别名、原生电池子视图恢复、延迟字段解析和 OEM 失败。
 17 项原交接断言在提取前后均通过。旧 ring-handoff 脚本的源码列表/fixture 已同步；
 macOS 没有 pwsh，本轮通过等价 Java 编译/执行核对工装，未声称执行过 PowerShell 引擎。
+
+`host-tests` 将 Drawable 宿主协议与渲染像素替身隔离。5 个参数化实例保留历史 156 项断言，
+另一个方法验证字段写入失败的直绘回退。直接编译生产 GlyphDrawable/Refl，生成当前实际 Hook 方法体的测试夹具；
+标记/边界改变即失败，不自动换用其他源码位置。普通 CI 和发版 CI 均已加入 `:host-tests:test`。
+目前统计为 app 28、render 28、host 6 个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
 
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。

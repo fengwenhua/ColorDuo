@@ -24,6 +24,7 @@
 /build/
 /app/build/
 /render-tests/build/
+/host-tests/build/
 /dist/
 /.gradle/
 /.kotlin/

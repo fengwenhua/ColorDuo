@@ -34,7 +34,7 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | ring-slots | 新增 FreeRingTest：6 个方法、624 项断言 | 原脚本保留；更新过期预期的依据及像素隔离修复见下文 |
 | ring-handoff | 新增 HyperOsIconLeaseTest：9 个方法直接执行生产类 | 17 项历史断言提取前后相同；View/OEM 模型不代表 HyperOS 固件实机 |
 | capsule / capsule-zones / drawing-zones | 待迁移 | 固定胶囊历史规则与当前自由布局有差异，需要区分历史与现行断言 |
-| glyph-drawable | 待迁移 | 三种宿主形态与恢复时序需保留 |
+| glyph-drawable | 新增 host-tests：5 种形态保留 156 项断言，另加写槽失败回退 | Hook 方法体来自当前源码的隔离生成；不代替 Xposed/OEM/GPU 验证 |
 | wifi-presence / battery-presence | 待迁移 | 源码注入工装需迁到生产纯逻辑边界或合适的隔离测试项目 |
 | os4-layout / perf-layout / issue-regressions | 待迁移 | 多套 Android 替身有冲突，需要隔离而非修改生产代码迁就替身 |
 
@@ -74,3 +74,14 @@ TrioHooks 由 5123 行降至 4983 行，未变更 ColorOS 接管、绘制数学�
 完整检查：28 个 app 方法、28 个 render 方法、Lint、release/debug 构建全部通过；正常 release 无 Observer。
 未安装到手机，没有更换签名、改配置或重载 SystemUI。尚无 HyperOS 第二台设备，桌面队列检查不计为固件实机验收。
 接下来的职责仍包括网络采样、时钟/性能读数和更完整的历史渲染工装迁移。
+
+### Drawable 宿主测试迁移
+
+新增独立 host-tests 项目，测试替身与 render-tests 隔离。生产 GlyphDrawable/Refl 原样编译；
+绘制 Hook 的当前方法体由唯一标记/明确边界生成进测试夹具，保留原调用顺序验证。
+五种原宿主形态分别通过 34/34/31/31/26 项断言；新增字段类型不兼容的写入失败回退。
+
+同时将旧 PS 的原 Java 测试体逐形态独立编译运行，五个输出计数与新 JUnit 一致。
+临时源码中删除“仅释放自身 Drawable”的 guard，或将卸载移到原生 draw 之后，均被新的测试拒绝。
+所有 app/render/host 测试、Lint、release 构建通过；普通与正式发布 CI 都加入 host-tests。
+实际测试数为 28/28/6，未运行 PowerShell 引擎，未操作手机。
