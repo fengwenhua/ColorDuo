@@ -16,7 +16,15 @@
 
 **升级必读：低于 1.1.0 的旧版本（不包含 1.1.0）必须先卸载，再安装新版。卸载会清除配置，请提前记录布局；安装后在 LSPosed 重新启用 ColorDuo、勾选系统界面并重载。**
 
-**1.1.0 新签名正式版可直接覆盖升级至 1.1.1，配置保留，无需卸载。** 旧测试签名的调试包因签名不同仍需卸载重装。
+**1.1.0 及以上新签名正式版可直接覆盖升级至 1.1.6，配置保留，无需卸载。** 旧测试签名的调试包因签名不同仍需卸载重装。
+
+1.1.6 继续修复[源码仓 issue #4](https://github.com/fengwenhua/ColorDuo/issues/4) 反馈的充电功率显示为 0：修正 ColorOS / OPlus 电池电流的单位换算，功率继续随实时电流更新。已在 Find N5 / ColorOS 16 验证圆环和胶囊显示。
+
+1.1.5 修复启用充电功率后，插电或读数宽度变化导致圆环／胶囊回退原生图标的问题，见[源码仓 issue #4](https://github.com/fengwenhua/ColorDuo/issues/4)。已在 Find N5 / ColorOS 16 验证圆环、胶囊的 USB 拔插及内外屏折叠切换。
+
+1.1.4 修复 Wi-Fi 与移动数据同时关闭时，圆环／胶囊仍显示 5G 等网络类型的问题；重新开启移动数据后自动恢复制式显示。
+
+1.1.3 修复 Wi-Fi 开启、移动数据关闭时原生移动信号重新出现在圆环／胶囊左侧的问题，见[源码仓 issue #3](https://github.com/fengwenhua/ColorDuo/issues/3)。
 
 1. 从[模块仓 Releases](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases) 或
    [ColorDuo Releases](https://github.com/fengwenhua/ColorDuo/releases) 下载 APK。
@@ -38,7 +46,7 @@
 ## 致谢与许可证
 
 原项目作者 **yixing233** 及 HyperDuo 贡献者；设置界面使用 Compose 与 Miuix。
-修改日期：2026-10-26。沿用 [GPL-3.0](https://github.com/fengwenhua/ColorDuo/blob/main/LICENSE)，
+修改日期：2026-10-27。沿用 [GPL-3.0](https://github.com/fengwenhua/ColorDuo/blob/main/LICENSE)，
 保留上游版权及免责声明，修改版同协议公开源码。
 
 Copyright (C) 2026 yixing233 与 HyperDuo 贡献者。

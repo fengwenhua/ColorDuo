@@ -3,7 +3,7 @@
 面向 **ColorOS 16** 的 LSPosed 状态栏模块，把 **Wi-Fi、移动信号和电量** 融合为圆环或胶囊图标。
 
 本项目基于 [yixing233/HyperDuo](https://github.com/yixing233/HyperDuo) 修改，保留原项目的
-渲染与设置界面，并增加 ColorOS 系统界面适配。ColorDuo 由 fengwenhua 维护，修改日期：2026-10-26。
+渲染与设置界面，并增加 ColorOS 系统界面适配。ColorDuo 由 fengwenhua 维护，修改日期：2026-10-27。
 
 ## 实测设备
 
@@ -48,7 +48,9 @@
 
 **升级必读：低于 1.1.0 的旧版本（不包含 1.1.0）必须先卸载再安装新版。卸载会清除自定义配置，请提前记录布局；安装后在 LSPosed 重新启用 ColorDuo、勾选系统界面并重载。**
 
-**1.1.0 及以上新签名正式版可直接覆盖升级至 1.1.5，保留配置，无需卸载。** 旧测试签名的调试包仍因签名不同而需要卸载重装。
+**1.1.0 及以上新签名正式版可直接覆盖升级至 1.1.6，保留配置，无需卸载。** 旧测试签名的调试包仍因签名不同而需要卸载重装。
+
+1.1.6 继续修复[源码仓 issue #4](https://github.com/fengwenhua/ColorDuo/issues/4) 反馈的充电功率显示为 0：修正 ColorOS / OPlus 电池电流单位换算，功率随实时电流更新，保留温度显示和 HyperOS 的原有换算。已在 Find N5 验证圆环和胶囊显示。
 
 1.1.5 修复开启充电功率后，插电或读数尺寸变化导致圆环／胶囊回退原生图标的问题，见[源码仓 issue #4](https://github.com/fengwenhua/ColorDuo/issues/4)。已在 Find N5 验证拔插与折叠切换。
 
