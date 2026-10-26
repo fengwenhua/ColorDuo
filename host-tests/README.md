@@ -31,3 +31,14 @@ Wi-Fi 与电池读数夹具同样从当前生产源码读取 resolve/publish/功
 
 该参数只替换 GlyphDrawable、Refl 与绘制 Hook 来源，不替换 Presence 的正常生产源码。
 没有 pwsh 的环境直接运行 Gradle；本轮未把 PowerShell 引擎记为实跑验证。
+
+性能读数的 Paint/View 合同使用独立 readoutTest 源集及 JVM：
+
+```sh
+./gradlew :host-tests:readoutTest
+```
+
+普通 `:host-tests:test` 依赖此任务，CI 不需要额外命令。原 perf-layout 的 76 项尺寸/行距/预留宽度断言和
+4 组集成约束已迁入；42 个当前方法/常量绑定从生产源码读取，要求唯一匹配，不使用历史拷贝。
+FontMetrics 的 ascent 按 Android 负值约定，Typeface 使用共享桌面实现；这套替身与 Drawable fixture 隔离。
+两个测试报告目录分别是 build/test-results/test 与 build/test-results/readoutTest。

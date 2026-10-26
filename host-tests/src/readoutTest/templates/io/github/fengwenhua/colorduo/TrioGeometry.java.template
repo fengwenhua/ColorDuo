@@ -1,0 +1,31 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package io.github.fengwenhua.colorduo;
+
+/** The four ink boxes the fit is measured against, read from the real source. */
+final class TrioGeometry {
+    static final float INK_W = @inkW@f;
+    static final float INK_H = @inkH@f;
+    static final float RECT_INK_W = @rectInkW@f;
+    static final float RECT_INK_H = @rectInkH@f;
+    static final float CAP_LEFT = @capLeft@f;
+    static final float CAP_RIGHT = @capRight@f;
+    static final float CAP_TOP = @capTop@f;
+    static final float CAP_BOTTOM = @capBottom@f;
+    static final float CAP_STROKE_RATIO = @capStrokeRatio@f;
+
+    @capInkDerivation@
+    static final float CAP_BAND_H = @capBandH@f;
+    static final float CAP_INK_TOP = @capInkTop@;
+    static final float CAP_INK_BOTTOM = @capInkBottom@;
+    // The drawn width. The stub never lengthens the capsule, so this is the reference one.
+    static float capRight() { return CAP_RIGHT; }
+}

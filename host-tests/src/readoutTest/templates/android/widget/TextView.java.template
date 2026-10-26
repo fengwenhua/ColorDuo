@@ -1,0 +1,38 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package android.widget;
+import android.view.View;
+
+import android.graphics.Paint;
+
+/**
+ * The two things the readout needs from a text view: its paint, and a line
+ * spacing multiplier that reads back exactly what was written.
+ *
+ * <p>Android stores the multiplier verbatim and returns it unchanged from
+ * getLineSpacingMultiplier(), so the real one round-trips bit for bit. Storing
+ * it here the same way is what makes the fixpoint case below meaningful: the
+ * re-sync test compares the stored value against a freshly computed one, and if
+ * that comparison could never settle the status bar would post a layout on every
+ * pass. A stub that returned a rounded or rewritten number would hide exactly
+ * that hazard.
+ */
+public class TextView extends View {
+
+    private final Paint paint = new Paint();
+    private float spacingMultiplier = 1f;
+
+    public Paint getPaint() { return paint; }
+
+    public void setLineSpacing(float add, float mult) { spacingMultiplier = mult; }
+
+    public float getLineSpacingMultiplier() { return spacingMultiplier; }
+}

@@ -82,3 +82,54 @@ tasks.test {
     systemProperty("colorduo.productionSources", rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo").absolutePath)
     systemProperty("colorduo.glyphSources", glyphSources.absolutePath)
 }
+
+// Performance layout uses different Paint/View contracts, isolated from native-slot fixtures.
+val readout = sourceSets.create("readoutTest")
+configurations.named(readout.implementationConfigurationName) { extendsFrom(configurations.testImplementation.get()) }
+configurations.named(readout.runtimeOnlyConfigurationName) { extendsFrom(configurations.testRuntimeOnly.get()) }
+val readoutTemplates = layout.projectDirectory.dir("src/readoutTest/templates")
+val readoutGenerated = layout.buildDirectory.dir("generated/readout-fixtures")
+val generateReadoutFixtures = tasks.register("generateReadoutFixtures") {
+    val production = rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo")
+    val files = mapOf("hooks" to "TrioHooks.java", "rend" to "TrioRenderer.java", "geom" to "TrioGeometry.java",
+        "appear" to "TrioAppearance.java", "prefs" to "Prefs.java")
+    inputs.files(files.values.map { production.resolve(it) })
+    inputs.dir(readoutTemplates)
+    outputs.dir(readoutGenerated)
+    doLast {
+        val values = readoutTemplates.file("bindings.tsv").asFile.readLines().filter { it.isNotBlank() && !it.startsWith("#") }
+            .associate { line ->
+                val fields = line.split('\t', limit = 4)
+                require(fields.size == 4) { "Malformed readout fixture binding" }
+                val (name, alias, group, pattern) = fields
+                val matches = Regex(pattern).findAll(production.resolve(files.getValue(alias)).readText()).toList()
+                require(matches.size == 1) { "Readout source binding must be unique: $name" }
+                name to matches.single().groupValues[group.toInt()]
+            }
+        readoutTemplates.asFile.walkTopDown().filter { it.isFile && it.name.endsWith(".java.template") }.forEach { template ->
+            var text = template.readText()
+            values.forEach { (name, value) -> text = text.replace("@$name@", value) }
+            require(!Regex("@[A-Za-z][A-Za-z0-9]*@").containsMatchIn(text)) { "Unresolved readout marker in ${template.name}" }
+            val target = readoutGenerated.get().asFile.resolve(template.relativeTo(readoutTemplates.asFile).path.removeSuffix(".template"))
+            target.parentFile.mkdirs(); target.writeText(text)
+        }
+    }
+}
+readout.java.srcDir(readoutGenerated)
+tasks.named<JavaCompile>(readout.compileJavaTaskName) {
+    dependsOn(generateReadoutFixtures)
+    options.encoding = "UTF-8"
+    source(rootProject.file("tests/shims/android/graphics/Typeface.java"),
+        rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/HyperOsReadout.java"))
+}
+val readoutTest = tasks.register<Test>("readoutTest") {
+    description = "Run isolated performance sizing and reservation regressions"
+    group = "verification"
+    testClassesDirs = readout.output.classesDirs
+    classpath = readout.runtimeClasspath
+    dependsOn(tasks.named(readout.classesTaskName))
+    maxHeapSize = "128m"
+    systemProperty("java.awt.headless", "true")
+    systemProperty("colorduo.productionSources", rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo").absolutePath)
+}
+tasks.named("test") { dependsOn(readoutTest) }

@@ -1,0 +1,116 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package android.graphics;
+
+import java.awt.Font;
+
+/** Desktop paint whose font metrics follow Android's sign convention. */
+public class Paint {
+
+    public static class FontMetrics {
+        public float ascent;
+        public float descent;
+    }
+
+    private float textSize = 12f;
+    private String family = "SansSerif";
+    private int typefaceStyle = Font.PLAIN;
+    private boolean fakeBold = false;
+
+    public void setTextSize(float s) { textSize = s; }
+
+    public float getTextSize() { return textSize; }
+
+    public void setTypeface(Typeface t) {
+        if (t != null) {
+            family = t.family();
+            typefaceStyle = t.style();
+        }
+    }
+
+    /**
+     * Synthetic emboldening. The stub keeps the flag so a caller that sets it can
+     * be seen to have done so, but leaves the metrics alone: every case in this
+     * harness runs without a custom font loaded, where the real renderer never
+     * emboldens anything. Making AWT retype the font here would perturb the line
+     * heights the cases below measure, and none of them is about the font feature.
+     */
+    public void setFakeBoldText(boolean bold) { fakeBold = bold; }
+
+    public boolean isFakeBoldText() { return fakeBold; }
+
+    public Font font() {
+        return new Font(family, typefaceStyle, (int) REFERENCE);
+    }
+
+    public FontMetrics getFontMetrics() {
+        // Measured once at REFERENCE and scaled, because AWT rounds a font to
+        // whole points: at 36.9 and 37 it reports the same metrics, while
+        // Android's are exactly linear in the text size. The size fit divides
+        // a line height taken at the base size into a size taken at another, so
+        // a stub that quantises makes the identity look broken when it is not.
+        java.awt.Canvas probe = new java.awt.Canvas();
+        java.awt.FontMetrics fm = probe.getFontMetrics(font());
+        final float scale = textSize / REFERENCE;
+        FontMetrics out = new FontMetrics();
+        // Negated on purpose: Android reports the ascent as the negative
+        // distance from the baseline, so a line is descent - ascent.
+        out.ascent = -fm.getAscent() * scale;
+        out.descent = fm.getDescent() * scale;
+        return out;
+    }
+
+    /**
+     * Summed per character, the way the desktop shims do it, and scaled from
+     * REFERENCE for the same reason the metrics are.
+     *
+     * <p>Note for the digit cases below: on this face every digit is exactly
+     * 556/1000 wide (measured), so replacing a digit with the widest digit is a
+     * no-op here and could not be observed through it. The checks that the
+     * substitution really happens therefore use a face whose digits differ,
+     * which is what a real status-bar face does; this one stays faithful to AWT
+     * so the line height and spacing cases keep measuring real metrics.
+     */
+    public float measureText(String text) {
+        if (text == null || text.length() == 0) {
+            return 0f;
+        }
+        java.awt.Canvas probe = new java.awt.Canvas();
+        java.awt.FontMetrics fm = probe.getFontMetrics(font());
+        float total = 0f;
+        for (int i = 0; i < text.length(); i++) {
+            final char c = text.charAt(i);
+            if (digitWidths != null && c >= '0' && c <= '9') {
+                total += digitWidths[c - '0'];
+            } else {
+                total += fm.charWidth(c);
+            }
+        }
+        return total * (textSize / REFERENCE);
+    }
+
+    private float[] digitWidths;
+
+    /**
+     * Test hook: per-digit widths at REFERENCE, or null to measure the real
+     * face. The wide-awake status-bar faces draw their digits at different
+     * widths - the device log shows "0.0W" at 102px and "6.1W" at 92px, same
+     * character count - and that difference is the whole reason the reserve
+     * used to step sideways. AWT's SansSerif gives all ten digits the same 556,
+     * so the substitution perfWidth makes is unobservable through it; setting a
+     * table here is what lets the cases below see it. Left null everywhere else
+     * so the line-height and spacing cases still measure real metrics.
+     */
+    public void setDigitWidths(float[] widths) { digitWidths = widths; }
+
+    /** Font size the metrics are measured at, before scaling to textSize. */
+    private static final float REFERENCE = 1000f;
+}

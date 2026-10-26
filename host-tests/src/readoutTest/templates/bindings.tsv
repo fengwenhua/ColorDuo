@@ -1,0 +1,43 @@
+# name	source alias	capture group	production regex
+capBandH	geom	1	static final float CAP_BAND_H = ([0-9.]+)f;
+capBottom	geom	1	static final float CAP_BOTTOM = ([0-9.]+)f;
+capInkBottom	geom	1	static final float CAP_INK_BOTTOM = ([^;]+);
+capInkDerivation	geom	0	(?s)static final float CAP_INK_X =.*?CAP_INK_H =[^;]*;
+capInkTop	geom	1	static final float CAP_INK_TOP = ([^;]+);
+capLeft	geom	1	static final float CAP_LEFT = ([0-9.]+)f;
+capRight	geom	1	static final float CAP_RIGHT = ([0-9.]+)f;
+capStrokeRatio	geom	1	static final float CAP_STROKE_RATIO = ([0-9.]+)f;
+capTop	geom	1	static final float CAP_TOP = ([0-9.]+)f;
+clamp	prefs	0	(?s)static int clamp\(int value, int min, int max\) \{.*?\n    \}
+defPerfWeight	prefs	1	static final int DEF_PERF_WEIGHT = ([0-9]+);
+glyphFit	appear	0	(?s)public float glyphFit\(\) \{.*?\n    \}
+inkH	geom	1	static final float INK_H = ([0-9.]+)f;
+inkScale1	rend	0	(?s)static float inkScale\(int w, int h\) \{.*?\n    \}
+inkScale2	rend	0	(?s)static float inkScale\(int w, int h, boolean rect\) \{.*?\n    \}
+inkScale3	rend	0	(?s)static float inkScale\(int w, int h, float inkW, float inkH\) \{.*?\n    \}
+inkScale4	rend	0	(?s)static float inkScale\(int w, int h, int style\) \{.*?\n    \}
+inkW	geom	1	static final float INK_W = ([0-9.]+)f;
+maxGlyphScale	prefs	1	static final int MAX_GLYPH_SCALE = ([0-9]+);
+maxPerfScale	prefs	1	static final int MAX_PERF_SCALE = ([0-9]+);
+maxPerfWeight	prefs	1	static final int MAX_PERF_WEIGHT = ([0-9]+);
+maxRingStroke	prefs	1	MAX_RING_STROKE = ([0-9.]+)
+minGlyphScale	prefs	1	static final int MIN_GLYPH_SCALE = ([0-9]+);
+minPerfScale	prefs	1	static final int MIN_PERF_SCALE = ([0-9]+);
+minPerfWeight	prefs	1	static final int MIN_PERF_WEIGHT = ([0-9]+);
+minSize	hooks	1	static final float PERF_MIN_SIZE_RATIO = ([0-9.]+)f;
+minSpace	hooks	1	static final float PERF_MIN_LINE_SPACING = ([0-9.]+)f;
+outTypeSizePx	hooks	0	(?s)private static float outTypeSizePx\(View container\) \{.*?\n    \}
+perfBreak	hooks	1	static final char PERF_BREAK = '(.+?)';
+perfFit	appear	0	(?s)public float perfFit\(\) \{.*?\n    \}
+perfLineHeight	hooks	0	(?s)private static float perfLineHeight\(float size, int weight\) \{.*?\n    \}
+perfLineSpacing	hooks	0	(?s)private static float perfLineSpacing\(TextView view, String text,\s*\n\s*View container\) \{.*?\n    \}
+perfLines	hooks	0	(?s)private static int perfLines\(String text\) \{.*?\n    \}
+perfTextSize	hooks	0	(?s)private static float perfTextSize\(String text, View container, View host\) \{.*?\n    \}
+perfTypeWeight	appear	0	(?s)public int perfTypeWeight\(\) \{.*?\n    \}
+perfWidth	hooks	0	(?s)private static int perfWidth\(PerfLabel perf, String text\) \{.*?\n    \}
+rectInkH	geom	1	static final float RECT_INK_H = ([0-9.]+)f;
+rectInkW	geom	1	static final float RECT_INK_W = ([0-9.]+)f;
+styleCapsule	prefs	1	static final int STYLE_CAPSULE = (\d+);
+styleRect	prefs	1	static final int STYLE_RECT = (\d+);
+styleRing	prefs	1	static final int STYLE_RING = (\d+);
+typefaceFor	rend	0	(?s)static Typeface typefaceFor\(int weight\) \{.*?\n    \}

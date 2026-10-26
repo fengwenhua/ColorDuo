@@ -36,7 +36,8 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | capsule / capsule-zones / drawing-zones | 待迁移 | 固定胶囊历史规则与当前自由布局有差异，需要区分历史与现行断言 |
 | glyph-drawable | 新增 host-tests：5 种形态保留 156 项断言，另加写槽失败回退 | Hook 方法体来自当前源码的隔离生成；不代替 Xposed/OEM/GPU 验证 |
 | wifi-presence / battery-presence | host-tests：18 组 Wi-Fi 组合+3 次转换、44 项电池断言及温度过滤 | 当前实际方法体生成；不能代替真实 Android 服务/广播 |
-| os4-layout / perf-layout / issue-regressions | 待迁移 | 多套 Android 替身有冲突，需要隔离而非修改生产代码迁就替身 |
+| perf-layout | 独立 readoutTest：76 项原断言、4 组集成约束，旧入口转发 | Paint/View 替身与主宿主测试隔离；不代表 Android 字体/OEM 测量 |
+| os4-layout / issue-regressions | 待迁移 | 多套 Android 替身有冲突，需要隔离而非修改生产代码迁就替身 |
 
 GlyphScaleTest 的验证：`:render-tests:test --tests io.github.fengwenhua.colorduo.GlyphScaleTest` 成功，
 JUnit 输出 17 项断言。仅在 `.local` 临时源码中注入三种故障，忽略缩放、取消限幅、重复缩放均触发像素/边界断言失败；
@@ -113,3 +114,16 @@ perfText 调用前仍检查 appearance 可用性，格式化只接收当前标�
 现有 44 项电池读数断言、温度过滤新增检查和全部门禁均通过；app 28、render 29、host 14，
 Lint、debug/release 构建成功。perf-layout 旧入口补充了新类编译依赖。
 TrioHooks 当前为 4937 行；仍需进一步处理读数 View/尺寸、时钟与网络采样职责。
+
+### 读数布局工装迁移
+
+新增 host-tests 的 readoutTest 源集及 Test 任务，与 Drawable/Presence 的替身和类路径隔离，
+host-tests:test 自动依赖它。42 项当前方法/常量绑定以 TSV 声明，要求生产来源唯一匹配。
+实际读取原 perfTextSize/perfLineSpacing/perfWidth/行高、字体与 inkScale 方法体，未复制另一套尺寸算法。
+TextView 替身名称对齐 android.widget；绘制参数与原 Java 工装相同，原 76 项断言保持通过。
+原字重/字体重同步、共享 strip 宽度与释放、行距写入等约束分为 4 个 JUnit 方法。
+
+旧 Java 工装独立编译/执行先通过 76 项，新 Gradle 输出计数相同。
+临时忽略读数尺寸、按当前数字测量预留宽度、将多行宽度求和三种故障均被拒绝。
+perf-layout.ps1 改为统一启动器，底层两项 --tests 参数和全部项目门禁实跑通过。
+当前为 app 28、render 29、host 19（普通14+隔离读数5），Lint/release 成功；没有操作手机或宣称 Android 字体实测。

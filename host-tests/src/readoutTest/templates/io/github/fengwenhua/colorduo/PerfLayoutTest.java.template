@@ -1,0 +1,450 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package io.github.fengwenhua.colorduo;
+
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.widget.TextView;
+import android.view.View;
+
+public class PerfLayoutTest {
+    @org.junit.Test public void realSizingAndStableReservation() { checks = 0; main(new String[0]); }
+
+    static final float PERF_MIN_SIZE_RATIO = @minSize@f;
+    static final float PERF_MIN_LINE_SPACING = @minSpace@f;
+    static final char PERF_BREAK = '@perfBreak@';
+    private static final Paint PERF_PROBE = new Paint();
+
+    @perfLines@
+
+    @perfLineHeight@
+
+    @perfTextSize@
+
+    @perfLineSpacing@
+
+    @perfWidth@
+
+    @outTypeSizePx@
+
+    /** Stands in for TrioHooks.PerfLabel: a text view with a frame and a paint. */
+    static final class PerfLabel extends TextView {
+    }
+
+    static int checks;
+
+    static void eq(String what, Object got, Object want){
+        checks++;
+        if(!String.valueOf(got).equals(String.valueOf(want))){
+            throw new AssertionError(what + ": got <" + got + "> want <" + want + ">");
+        }
+    }
+
+    static void ok(String what, boolean fine){
+        checks++;
+        if(!fine){
+            throw new AssertionError(what);
+        }
+    }
+
+    static void close(String what, float got, float want, float tol){
+        checks++;
+        if(Math.abs(got - want) > tol){
+            throw new AssertionError(what + ": got <" + got + "> want <" + want + ">");
+        }
+    }
+
+    static View box(int w, int h){
+        View v = new View();
+        v.setSize(w, h);
+        return v;
+    }
+
+    public static void main(String[] args){
+        TrioConfig.appearance().outTypeSize = 14;
+        TrioConfig.appearance().rect = false;
+        TrioConfig.appearance().typeWeight = 400;
+
+        View container = box(491, 88);
+        container.getResources().getDisplayMetrics().density = 3f;
+        final float base = outTypeSizePx(container);
+        eq("the base size is the dp setting times the density", base, 42f);
+
+        // ---- one reading keeps the type size whatever the row does.
+        final String single = "31\u00B0C";
+        final String pair = "6.1W" + PERF_BREAK + "31\u00B0C";
+        // The separator is spliced out of the production source above, so the
+        // cases below are built from whatever it really is. This is the lock on
+        // its value: the feature is that the two readings sit on separate
+        // lines, so the separator has to be a line break and nothing else. A
+        // change back to ' ' would make every two-line case below a one-line
+        // case while still "passing" a probe that had restated '\n' itself.
+        eq("the two readings are separated by a line break", (int) PERF_BREAK, (int) '\n');
+        eq("a pair is two lines", perfLines(pair), 2);
+        eq("a single reading is one", perfLines(single), 1);
+        eq("one line keeps the base size", perfTextSize(single, container, box(10, 10)), base);
+        eq("one line keeps it even with no host", perfTextSize(single, container, null), base);
+
+        // ---- the pair: shrink to one icon height, but never disappear.
+        eq("a pair with no host falls back to the base size", perfTextSize(pair, container, null), base);
+        eq("a pair in an unmeasured host falls back too", perfTextSize(pair, container, box(0, 0)), base);
+        eq("a host far taller than the pair is clamped at the base size", perfTextSize(pair, container, box(1000, 1000)), base);
+
+        final float lhBase = perfLineHeight(base, TrioConfig.appearance().typeWeight);
+        ok("the base line height is positive", lhBase > 0f);
+
+        // The identity below holds only while the fit is deciding: the host has
+        // to want a size strictly between the base and the floor, i.e. an icon
+        // height between 1.2 and 2 base line heights. Derive the host from the
+        // measured line height instead of hard-coding pixel sizes, so the case
+        // stays in that window whatever line-height ratio the desktop font has
+        // (AWT's SansSerif is taller than the device's face, and a hard-coded
+        // host that is fine on one is inside the floor's reach on the other).
+        final int iconPx = Math.round(lhBase * 1.8f);
+        final View sized = box(1000, iconPx);
+        final float iconHeight = iconPx;
+        ok("the host is in the window where the fit decides, not the clamps",
+                iconHeight > lhBase * 1.2f && iconHeight < lhBase * 2f);
+
+        final float size = perfTextSize(pair, container, sized);
+        ok("a pair beside a real icon is smaller than a single reading", size < base);
+        ok("but not below the legibility floor", size >= base * PERF_MIN_SIZE_RATIO);
+        close("two lines at the chosen size are one icon tall",
+                2f * perfLineHeight(size, TrioConfig.appearance().typeWeight), iconHeight, 0.05f);
+        close("and the chosen size is the fit's own answer, unclamped",
+                size, base * (iconHeight / 2f) / lhBase, 0.05f);
+
+        // A host so small that the fit wants an illegible size: the floor wins.
+        final float floored = perfTextSize(pair, container, box(10, 10));
+        close("a tiny host hits the floor", floored, base * PERF_MIN_SIZE_RATIO, 0.001f);
+        // The floor's own value, stated here as an external fact. The case above
+        // compares the answer against the same constant production clamped to, so
+        // it holds however that constant moves; this one can fail, and it is what
+        // catches the floor being lowered to the point where the reading stops
+        // being legible.
+        eq("the legibility floor is 0.6 of the type size", PERF_MIN_SIZE_RATIO, 0.6f);
+        ok("and the unclamped fit really was below it", perfTextSize(single, container, box(10, 10)) == base);
+        // More readings share the same icon, so each line gets less of it. The
+        // host is the SAME one the pair was measured in: comparing two line
+        // counts in different hosts compares two different fits. The original
+        // shape here measured the trio in a tiny host of its own, where
+        // perfTextSize answers with the floor whatever the line count is, so
+        // hard-coding production's line count to two still passed. In this host
+        // the pair fits and the trio does not, so the two answers differ
+        // precisely because the count is read.
+        final String trio = "6.1W" + PERF_BREAK + "31\u00B0C" + PERF_BREAK + "40\u00B0C";
+        eq("three readings are three lines", perfLines(trio), 3);
+        final float size3 = perfTextSize(trio, container, sized);
+        ok("three lines are smaller than two in the same host", size3 < size);
+
+        // The rect arrangement has a shorter ink box (114.4 against 117.5), so
+        // in a host whose width limits the fit it comes out a little smaller.
+        // The host is wide enough that the result stays above the floor; a
+        // narrower one would put both arrangements on the floor and compare
+        // two equal clamped values instead of the arithmetic.
+        TrioConfig.appearance().rect = true;
+        final float rectSize = perfTextSize(pair, container, box(84, 1000));
+        TrioConfig.appearance().rect = false;
+        final float roundSize = perfTextSize(pair, container, box(84, 1000));
+        ok("both arrangements are off the floor here",
+                rectSize > base * PERF_MIN_SIZE_RATIO && roundSize > base * PERF_MIN_SIZE_RATIO);
+        // Each arrangement is fitted against ITS OWN box, and the readout's size follows the
+        // box's HEIGHT (perfTextSize: icon = inkH * fit), not its width. So the taller box
+        // yields the larger reading - and the ring's square (119) is taller than the
+        // rectangle's (114.4).
+        //
+        // This is the term that flipped when the ring's box became a square centred on the
+        // ring; the comment above it, which spoke about widths, was describing an older fit.
+        ok("the two ink boxes are actually different",
+                TrioGeometry.INK_H != TrioGeometry.RECT_INK_H
+                        || TrioGeometry.INK_W != TrioGeometry.RECT_INK_W);
+        ok("the taller box fits the larger reading",
+                (TrioGeometry.INK_H > TrioGeometry.RECT_INK_H) == (roundSize > rectSize));
+
+        // ---- the leading: only a stack is squeezed, and only as far as the floor.
+        final TextView perf = new TextView();
+        perf.getPaint().setTextSize(base);
+        final Paint.FontMetrics fm = perf.getPaint().getFontMetrics();
+        final float lh = fm.descent - fm.ascent;
+        ok("the probe font has a positive line height", lh > 0f);
+
+        eq("no break, no squeeze", perfLineSpacing(perf, single, container), 1f);
+        eq("an empty container leaves the leading alone", perfLineSpacing(perf, pair, box(491, 0)), 1f);
+        eq("a row taller than the stack leaves it alone",
+                perfLineSpacing(perf, pair, box(491, Math.round(lh * 2.5f))), 1f);
+        // The stack is two lines tall, so this is the room at which the
+        // multiplier first reaches 1. One line's worth of room is not "the
+        // stack's height" - it is half of it, and the pair cannot fit there at
+        // any leading, which is why the floor answers below.
+        eq("a row exactly the stack's height leaves it alone",
+                perfLineSpacing(perf, pair, box(491, (int) Math.ceil(lh * 2f))), 1f);
+        eq("a row of one line's height cannot fit two and hits the floor",
+                perfLineSpacing(perf, pair, box(491, Math.round(lh))), PERF_MIN_LINE_SPACING);
+        // One pixel under the height at which the multiplier reaches exactly 1:
+        // the one case where the answer is decided by "what is left after the
+        // first line, shared between the rest" rather than by either clamp. A
+        // room rounded down another way can land on the same integer as the case
+        // above (about 51px at these metrics), which would test the same value
+        // twice and leave the whole near-boundary region unexercised.
+        final int justUnder = (int) Math.ceil(lh * 2f) - 1;
+        final float nearBoundary = perfLineSpacing(perf, pair, box(491, justUnder));
+        ok("a row one pixel under the stack's height still squeezes", nearBoundary < 1f);
+        ok("and it squeezes only just", nearBoundary > 0.9f);
+
+        final int snug = Math.round(lh * 1.8f);
+        final float m = perfLineSpacing(perf, pair, box(491, snug));
+        ok("a snug row squeezes the pair", m < 1f);
+        ok("but never past the floor", m >= PERF_MIN_LINE_SPACING);
+        close("and the squeezed stack then fits the room", lh + m * lh, snug, 1f);
+        // The bug this guards: dividing the room by the line count spreads the
+        // first line's full height over all of them and leaves the stack taller
+        // than the row. Dividing what is left after the first line does not.
+        ok("the squeeze is not just the room over the line count",
+                Math.abs(m - (snug / 2f) / lh) > 0.01f);
+
+        final int tight = Math.round(lh * 1.2f);
+        close("a row too short for any squeeze hits the leading floor",
+                perfLineSpacing(perf, pair, box(491, tight)), PERF_MIN_LINE_SPACING, 0.001f);
+        close("a row not much taller than one line hits it too",
+                perfLineSpacing(perf, pair, box(491, Math.round(lh * 1.05f))), PERF_MIN_LINE_SPACING, 0.001f);
+
+        // The padding belongs to the row, so it is taken out of the room.
+        final View padded = box(491, snug + 40);
+        padded.setPadding(20, 20);
+        close("the row's own padding is not part of the room",
+                perfLineSpacing(perf, pair, padded), m, 0.02f);
+
+        // Three lines: more of the same room between more lines.
+        final float m3 = perfLineSpacing(perf, trio, box(491, snug));
+        ok("three readings squeeze harder than two in the same row", m3 < m);
+        ok("and they still respect the floor", m3 >= PERF_MIN_LINE_SPACING);
+        // In this row the unclamped multiplier would be below the floor, so the
+        // floor answers and the stack is taller than the row. That is the
+        // documented trade: legibility wins over fitting, and the size fit -
+        // not the leading - is what normally keeps the stack inside the row.
+        ok("a stack the floor cannot fit overflows the row rather than shrinking past it",
+                lh + 2f * m3 * lh > snug);
+
+        // ---- the leading has to settle. refreshPerfLabel re-posts a sync when
+        // the view's stored multiplier differs from a freshly computed one, so if
+        // writing the computed value did not then read back equal, every layout
+        // pass would post another and the status bar would relayout forever. The
+        // pure function is idempotent by construction; what is pinned here is the
+        // round trip through the view, which is the half a desktop probe can
+        // reach. The stub stores the multiplier verbatim the way Android does,
+        // so a rounded or rewritten value shows up as a failure rather than a
+        // silently passable no-op.
+        perf.setLineSpacing(0f, perfLineSpacing(perf, pair, box(491, snug)));
+        eq("writing the computed leading reads back unchanged, so the re-sync settles",
+                perf.getLineSpacingMultiplier(), perfLineSpacing(perf, pair, box(491, snug)));
+        // The value really was squeezed, so the round trip above is not the
+        // trivial one where 1f is stored and 1f read back.
+        ok("the settled leading is a real squeeze, not the untouched 1",
+                perf.getLineSpacingMultiplier() < 1f);
+
+        // ---- the identity measured a second way. perfLineHeight is production's
+        // own answer, so comparing 2 * perfLineHeight(size) against the icon is a
+        // consistency check: it catches a size formula that stopped matching the
+        // host, but it would also hold if perfLineHeight itself carried a factor
+        // that the size formula cancelled out. Measuring the same two lines
+        // straight off a paint that never went through perfLineHeight is what
+        // makes the claim independent.
+        final Paint raw = new Paint();
+        raw.setTextSize(size);
+        final Paint.FontMetrics rawMetrics = raw.getFontMetrics();
+        final float rawLine = rawMetrics.descent - rawMetrics.ascent;
+        ok("the raw line height is positive", rawLine > 0f);
+        close("two lines measured without perfLineHeight are one icon tall too",
+                2f * rawLine, iconHeight, 0.05f);
+        close("and the spliced line height agrees with the raw one",
+                perfLineHeight(size, TrioConfig.appearance().typeWeight), rawLine, 0.01f);
+
+        // ---- the overall-size setting multiplies whatever the rules settled on.
+        // It is applied last and to every answer, which is what these cases pin:
+        // a lone reading scales too, so moving the slider with one switch on does
+        // something instead of waiting for the second switch to make it jump, and
+        // the fallback branches scale with it rather than staying at the base.
+        // The test value is the production floor, not an arbitrary 50: the
+        // multiplier clamps, so 50 is not reachable and asking for it would only
+        // re-test the clamp below.
+        final float low = Prefs.MIN_PERF_SCALE / 100f;
+        TrioConfig.appearance().perfScale = Prefs.MIN_PERF_SCALE;
+        eq("the setting scales a lone reading", perfTextSize(single, container, box(10, 10)), base * low);
+        eq("and its no-host fallback", perfTextSize(single, container, null), base * low);
+        final float half = perfTextSize(pair, container, sized);
+        close("a pair scales from the fit's own answer", half, size * low, 0.05f);
+        close("a floored pair scales from the floor", perfTextSize(pair, container, box(10, 10)),
+                base * PERF_MIN_SIZE_RATIO * low, 0.001f);
+        // The bounds are clamped rather than trusted. The stored number is
+        // clamped on read, but the broadcast path builds an appearance straight
+        // from extras and this multiplier reaches the canvas, so an out-of-range
+        // percentage has to be brought back rather than obeyed. Both directions
+        // are checked against the values read out of Prefs, so moving a bound is
+        // an explicit change and dropping the clamp is a failure.
+        TrioConfig.appearance().perfScale = 1000;
+        eq("a percentage over the ceiling clamps to it",
+                perfTextSize(single, container, box(10, 10)), base * (Prefs.MAX_PERF_SCALE / 100f));
+        TrioConfig.appearance().perfScale = 1;
+        eq("a percentage under the floor clamps to it",
+                perfTextSize(single, container, box(10, 10)), base * (Prefs.MIN_PERF_SCALE / 100f));
+        TrioConfig.appearance().perfScale = 100;
+        eq("and 100 restores the unscaled answer, so the shipped look is the default",
+                perfTextSize(pair, container, sized), size);
+
+        // ---- the pair is sized to the icon that is actually painted. The glyph
+        // slider shrinks what is drawn inside MIUI's reserved box without moving
+        // the box, so a fit measured off the box alone would keep the stack at
+        // the height of an icon that is no longer there. These cases pin the
+        // coupling; the slider's own bounds are read from Prefs above.
+        //
+        // The host is chosen so that BOTH readings land between the floor and the
+        // base size. That window is narrow and it is why the case uses 10% rather
+        // than the whole span: at two lines the fit is `base * (icon / 2) / line`
+        // clamped to [0.6 * base, base], so a host that is unclamped at 100% is
+        // already on the floor by 60% - the floor is absolute and does not shrink
+        // with the glyph, so the full span is not linearly observable. What is
+        // observable is the ratio wherever neither clamp is in play.
+        TrioConfig.appearance().glyphScale = 100;
+        final float pairFull = perfTextSize(pair, container, box(1000, 90));
+        ok("the coupling case really is off both clamps",
+                pairFull < base && pairFull > base * PERF_MIN_SIZE_RATIO);
+        TrioConfig.appearance().glyphScale = 90;
+        final float pairNine = perfTextSize(pair, container, box(1000, 90));
+        close("shrinking the glyph shrinks the pair by the same factor",
+                pairNine, pairFull * 0.9f, 0.05f);
+        // Not merely a lower answer: the pair tracks the icon that is painted, so
+        // a host that draws the same icon asks for the same text size. The drawn
+        // height is taken from the renderer's own fit and the geometry constants
+        // rather than from perfTextSize, so this compares two hosts instead of
+        // restating the formula the size is computed from.
+        final float drawnNine = Math.round(TrioGeometry.INK_H * TrioRenderer.inkScale(1000, 90, false) * 0.9f);
+        TrioConfig.appearance().glyphScale = 100;
+        close("a host drawing the same icon at 100% agrees",
+                perfTextSize(pair, container, box(1000, (int) drawnNine)), pairNine, 0.05f);
+        TrioConfig.appearance().glyphScale = 90;
+        TrioConfig.appearance().glyphScale = Prefs.MIN_GLYPH_SCALE;
+        final float pairSmall = perfTextSize(pair, container, box(1000, 90));
+        ok("and at the smallest glyph the pair is smaller still", pairSmall < pairNine);
+        // The legibility floor is absolute: it is about the text being readable,
+        // not about how big the icon is, so it does not shrink with the glyph.
+        // A row this small is already on the floor at either setting, which is
+        // the documented trade - legibility wins over matching the icon.
+        final float flooredSmall = perfTextSize(pair, container, box(10, 10));
+        TrioConfig.appearance().glyphScale = 100;
+        close("the legibility floor does not shrink with the glyph",
+                flooredSmall, perfTextSize(pair, container, box(10, 10)), 0.001f);
+        // A lone reading is deliberately left out of the coupling: it has no
+        // icon-height identity to keep and already fits, so it stays at the
+        // out-of-ring type size whatever the glyph slider says.
+        TrioConfig.appearance().glyphScale = Prefs.MIN_GLYPH_SCALE;
+        eq("a lone reading ignores the glyph slider",
+                perfTextSize(single, container, sized), base);
+        TrioConfig.appearance().glyphScale = 100;
+
+        // ---- the readout's own weight. The desktop face is the reason this
+        // section is nearly all clamps: AWT answers byte-identical metrics for
+        // plain and bold (asc=1006 desc=220 at 1000pt), so no measurement here
+        // can tell one weight from another and a metric assertion would pass
+        // whatever the reading was drawn at. What IS observable is the accessor
+        // production feeds to perfLineHeight and to the typeface, so the clamp
+        // is pinned through it; the wiring itself is pinned by the source
+        // contracts run above, which is the only place it can be pinned at all.
+        TrioConfig.appearance().perfWeight = @defPerfWeight@;
+        eq("the default weight is the readout's own default",
+                TrioConfig.appearance().perfTypeWeight(), @defPerfWeight@);
+        TrioConfig.appearance().perfWeight = 1000;
+        eq("a weight over the ceiling clamps to it",
+                TrioConfig.appearance().perfTypeWeight(), @maxPerfWeight@);
+        TrioConfig.appearance().perfWeight = 0;
+        eq("a weight under the floor clamps to it",
+                TrioConfig.appearance().perfTypeWeight(), @minPerfWeight@);
+        // The stored number is clamped on read, but the broadcast path builds an
+        // appearance straight from extras and this number reaches the canvas.
+        // Both bounds are read out of Prefs, so moving one is an explicit change.
+        eq("the weight ceilings agree with the nine-step range",
+                @maxPerfWeight@ - @minPerfWeight@, 800);
+        TrioConfig.appearance().perfWeight = 700;
+        // A weight change must not move the size on a row where the floor is
+        // already biting: the floor is absolute, so the answer is the same
+        // whatever the face. This is the documented trade and it is also why the
+        // weight needed its own term in the re-sync test.
+        close("the floor does not move with the weight",
+                perfTextSize(pair, container, box(10, 10)), base * PERF_MIN_SIZE_RATIO * 1f, 0.001f);
+
+        // ---- the reserved strip. This is the fix for the icon row that stepped
+        // sideways whenever the wattage changed: the strip MIUI is asked to give
+        // up is one scalar shared by every view in it and it arrives through
+        // setPadding, so measuring the live text moved the whole row with the
+        // digits - about once a second while charging. What is pinned here is
+        // that the answer is a function of what the reading IS (its widest
+        // possible form) and not of what it happens to say right now.
+        final PerfLabel label = new PerfLabel();
+        label.getPaint().setTextSize(base);
+        label.setSize(77, 40);
+
+        // The digits are given distinct widths. AWT's SansSerif gives all ten
+        // digits the same 556, which would make the substitution invisible:
+        // with equal digits "0.0W" and "6.1W" reserve the same width whether or
+        // not the widest digit was substituted, so the equality below would hold
+        // for the wrong reason. Real status-bar faces are proportional - the
+        // device log shows "0.0W" at 102px against "6.1W" at 92px - and this
+        // table stands in for that.
+        final float[] widths = new float[10];
+        for (int d = 0; d < 10; d++) { widths[d] = 500f; }
+        widths[4] = 900f;
+        widths[6] = 600f;
+        widths[1] = 520f;
+        label.getPaint().setDigitWidths(widths);
+
+        ok("the reserve is wider than the literal, so the substitution is observable",
+                perfWidth(label, "0.0W") > (int) Math.ceil(label.getPaint().measureText("0.0W")));
+        eq("every digit is measured at the widest one",
+                perfWidth(label, "0.0W"), perfWidth(label, "4.4W"));
+        eq("so two different wattages reserve the same strip",
+                perfWidth(label, "0.0W"), perfWidth(label, "6.1W"));
+        final int widened = (int) Math.ceil(label.getPaint().measureText("4.4W"));
+        eq("and the answer is the ceiling of that widened width",
+                perfWidth(label, "0.0W"), widened);
+        ok("the widened width is not a whole number, so rounding up is observable",
+                label.getPaint().measureText("4.4W") != widened);
+        // Digits can still change count - "9.9W" to "10W" - and that is a step
+        // in the strip, not a flicker. The reserve has to follow the count.
+        ok("a longer number still reserves more",
+                perfWidth(label, "10W") < perfWidth(label, "100W"));
+        // Per line. Measuring the whole string in one call would add the two
+        // lines together - the break is just a character to the paint - and
+        // reserve the pair at the sum of its lines instead of its widest.
+        ok("the pair's strip is not the sum of its lines",
+                perfWidth(label, pair) < perfWidth(label, "6.1W") + perfWidth(label, "31\u00B0C"));
+        eq("it is exactly the wider of the two lines",
+                perfWidth(label, pair), Math.max(perfWidth(label, "6.1W"), perfWidth(label, "31\u00B0C")));
+        // The widest digit is asked of the face rather than assumed to be '0':
+        // it is not the same at every weight. Swapping the face changes which
+        // digit is widest and how wide it is, and the answer has to follow both.
+        final float[] nines = new float[10];
+        for (int d = 0; d < 10; d++) { nines[d] = 500f; }
+        nines[9] = 700f;
+        label.getPaint().setDigitWidths(nines);
+        eq("a different face widens to its own widest digit",
+                perfWidth(label, "0.0W"), perfWidth(label, "9.9W"));
+        ok("and the answer really did change with the face",
+                perfWidth(label, "0.0W") != widened);
+        // Nothing to measure: fall back to the frame rather than to no strip.
+        eq("an empty reading falls back to the frame it already has", perfWidth(label, ""), 77);
+        // On a face whose digits are all one width the substitution is a no-op,
+        // and the reserve still may not come out short of what is drawn.
+        label.getPaint().setDigitWidths(null);
+        ok("with uniform digits the reserve is still at least the literal",
+                perfWidth(label, "0.0W") >= (int) Math.ceil(label.getPaint().measureText("0.0W")));
+
+        System.out.println("PASS: " + checks + " cases over perfTextSize, perfLineSpacing, perfWidth and inkScale");
+    }
+}

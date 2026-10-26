@@ -5,13 +5,14 @@
 param(
     [Parameter(Mandatory = $true)][ValidateSet('render-tests', 'host-tests')][string]$TestProject,
     [Parameter(Mandatory = $true)][string[]]$TestClass,
+    [ValidateSet('test', 'readoutTest')][string]$TestTask = 'test',
     [string]$SourceDirectory
 )
 $ErrorActionPreference = 'Stop'
 $GradleTestRoot = Split-Path $PSScriptRoot -Parent
 $GradleTestLauncher = Join-Path $GradleTestRoot 'gradlew'
 if ($env:OS -eq 'Windows_NT') { $GradleTestLauncher += '.bat' }
-$GradleTestArgs = @('--no-daemon', ":${TestProject}:test")
+$GradleTestArgs = @('--no-daemon', ":${TestProject}:${TestTask}")
 foreach ($GradleTestClass in $TestClass) { $GradleTestArgs += @('--tests', $GradleTestClass) }
 if ($SourceDirectory) {
     if ($TestProject -ne 'host-tests') { throw 'Alternate source directories apply to Drawable host tests only.' }

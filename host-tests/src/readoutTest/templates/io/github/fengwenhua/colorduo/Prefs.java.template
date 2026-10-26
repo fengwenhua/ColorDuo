@@ -1,0 +1,29 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package io.github.fengwenhua.colorduo;
+
+/** The bounds the two fit multipliers and the weight clamp themselves to, read from the real Prefs. */
+final class Prefs {
+    static final int MIN_PERF_SCALE = @minPerfScale@;
+    static final int MAX_PERF_SCALE = @maxPerfScale@;
+    static final int MIN_GLYPH_SCALE = @minGlyphScale@;
+    static final int MAX_GLYPH_SCALE = @maxGlyphScale@;
+    static final int MIN_PERF_WEIGHT = @minPerfWeight@;
+    static final int MAX_PERF_WEIGHT = @maxPerfWeight@;
+    static final int MAX_RING_STROKE = @maxRingStroke@;
+    // The style ordinals the spliced inkScale(w,h,style) switches on, read from
+    // the real Prefs so the stub cannot disagree with the renderer about them.
+    static final int STYLE_RING = @styleRing@;
+    static final int STYLE_RECT = @styleRect@;
+    static final int STYLE_CAPSULE = @styleCapsule@;
+
+    @clamp@
+}

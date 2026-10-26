@@ -1,0 +1,47 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package io.github.fengwenhua.colorduo;
+
+import android.graphics.Typeface;
+
+/** The renderer's own measurement methods, spliced so there is one arithmetic. */
+final class TrioRenderer {
+
+    private static final Typeface TEXT_BASE = Typeface.create("sans-serif", Typeface.NORMAL);
+
+    /**
+     * No custom font is loaded here: this harness checks the readout's arithmetic,
+     * not the font feature. The field exists because the spliced {@code
+     * typefaceFor} and {@code fakeBoldFor} read it, and null is the "system face"
+     * branch - the one every case below asserts against.
+     *
+     * <p>The production styling helper for a real label is deliberately absent:
+     * nothing spliced here calls it, and it names a platform class this stripped
+     * stub does not carry.
+     */
+    private static final Typeface sFontFace = null;
+
+    private static final int FAKE_BOLD_FROM = 600;
+
+    static boolean fakeBoldFor(int weight) {
+        return sFontFace != null && weight >= FAKE_BOLD_FROM;
+    }
+
+    @inkScale1@
+
+    @inkScale2@
+
+    @inkScale4@
+
+    @inkScale3@
+
+    @typefaceFor@
+}

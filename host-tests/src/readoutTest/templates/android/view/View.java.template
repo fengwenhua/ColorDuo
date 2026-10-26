@@ -1,0 +1,39 @@
+/*
+ * Copyright (C) 2026 yixing233 and HyperDuo contributors
+ *
+ * This file is part of ColorDuo, released under the GNU General Public
+ * License v3.0. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/gpl-3.0.html>.
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+package android.view;
+
+import android.content.res.Resources;
+
+/** A view with a frame, a frame's padding, and a density to measure dp with. */
+public class View {
+
+    private int width;
+    private int height;
+    private int paddingTop;
+    private int paddingBottom;
+    private final Resources resources = new Resources();
+
+    public int getWidth() { return width; }
+
+    public int getHeight() { return height; }
+
+    public int getPaddingTop() { return paddingTop; }
+
+    public int getPaddingBottom() { return paddingBottom; }
+
+    public Resources getResources() { return resources; }
+
+    public int getMeasuredWidth() { return width; }
+
+    public void setSize(int w, int h) { width = w; height = h; }
+
+    public void setPadding(int top, int bottom) { paddingTop = top; paddingBottom = bottom; }
+}
