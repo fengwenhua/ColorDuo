@@ -79,7 +79,7 @@ public final class CapsuleZonesTest {
                     for (int value : new int[] {Prefs.MIN_VALUE_SIZE, Prefs.MAX_VALUE_SIZE})
                         for (int level : new int[] {5, 100}) {
                             TrioSettings s = config();
-                            s.capsuleLength = length; s.ringStroke = stroke;
+                            s.capsuleLayout = s.capsuleLayout.withLength(length); s.ringStroke = stroke;
                             s.clockSize = clock; s.valueSize = value;
                             BufferedImage on = paint(s, level, 2, new int[] {2, 4}, "19:41");
                             differencesStayInBody(on, paint(s, level, 2, new int[] {2, 4}, ""), s, "clock");

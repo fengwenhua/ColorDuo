@@ -221,7 +221,7 @@ tasks.named<JavaCompile>(issue.compileJavaTaskName) {
     source(issueSources.resolve("TrioZones.java"), issueSources.resolve("TrioTint.java"), issueSources.resolve("OutRingLayout.java"))
     source(rootProject.file("tests/shims/android/content/SharedPreferences.java"), rootProject.file("tests/shims/android/os/Bundle.java"))
     source(fileTree(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo")) {
-        include("Prefs.java", "ChargeLayout.java", "SettingsSchema.java", "TrioSettings.java", "TrioAppearance.java", "TrioGeometry.java")
+        include("Prefs.java", "ChargeLayout.java", "SettingsSchema.java", "TrioSettings.java", "TrioAppearance.java", "TrioGeometry.java", "CapsuleLayoutSettings.java")
     })
 }
 val issueTest = tasks.register<Test>("issueTest") {

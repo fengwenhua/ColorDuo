@@ -18,8 +18,14 @@ public final class SettingsSchemaTest {
     @Test public void everyPersistedModelFieldHasExactlyOneDeclaration() {
         Set<String> model = new HashSet<>();
         for (var field : TrioSettings.class.getFields())
-            if (!Modifier.isStatic(field.getModifiers()) && !field.getName().equals("editingChargeScene"))
-                model.add(field.getName());
+            if (!Modifier.isStatic(field.getModifiers()) && !field.getName().equals("editingChargeScene")) {
+                if (field.getType() == CapsuleLayoutSettings.class) {
+                    for (var component : CapsuleLayoutSettings.class.getRecordComponents()) {
+                        String name = component.getName();
+                        assertTrue(model.add("capsule" + Character.toUpperCase(name.charAt(0)) + name.substring(1)));
+                    }
+                } else assertTrue(model.add(field.getName()));
+            }
         Set<String> registered = new HashSet<>();
         for (SettingsSchema.Entry entry : SettingsSchema.ENTRIES) {
             assertTrue("duplicate " + entry.field(), registered.add(entry.field()));

@@ -172,7 +172,7 @@ public final class ConfigCodecProbe {
         String oldClock = TrioState.sClockText;
         try {
             TrioState.sClockText = "10:27";
-            int[] size = ColorOsBatterySize.target(52, 65, 380, capsule.capsuleLength);
+            int[] size = ColorOsBatterySize.target(52, 65, 380, capsule.capsuleLayout.length());
             check(size[0] > 85 && size[0] <= 380 && size[1] <= 65, "capsule fits the actual status row budget");
             ColorOsBatteryDrawable.Frame capFrame = new ColorOsBatteryDrawable.Frame(67, Color.BLACK,
                     capsulePaint, capPlan, full, "10:27", size[0], size[1]);

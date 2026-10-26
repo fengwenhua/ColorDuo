@@ -269,11 +269,11 @@ public final class TrioAppearance {
         style = c.trioStyle;
         rect = c.trioStyle == Prefs.STYLE_RECT;
         capsule = c.trioStyle == Prefs.STYLE_CAPSULE;
-        capsuleLeftDx = c.capsuleLeftDx;
-        capsuleLeftDy = c.capsuleLeftDy;
-        capsuleRightDx = c.capsuleRightDx;
-        capsuleRightDy = c.capsuleRightDy;
-        capsuleLength = c.capsuleLength;
+        capsuleLeftDx = c.capsuleLayout.leftDx();
+        capsuleLeftDy = c.capsuleLayout.leftDy();
+        capsuleRightDx = c.capsuleLayout.rightDx();
+        capsuleRightDy = c.capsuleLayout.rightDy();
+        capsuleLength = c.capsuleLayout.length();
         ring = c.trioStyle == Prefs.STYLE_RING;
         slotted = !rect;
         ringZones = TrioSettings.copyZones(c.ringZones);

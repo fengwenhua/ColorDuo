@@ -40,5 +40,14 @@ Android `SettingsBufferProbe` 在独立文件中验证 240 次输入合并为一
 
 `SettingsSchemaTest` 自动枚举两种样式的每个字段，核对 SharedPreferences、Bundle、JSON、
 copy、equality/hash 和局部更新。模型新增字段但未注册，或注册后漏改旧映射，测试均会失败。
-序列化只声明一次；当前阶段仍保留历史读取、copy/equality 的直接字段实现，新增字段也必须通过这些门禁。
+序列化只声明一次；当前阶段仍保留其他组的历史读取和直接字段，胶囊几何组已提取为不可变 CapsuleLayoutSettings；新增字段也必须通过这些门禁。
 后续按注册表分组逐步提取 Content/布局/Appearance 模型，不一次替换绘制路径使用的快照。
+
+## 胶囊几何配置组
+
+`TrioSettings.capsuleLayout` 持有不可变 `CapsuleLayoutSettings`，成员为 leftDx/leftDy/rightDx/rightDy/length。
+这五项的 SharedPreferences/Bundle 读取共用同一个默认值和范围入口，内部 Java/Kotlin 调用改为访问该组。
+Schema 仍输出原五个扁平 key，VERSION 保持 1；老配置与环/胶囊样式维度、独立充电布局规则不变。
+copy 共享不可变值，修改某一项生成新值；单 key 更新必须保留本组其他四项，不能直接替换为远端整组。
+SettingsSchemaTest 自动展开 record 的五个逻辑字段，继续与完整 61 项注册表逐项核对。
+其余 Content/环布局/Appearance 仍待按计划提取，不将第一组视为 O-08 全部完成。

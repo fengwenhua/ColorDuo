@@ -293,13 +293,8 @@ public final class TrioSettings {
      * implies. Shrink-only; see {@link Prefs#KEY_GLYPH_SCALE}.
      */
     public int glyphScale;
-    /** Interior cell nudges, in design units; see Prefs.KEY_CAPSULE_LEFT_DX. */
-    public int capsuleLeftDx;
-    public int capsuleLeftDy;
-    public int capsuleRightDx;
-    public int capsuleRightDy;
-    /** Extra straight-run length; see {@link Prefs#KEY_CAPSULE_LENGTH}. */
-    public int capsuleLength;
+    /** Capsule offsets and length, shared safely by immutable snapshots. */
+    public CapsuleLayoutSettings capsuleLayout = CapsuleLayoutSettings.DEFAULT;
 
     /** Only used by the settings app: the hooked side reads this via {@code TrioConfig}. */
     public boolean debugLog;
@@ -328,11 +323,7 @@ public final class TrioSettings {
         s.perfScale = Prefs.DEF_PERF_SCALE;
         s.perfWeight = Prefs.DEF_PERF_WEIGHT;
         s.glyphScale = Prefs.DEF_GLYPH_SCALE;
-        s.capsuleLeftDx = Prefs.DEF_CAPSULE_NUDGE;
-        s.capsuleLeftDy = Prefs.DEF_CAPSULE_NUDGE;
-        s.capsuleRightDx = Prefs.DEF_CAPSULE_NUDGE;
-        s.capsuleRightDy = Prefs.DEF_CAPSULE_NUDGE;
-        s.capsuleLength = Prefs.DEF_CAPSULE_LENGTH;
+        s.capsuleLayout = CapsuleLayoutSettings.DEFAULT;
 
         s.roleColors = Prefs.DEF_ROLE_COLORS;
         s.criticalOnDark = Prefs.DEF_COLOR_CRITICAL_ON_DARK;
@@ -467,21 +458,7 @@ public final class TrioSettings {
         s.glyphScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
-        s.capsuleLeftDx = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
-                Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
-                Prefs.MAX_CAPSULE_NUDGE_X);
-        s.capsuleLeftDy = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_LEFT_DY,
-                Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE, Prefs.MAX_CAPSULE_NUDGE);
-        // Its own span: the right cell leans right, so its travel is leftwards. Sharing the
-        // left cell's range would silently trim every value the slider allows.
-        s.capsuleRightDx = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_RIGHT_DX,
-                Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X_RIGHT,
-                Prefs.MAX_CAPSULE_NUDGE_X_RIGHT);
-        s.capsuleRightDy = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_RIGHT_DY,
-                Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE, Prefs.MAX_CAPSULE_NUDGE);
-        s.capsuleLength = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_LENGTH,
-                Prefs.DEF_CAPSULE_LENGTH), Prefs.MIN_CAPSULE_LENGTH,
-                Prefs.MAX_CAPSULE_LENGTH);
+        s.capsuleLayout = CapsuleLayoutSettings.read(p::getInt);
         s.roleColors = p.getBoolean(Prefs.KEY_ROLE_COLORS, Prefs.DEF_ROLE_COLORS);
         s.criticalOnDark = p.getInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, Prefs.DEF_COLOR_CRITICAL_ON_DARK);
         s.criticalOnLight = p.getInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, Prefs.DEF_COLOR_CRITICAL_ON_LIGHT);
@@ -859,11 +836,7 @@ public final class TrioSettings {
         s.perfScale = perfScale;
         s.perfWeight = perfWeight;
         s.glyphScale = glyphScale;
-        s.capsuleLeftDx = capsuleLeftDx;
-        s.capsuleLeftDy = capsuleLeftDy;
-        s.capsuleRightDx = capsuleRightDx;
-        s.capsuleRightDy = capsuleRightDy;
-        s.capsuleLength = capsuleLength;
+        s.capsuleLayout = capsuleLayout;
 
         s.roleColors = roleColors;
         s.criticalOnDark = criticalOnDark;
@@ -954,11 +927,11 @@ public final class TrioSettings {
             case Prefs.KEY_PERF_SCALE: perfScale = src.perfScale; return true;
         case Prefs.KEY_PERF_WEIGHT: perfWeight = src.perfWeight; return true;
             case Prefs.KEY_GLYPH_SCALE: glyphScale = src.glyphScale; return true;
-            case Prefs.KEY_CAPSULE_LEFT_DX: capsuleLeftDx = src.capsuleLeftDx; return true;
-            case Prefs.KEY_CAPSULE_LEFT_DY: capsuleLeftDy = src.capsuleLeftDy; return true;
-            case Prefs.KEY_CAPSULE_RIGHT_DX: capsuleRightDx = src.capsuleRightDx; return true;
-            case Prefs.KEY_CAPSULE_RIGHT_DY: capsuleRightDy = src.capsuleRightDy; return true;
-            case Prefs.KEY_CAPSULE_LENGTH: capsuleLength = src.capsuleLength; return true;
+            case Prefs.KEY_CAPSULE_LEFT_DX: capsuleLayout = capsuleLayout.withLeftDx(src.capsuleLayout.leftDx()); return true;
+            case Prefs.KEY_CAPSULE_LEFT_DY: capsuleLayout = capsuleLayout.withLeftDy(src.capsuleLayout.leftDy()); return true;
+            case Prefs.KEY_CAPSULE_RIGHT_DX: capsuleLayout = capsuleLayout.withRightDx(src.capsuleLayout.rightDx()); return true;
+            case Prefs.KEY_CAPSULE_RIGHT_DY: capsuleLayout = capsuleLayout.withRightDy(src.capsuleLayout.rightDy()); return true;
+            case Prefs.KEY_CAPSULE_LENGTH: capsuleLayout = capsuleLayout.withLength(src.capsuleLayout.length()); return true;
             case Prefs.KEY_ROLE_COLORS: roleColors = src.roleColors; return true;
             case Prefs.KEY_COLOR_CRITICAL_ON_DARK: criticalOnDark = src.criticalOnDark; return true;
             case Prefs.KEY_COLOR_CRITICAL_ON_LIGHT: criticalOnLight = src.criticalOnLight; return true;
@@ -1056,19 +1029,7 @@ public final class TrioSettings {
         s.glyphScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
-        s.capsuleLeftDx = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
-                Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
-                Prefs.MAX_CAPSULE_NUDGE_X);
-        s.capsuleLeftDy = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_LEFT_DY,
-                Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE, Prefs.MAX_CAPSULE_NUDGE);
-        s.capsuleRightDx = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_RIGHT_DX,
-                Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X_RIGHT,
-                Prefs.MAX_CAPSULE_NUDGE_X_RIGHT);
-        s.capsuleRightDy = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_RIGHT_DY,
-                Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE, Prefs.MAX_CAPSULE_NUDGE);
-        s.capsuleLength = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_LENGTH,
-                Prefs.DEF_CAPSULE_LENGTH), Prefs.MIN_CAPSULE_LENGTH,
-                Prefs.MAX_CAPSULE_LENGTH);
+        s.capsuleLayout = CapsuleLayoutSettings.read(bundle::getInt);
         s.roleColors = bundle.getBoolean(Prefs.KEY_ROLE_COLORS, Prefs.DEF_ROLE_COLORS);
         s.criticalOnDark = bundle.getInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, Prefs.DEF_COLOR_CRITICAL_ON_DARK);
         s.criticalOnLight = bundle.getInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, Prefs.DEF_COLOR_CRITICAL_ON_LIGHT);
@@ -1255,11 +1216,7 @@ public final class TrioSettings {
                 // row in the module that could not move was the one they belong to. The
                 // readout row next to them is in the list, which is why dragging THAT one
                 // refreshed the whole page and made the nudges catch up.
-                && capsuleLeftDx == s.capsuleLeftDx
-                && capsuleLeftDy == s.capsuleLeftDy
-                && capsuleRightDx == s.capsuleRightDx
-                && capsuleRightDy == s.capsuleRightDy
-                && capsuleLength == s.capsuleLength
+                && capsuleLayout.equals(s.capsuleLayout)
                 && roleColors == s.roleColors
                 && criticalOnDark == s.criticalOnDark
                 && criticalOnLight == s.criticalOnLight
@@ -1313,10 +1270,7 @@ public final class TrioSettings {
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;
         h = h * 31 + (perfTempChargingOnly ? 1 : 0);
-        h = h * 31 + capsuleLeftDx;
-        h = h * 31 + capsuleLeftDy;
-        h = h * 31 + capsuleRightDx;
-        h = h * 31 + capsuleRightDy;
+        h = h * 31 + capsuleLayout.hashCode();
         return h != 0 ? h : 1;
     }
 }

@@ -58,8 +58,10 @@ tasks.named<JavaCompile>("compileTestJava") {
     source(listOf("Prefs.java", "ChargeLayout.java", "TrioSettings.java", "TrioAppearance.java",
             "TrioGeometry.java", "TrioZones.java", "TrioRenderer.java", "ConfigPacket.java",
             "RemoteFontKey.java", "FirstRunDefaults.java", "PreferencesSnapshot.java", "UpdateManifest.java",
-            "SettingsSchema.java", "HyperOsIconLease.java", "Refl.java").map { name ->
-        val directory = if (name in overriddenNames) (ringOverride ?: leaseOverride)!! else production
+            "SettingsSchema.java", "HyperOsIconLease.java", "Refl.java", "CapsuleLayoutSettings.java").map { name ->
+        val alternate = ringOverride ?: leaseOverride
+        val optionalModel = name == "CapsuleLayoutSettings.java" && alternate?.resolve(name)?.isFile == true
+        val directory = if (name in overriddenNames || optionalModel) alternate!! else production
         directory.resolve(name)
     })
 }

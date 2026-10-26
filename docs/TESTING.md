@@ -30,7 +30,7 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 历史 `RingSlotsTest` 的过期三分区、聚合信号及中部信号行预期已在新 `FreeRingTest` 中按当前规则迁移；
 旧的重复 Java 测试体已移除；历史预期调整与故障检出依据保存在验证记录中。
 状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
-Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 35+60 个 JUnit 测试方法，
+Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 35+63 个 JUnit 测试方法，
 每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
 
 `GlyphScaleTest` 将旧脚本的 17 项真实像素断言迁为 1 个 Gradle/JUnit 方法；
@@ -57,7 +57,7 @@ host-tests 另迁入 18 组 Wi-Fi 组合/3 次转换和 44 项电池读数断言
 `host-tests:stripTest` 使用独立 ViewGroup 替身保留 2776 项 OS4 布局/预留检查，另补 144 项排序与优先级断言，
 同样由普通 host-tests:test 自动调用。
 `RingHitBoundaryTest` 两项检查覆盖 18 个极值描边/布局/宿主比例帧的逐像素命中和 ink 外点击拒绝。
-目前统计为 app 35、render 60、host 41（普通14+隔离读数5+环外布局2+历史 issue 20）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
+目前统计为 app 35、render 63、host 41（普通14+隔离读数5+环外布局2+历史 issue 20）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
 
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。
@@ -88,3 +88,7 @@ UI 源检查跟随 DrawingPreview/DrawingZones 的既有拆分。旧 -Suite 与 
 `-PleaseTestProductionSources=...`（原 8 个文件加 TrioHooks）。其余测试依赖继续取项目源码，不要求替代目录扩为整个项目。
 两个最小目录已分别实跑；在目录内注入优先级反转、丢失 hideIcon 委托与丢失灵动岛同步，均使对应 Gradle 检查失败。
 `ring-handoff.ps1` 同时运行原 17 项桥接序列和 9 组 lease 测试；仍未执行 PowerShell 引擎。
+
+`CapsuleLayoutSettingsTest` 新增三组不可变副本、单 key 更新隔离与缺失值默认回归。
+胶囊模型提取前后，70 组输入的规范 Bundle 值相同，140 帧像素摘要逐一相同；不把这些对照称作固定 golden。
+记录见 [胶囊模型分组](validation/capsule-settings-group-2026-10-26.md)。当前 app/render/host 为 35/63/41，共 139 项。

@@ -320,7 +320,7 @@ public final class TrioPreviewView extends View {
         // The shape has to be in force before the transform is derived from it, or the hit
         // boxes and the highlight guide land on the reference-length capsule while a longer
         // one is drawn.
-        TrioGeometry.setCapsuleLength(settings.capsuleLength);
+        TrioGeometry.setCapsuleLength(settings.capsuleLayout.length());
         return TrioZones.viewTransform(width, height, inset, TrioAppearance.of(settings));
     }
 

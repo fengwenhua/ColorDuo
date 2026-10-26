@@ -25,7 +25,7 @@ final class ColorOsBatterySize {
         int width = owned ? nativeWidth : params.width, height = owned ? nativeHeight : params.height;
         if (width <= 0 || height <= 0 || meter.getHeight() <= 0) return new int[]{0, 0};
         return settings.trioStyle == Prefs.STYLE_CAPSULE
-                ? target(height, availableHeight(meter, params), meter.getResources().getDisplayMetrics().widthPixels / 3, settings.capsuleLength)
+                ? target(height, availableHeight(meter, params), meter.getResources().getDisplayMetrics().widthPixels / 3, settings.capsuleLayout.length())
                 : new int[]{width, height};
     }
 

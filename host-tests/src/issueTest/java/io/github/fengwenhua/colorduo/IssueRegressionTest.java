@@ -871,6 +871,14 @@ public class IssueRegressionTest {
     // suites; this sweep is about the scalars, which are the ones a list can silently
     // stop growing.
     Class<?> t=f.getType();
+    if(t==CapsuleLayoutSettings.class) {
+     for(var component:CapsuleLayoutSettings.class.getRecordComponents()) {
+      String name="capsule"+Character.toUpperCase(component.getName().charAt(0))+component.getName().substring(1);
+      TrioSettings moved=base.copy();setNudge(moved,name,currentNudge(base,name)+1);
+      ok("equals() sees a change in "+name,!base.equals(moved));compared++;
+     }
+     continue;
+    }
     if(t!=int.class && t!=boolean.class) {
      continue;
     }
@@ -902,10 +910,10 @@ public class IssueRegressionTest {
   // 2. The four nudges by name, so a rename cannot quietly drop them from the sweep.
   {
    TrioSettings s=TrioSettings.defaults();
-   ok("a fresh install does not nudge",s.capsuleLeftDx==Prefs.DEF_CAPSULE_NUDGE
-      && s.capsuleLeftDy==Prefs.DEF_CAPSULE_NUDGE
-      && s.capsuleRightDx==Prefs.DEF_CAPSULE_NUDGE
-      && s.capsuleRightDy==Prefs.DEF_CAPSULE_NUDGE);
+   ok("a fresh install does not nudge",s.capsuleLayout.leftDx()==Prefs.DEF_CAPSULE_NUDGE
+      && s.capsuleLayout.leftDy()==Prefs.DEF_CAPSULE_NUDGE
+      && s.capsuleLayout.rightDx()==Prefs.DEF_CAPSULE_NUDGE
+      && s.capsuleLayout.rightDy()==Prefs.DEF_CAPSULE_NUDGE);
    for(String name:new String[]{"capsuleLeftDx","capsuleLeftDy","capsuleRightDx","capsuleRightDy"}) {
     TrioSettings moved=s.copy();
     setNudge(moved,name,3);
@@ -921,16 +929,16 @@ public class IssueRegressionTest {
    prefs.m.put(Prefs.KEY_CAPSULE_LEFT_DX,Integer.valueOf(9999));
    prefs.m.put(Prefs.KEY_CAPSULE_LEFT_DY,Integer.valueOf(-9999));
    ok("a wild x nudge is clamped on read",
-      TrioSettings.from(prefs,3f).capsuleLeftDx==Prefs.MAX_CAPSULE_NUDGE_X);
+      TrioSettings.from(prefs,3f).capsuleLayout.leftDx()==Prefs.MAX_CAPSULE_NUDGE_X);
    ok("a wild y nudge is clamped on read",
-      TrioSettings.from(prefs,3f).capsuleLeftDy==Prefs.MIN_CAPSULE_NUDGE);
+      TrioSettings.from(prefs,3f).capsuleLayout.leftDy()==Prefs.MIN_CAPSULE_NUDGE);
    android.os.Bundle wild=new android.os.Bundle();
    wild.putInt(Prefs.KEY_CAPSULE_RIGHT_DX,9999);
    // The RIGHT cell has its own mirrored span, so a wild value lands on ITS ceiling.
    ok("the broadcast extras are clamped too",
-      TrioSettings.fromBundle(wild).capsuleRightDx==Prefs.MAX_CAPSULE_NUDGE_X_RIGHT);
+      TrioSettings.fromBundle(wild).capsuleLayout.rightDx()==Prefs.MAX_CAPSULE_NUDGE_X_RIGHT);
    // 4. The appearance carries them, since the renderer reads that view of the snapshot.
-   TrioSettings nudged=TrioSettings.defaults();nudged.capsuleRightDy=5;
+   TrioSettings nudged=TrioSettings.defaults();nudged.capsuleLayout=nudged.capsuleLayout.withRightDy(5);
    ok("the renderer sees the nudge",TrioAppearance.of(nudged).capsuleRightDy==5);
   }
   // 5. issue 45's flag, found by the same audit and left out of equals() too.
@@ -1157,23 +1165,33 @@ public class IssueRegressionTest {
    Map right=new Map();
    right.m.put(Prefs.KEY_CAPSULE_RIGHT_DX,Integer.valueOf(Prefs.MIN_CAPSULE_NUDGE_X_RIGHT));
    ok("the stored read keeps the right cell at its own minimum",
-      TrioSettings.from(right,3f).capsuleRightDx==Prefs.MIN_CAPSULE_NUDGE_X_RIGHT);
+      TrioSettings.from(right,3f).capsuleLayout.rightDx()==Prefs.MIN_CAPSULE_NUDGE_X_RIGHT);
    android.os.Bundle rightBundle=new android.os.Bundle();
    rightBundle.putInt(Prefs.KEY_CAPSULE_RIGHT_DX,Prefs.MIN_CAPSULE_NUDGE_X_RIGHT);
    ok("and so does the broadcast read",
-      TrioSettings.fromBundle(rightBundle).capsuleRightDx==Prefs.MIN_CAPSULE_NUDGE_X_RIGHT);
+      TrioSettings.fromBundle(rightBundle).capsuleLayout.rightDx()==Prefs.MIN_CAPSULE_NUDGE_X_RIGHT);
    // While a value only the LEFT span allows is trimmed for the right cell, which is what
    // keeps the two from silently sharing a range again.
    Map shared=new Map();
    shared.m.put(Prefs.KEY_CAPSULE_RIGHT_DX,Integer.valueOf(Prefs.MAX_CAPSULE_NUDGE_X));
    ok("a left-only value is trimmed for the right cell",
-      TrioSettings.from(shared,3f).capsuleRightDx==Prefs.MAX_CAPSULE_NUDGE_X_RIGHT);
+      TrioSettings.from(shared,3f).capsuleLayout.rightDx()==Prefs.MAX_CAPSULE_NUDGE_X_RIGHT);
   }
  }
  /** Writes one of the four nudge fields by name, so a rename fails loudly here. */
  static void setNudge(TrioSettings s,String name,int value) {
-  try { TrioSettings.class.getField(name).setInt(s,value); }
-  catch(Exception e) { throw new AssertionError("missing field "+name,e); }
+  try {
+   var components=CapsuleLayoutSettings.class.getRecordComponents();
+   Class<?>[] types=new Class<?>[components.length];Object[] values=new Object[components.length];boolean found=false;
+   for(int i=0;i<components.length;i++) {
+    var component=components[i];types[i]=component.getType();
+    String logical="capsule"+Character.toUpperCase(component.getName().charAt(0))+component.getName().substring(1);
+    values[i]=component.getAccessor().invoke(s.capsuleLayout);
+    if(logical.equals(name)){values[i]=value;found=true;}
+   }
+   if(!found)throw new AssertionError("missing field "+name);
+   s.capsuleLayout=CapsuleLayoutSettings.class.getDeclaredConstructor(types).newInstance(values);
+  } catch(ReflectiveOperationException e) { throw new AssertionError("missing field "+name,e); }
  }
  /**
   * The storage key a nudge field is written under, read off the Prefs constant so this
@@ -1196,8 +1214,10 @@ public class IssueRegressionTest {
  }
  /** Reads one of the four nudge fields by name, so a rename fails loudly here. */
  static int currentNudge(TrioSettings s,String name) {
-  try { return TrioSettings.class.getField(name).getInt(s); }
-  catch(Exception e) { throw new AssertionError("missing field "+name,e); }
+  try {
+   String component=Character.toLowerCase(name.charAt(7))+name.substring(8);
+   return (Integer)CapsuleLayoutSettings.class.getMethod(component).invoke(s.capsuleLayout);
+  } catch(ReflectiveOperationException e) { throw new AssertionError("missing field "+name,e); }
  }
  public static void main(String[] args)throws Throwable {
   resetFixture();
