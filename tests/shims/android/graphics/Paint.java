@@ -117,11 +117,15 @@ public class Paint {
         if (text == null || text.isEmpty()) {
             return 0f;
         }
-        java.awt.Canvas probe = new java.awt.Canvas();
-        java.awt.FontMetrics fm = probe.getFontMetrics(font());
+        // Android advances are floats. Integer FontMetrics.charWidth quantizes
+        // each glyph at every size, breaking proportional fitting (and varying
+        // across platform fonts). Match Canvas's fractional text rendering.
+        java.awt.font.FontRenderContext context =
+                new java.awt.font.FontRenderContext(null, true, true);
+        Font face = font();
         float total = 0f;
         for (int i = 0; i < text.length(); i++) {
-            total += fm.charWidth(text.charAt(i));
+            total += (float) face.getStringBounds(text.substring(i, i + 1), context).getWidth();
             if (i < text.length() - 1) {
                 total += letterSpacing * textSize;
             }

@@ -30,7 +30,7 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 历史 `RingSlotsTest` 的过期三分区、聚合信号及中部信号行预期已在新 `FreeRingTest` 中按当前规则迁移；
 原脚本仍保留，不能据此宣称原脚本本身已通过。
 状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
-Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 33+58 个 JUnit 测试方法，
+Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 33+59 个 JUnit 测试方法，
 每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
 
 `GlyphScaleTest` 将旧脚本的 17 项真实像素断言迁为 1 个 Gradle/JUnit 方法；
@@ -56,7 +56,7 @@ host-tests 另迁入 18 组 Wi-Fi 组合/3 次转换和 44 项电池读数断言
 `host-tests:stripTest` 使用独立 ViewGroup 替身保留 2776 项 OS4 布局/预留检查，另补 144 项排序与优先级断言，
 同样由普通 host-tests:test 自动调用。
 `RingHitBoundaryTest` 两项检查覆盖 18 个极值描边/布局/宿主比例帧的逐像素命中和 ink 外点击拒绝。
-目前统计为 app 33、render 58、host 21（普通14+隔离读数5+环外布局2）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
+目前统计为 app 33、render 59、host 21（普通14+隔离读数5+环外布局2）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
 
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。

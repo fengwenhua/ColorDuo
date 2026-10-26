@@ -217,6 +217,13 @@ JUnit 每例恢复原独立 JVM 的 CENTER 画笔初始状态，避免先运行�
 不逐帧重置，不将此项算作现行样式切换验证。
 临时副本将矩形读数上移 4 单位、允许零级 Wi-Fi、反转兼容三带逆变换，三项均被新测试拒绝。
 
-完整 app/render/host 为 33/58/21，Lint 通过；drawing-zones.ps1 成为第九个统一入口。
+完整 app/render/host 为 33/59/21，Lint 通过；drawing-zones.ps1 成为第九个统一入口。
 没有运行 PowerShell 引擎，没有操作手机。O-06 仍有 issue-regressions 等历史入口未完成迁移。
 按用户最新要求，提交此项后优先修复开启充电功率、插电时圆环消失的问题。
+
+Linux CI 首轮在旧矩形三位数检查失败。本地对照进一步发现桌面 Paint 使用整数字符宽度：
+48.3 字号下文本宽 93，字号缩放为 0.9 后宽 81，与期望 83.7 不符，破坏生产 fitter 依赖的浮点比例。
+仅修正 tests/shims 的 Paint/Canvas，测量与逐字绘制统一使用浮点 advance，开启 fractional metrics。
+新增 TextMetricsTest 覆盖普通/粗体、三种 tracking/文本/缩放，旧 Paint 副本会失败。
+保留完整像素边界检查，不通过放宽水平切线掩盖该问题；生产 APK 源码未改动。
+Gradle 开启完整失败详情，云端后续若失败可直接定位断言。

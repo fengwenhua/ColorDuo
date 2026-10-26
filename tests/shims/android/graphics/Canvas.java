@@ -34,6 +34,8 @@ public class Canvas {
                 RenderingHints.VALUE_ANTIALIAS_ON);
         this.g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
                 RenderingHints.VALUE_STROKE_PURE);
+        this.g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                RenderingHints.VALUE_FRACTIONALMETRICS_ON);
     }
 
     public Graphics2D graphics() {
@@ -142,7 +144,7 @@ public class Canvas {
                 String ch = String.valueOf(text.charAt(i));
                 g.setFont(font);
                 g.drawString(ch, cursor, y);
-                cursor += fm.charWidth(text.charAt(i)) + tracking;
+                cursor += paint.measureText(ch) + tracking;
             }
         }
         // fm is intentionally queried above so a missing font fails loudly.
