@@ -48,7 +48,9 @@
 
 **升级必读：低于 1.1.0 的旧版本（不包含 1.1.0）必须先卸载再安装新版。卸载会清除自定义配置，请提前记录布局；安装后在 LSPosed 重新启用 ColorDuo、勾选系统界面并重载。**
 
-**1.1.0 及以上新签名正式版可直接覆盖升级至 1.1.3，保留配置，无需卸载。** 旧测试签名的调试包仍因签名不同而需要卸载重装。
+**1.1.0 及以上新签名正式版可直接覆盖升级至 1.1.4，保留配置，无需卸载。** 旧测试签名的调试包仍因签名不同而需要卸载重装。
+
+1.1.4 修复 Wi-Fi 与移动数据同时关闭时，圆环／胶囊仍显示 5G 等网络类型的问题；重新开启移动数据后自动恢复制式显示。
 
 1.1.3 修复 Wi-Fi 开启、移动数据关闭时原生移动信号重新出现在圆环／胶囊左侧的问题，见[源码仓 issue #3](https://github.com/fengwenhua/ColorDuo/issues/3)。
 
@@ -126,7 +128,7 @@ ColorDuo 包名为 **`io.github.fengwenhua.colorduo`**，与原版及此前的
 bash tests/coloros-observer.sh
 ```
 
-默认版本为 `1.1.3 / 10103`，由 `version.properties` 统一维护，可用 `-PcolorduoVersionName=...` 和
+构建版本由 `version.properties` 统一维护，可用 `-PcolorduoVersionName=...` 和
 `-PcolorduoVersionCode=...` 覆盖。默认启用完整的当前 ColorOS 适配阶段；
 只读诊断构建可传入 `-PcolorOsStage=observe`。
 
