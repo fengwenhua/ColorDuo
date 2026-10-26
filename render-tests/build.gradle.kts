@@ -24,6 +24,7 @@ tasks.named<JavaCompile>("compileTestJava") {
     })
 }
 tasks.test {
+    testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     systemProperty("java.awt.headless", "true")
     systemProperty("colorduo.projectRoot", rootProject.projectDir.absolutePath)
     maxHeapSize = "512m"
