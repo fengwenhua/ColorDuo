@@ -31,9 +31,33 @@ public final class HostDecisionTest {
         assertEquals(WAIT, nativeLayout.action()); assertTrue(nativeLayout.releaseLeases());
         HostDecision.Decision moduleResize = HostDecision.gate(new HostDecision.Gate(true, false, true, true, true));
         assertEquals(WAIT, moduleResize.action()); assertFalse(moduleResize.releaseLeases());
-        assertEquals(RELEASE, HostDecision.prepare(new HostDecision.Preparation(true, true)).action());
+        assertEquals(RELEASE, HostDecision.prepare(new HostDecision.Preparation(true, true, false)).action());
         assertEquals(PREFLIGHT, HostDecision.attach(new HostDecision.Attachment(true, true, false)).action());
         assertEquals(UPDATE, HostDecision.attach(new HostDecision.Attachment(true, true, true)).action());
+    }
+    @Test public void chargingReadoutWaitsForMeasuredWidthAfterParamsAlreadyChanged() {
+        // Plugging adds a readout: request a larger ImageView first.
+        assertEquals("resize", HostDecision.prepare(new HostDecision.Preparation(true, false, false)).reason());
+        // OEM onLayout -> onDarkChanged -> native style can write the new params
+        // before the next traversal measures them. They no longer need changing.
+        HostDecision.Decision pending = HostDecision.prepare(new HostDecision.Preparation(false, false, true));
+        assertEquals(WAIT, pending.action());
+        assertFalse(pending.releaseLeases());
+        assertFalse(HostDecision.gate(new HostDecision.Gate(true, false, true, true, true)).releaseLeases());
+        // Once measured, the existing host updates and commits its own new frame.
+        assertEquals(UPDATE, HostDecision.prepare(new HostDecision.Preparation(false, true, false)).action());
+        assertEquals(UPDATE, HostDecision.mount(true).action());
+        assertEquals(COMMIT_LEASES, HostDecision.presented(new HostDecision.Presentation(true, true, true, true, true, true)).action());
+    }
+    @Test public void constrainedReadoutsRefitWithoutFailingTheBatteryHost() {
+        HostDecision.Decision constrained = HostDecision.prepare(new HostDecision.Preparation(false, false, false));
+        assertEquals(FIT_OUTSIDE, constrained.action());
+        assertFalse(constrained.releaseLeases());
+        // An optional label can be sacrificed; drawing, later removal and the
+        // next plug event remain available without a config change/restart.
+        assertEquals(UPDATE, HostDecision.gate(new HostDecision.Gate(true, false, true, false, false)).action());
+        assertEquals(UPDATE, HostDecision.prepare(new HostDecision.Preparation(false, true, false)).action());
+        assertEquals("resize", HostDecision.prepare(new HostDecision.Preparation(true, true, true)).reason());
     }
     @Test public void plugPopupRequiresAFreshBridgeAndNestedNativeUpdatesWait() {
         ColorOsPlugBridge bridge = new ColorOsPlugBridge();

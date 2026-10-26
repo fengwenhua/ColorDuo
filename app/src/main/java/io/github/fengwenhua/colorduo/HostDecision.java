@@ -3,13 +3,13 @@ package io.github.fengwenhua.colorduo;
 
 /** Pure decisions over sampled host state. View/Hook code executes effects on the main thread. */
 final class HostDecision {
-    enum Action { WAIT, RELEASE, PREFLIGHT, MOUNT, UPDATE, COMMIT_LEASES }
+    enum Action { WAIT, RELEASE, PREFLIGHT, MOUNT, UPDATE, COMMIT_LEASES, FIT_OUTSIDE }
     record Decision(Action action, String reason, boolean releaseLeases) {}
     record Gate(boolean hostPresent, boolean nativeUpdating, boolean available,
                 boolean awaitLayout, boolean resizing) {}
     record Model(boolean nativeDrawable, int style, boolean popup, int level, int tint,
                  int width, int height) {}
-    record Preparation(boolean resizeNeeded, boolean outsideFits) {}
+    record Preparation(boolean resizeNeeded, boolean outsideFits, boolean layoutPending) {}
     record Attachment(boolean mounted, boolean nativeOwned, boolean dimensionsTested) {}
     record Presentation(boolean current, boolean configEnabled, boolean layoutReady,
                         boolean attached, boolean shown, boolean planMatches) {}
@@ -54,7 +54,10 @@ final class HostDecision {
 
     static Decision prepare(Preparation state) {
         if (state.resizeNeeded) return release("resize");
-        if (!state.outsideFits) return release("outside-layout-constrained");
+        if (!state.outsideFits && state.layoutPending) return waitFor("await-resized-layout", false);
+        // Optional readouts must not poison a healthy battery host when the parent
+        // grants less space than requested. Refit them to the measured allocation.
+        if (!state.outsideFits) return new Decision(Action.FIT_OUTSIDE, "outside-layout-constrained", false);
         return next(Action.UPDATE);
     }
 

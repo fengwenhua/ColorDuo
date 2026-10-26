@@ -269,6 +269,13 @@ final class ColorOsBatteryAdapter {
                                         + " full=" + state.full + " saving=" + state.saving);
                             }
                             Host host = hosts.get(chain.getThisObject());
+                            if (host != null) {
+                                ImageView image = host.image.get();
+                                android.view.ViewGroup.LayoutParams params = image == null ? null : image.getLayoutParams();
+                                out.println("    batteryLayout measured=" + (image == null ? "missing" : image.getWidth() + "x" + image.getHeight())
+                                        + " requested=" + (params == null ? "missing" : params.width + "x" + params.height)
+                                        + " outside=" + host.outside.reserve + " pending=" + host.awaitLayout + " failed=" + host.failed);
+                            }
                             if (host != null && host.chargeIcon != null)
                                 out.println("    chargeIcon owned=" + host.chargeIcon.owned()
                                         + " nativeVisibility=" + host.chargeIcon.nativeVisibility());
@@ -552,28 +559,34 @@ final class ColorOsBatteryAdapter {
 
         if (font != null) font.prepareRenderer();
         int[] base = host.size.baseSize(meter, config.get());
-        ColorOsOutsideLayout outside = outsideStage && base[0] > 0 && base[1] > 0
-                ? ColorOsOutsideLayout.create(settings, rawPlan, base[1],
-                    meter.getResources().getDisplayMetrics().widthPixels / 3 - base[0],
-                    meter.getResources().getDisplayMetrics().density, meter.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL,
-                    readouts == null ? ColorOsReadoutSource.State.UNKNOWN : readouts.get(),
-                    ColorOsRingPreset.resolve(ColorOsRingPreset.userLayout(settings, outsidePercent, rawPlan),
-                            level, power.get().charging, rawPlan).wifi)
-                : ColorOsOutsideLayout.EMPTY;
+        ColorOsOutsideLayout outside = outsideLayout(meter, settings, rawPlan, outsidePercent, level,
+                base[1], meter.getResources().getDisplayMetrics().widthPixels / 3 - base[0]);
         HostDecision.Decision preparation = HostDecision.prepare(new HostDecision.Preparation(
                 capsuleStage && host.size.resizeNeeded(meter, config.get(), outside.reserve),
-                outside.reserve <= 0 || (width >= base[0] + outside.reserve && height >= base[1])));
+                outside.reserve <= 0 || (width >= base[0] + outside.reserve && height >= base[1]),
+                image.isLayoutRequested()));
         if (preparation.reason().equals("resize")) {
-            if (!host.configurationHandoff) release(host, preparation.reason());
+            // Keep the proven frame and its leases while a power/temperature label
+            // changes width. New ownership still waits for the resized frame to draw.
+            if (!host.configurationHandoff && !(host.preview != null && host.preview.hasDrawn()
+                    && image.getDrawable() == host.preview)) release(host, preparation.reason());
             host.awaitLayout = true;
             host.resizing = true;
             host.size.apply(meter, config.get(), outside.reserve);
             scheduleReconcile(host);
             return;
         }
-        if (preparation.action() == HostDecision.Action.RELEASE) {
-            host.failed = true;
-            release(host, preparation.reason()); return;
+        if (preparation.action() == HostDecision.Action.WAIT) {
+            host.awaitLayout = true;
+            host.resizing = true;
+            scheduleReconcile(host);
+            return;
+        }
+        if (preparation.action() == HostDecision.Action.FIT_OUTSIDE) {
+            log(host.key + "/outside-fit", "measured=" + width + "x" + height
+                    + " base=" + base[0] + "x" + base[1] + " requestedOutside=" + outside.reserve);
+            outside = outsideLayout(meter, settings, rawPlan, outsidePercent, level,
+                    Math.min(height, base[1]), Math.max(0, width - base[0]));
         }
         if (host.preview != null && image.getDrawable() != host.preview) {
             release(host, "drawable-replaced");
@@ -675,8 +688,9 @@ final class ColorOsBatteryAdapter {
             host.refreshQueued = false;
             if (host.mountToken != token || host.generation != generation) return;
             ImageView image = host.image.get();
-            if (host.resizing && image != null && !image.isLayoutRequested() && image.getLayoutParams() != null
-                    && image.getWidth() == image.getLayoutParams().width && image.getHeight() == image.getLayoutParams().height) {
+            if (host.resizing && image != null && !image.isLayoutRequested()) {
+                // A parent may clamp the requested size. Reconcile against its final
+                // allocation instead of waiting forever for LayoutParams equality.
                 host.awaitLayout = false; host.resizing = false;
             }
             try { reconcile(host); }
@@ -685,6 +699,16 @@ final class ColorOsBatteryAdapter {
                 try { release(host, "handoff-failure"); } catch (Throwable ignored) {}
             }
         });
+    }
+
+    private ColorOsOutsideLayout outsideLayout(View meter, TrioSettings settings, ColorOsNetworkAdapter.Plan plan,
+                                               boolean outsidePercent, int level, int height, int room) {
+        if (!outsideStage || height <= 0) return ColorOsOutsideLayout.EMPTY;
+        return ColorOsOutsideLayout.create(settings, plan, height, room,
+                meter.getResources().getDisplayMetrics().density, meter.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL,
+                readouts == null ? ColorOsReadoutSource.State.UNKNOWN : readouts.get(),
+                ColorOsRingPreset.resolve(ColorOsRingPreset.userLayout(settings, outsidePercent, plan),
+                        level, power.get().charging, plan).wifi);
     }
 
     private static String visibilityPath(View view) {
