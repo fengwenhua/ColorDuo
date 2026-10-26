@@ -26,11 +26,11 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 可传 `--adb` 指定绝对路径。脚本拒绝降级/卸载，不清空 logcat，不输出原始 SystemUI dump；
 只保存模块自有状态与断言计数，报告权限 0600 且不覆盖已存在报告。新签名首次迁移不能使用覆盖安装参数。
 
-`tests/*.ps1` 中十个入口已转发到 Gradle，其余仍保留为历史回归工装；不把全部历史工装算成已经迁移。
+`tests/*.ps1` 的 12 个历史回归入口已全部转发到 Gradle；gradle-test.ps1 是共用启动器。
 历史 `RingSlotsTest` 的过期三分区、聚合信号及中部信号行预期已在新 `FreeRingTest` 中按当前规则迁移；
-原脚本仍保留，不能据此宣称原脚本本身已通过。
+旧的重复 Java 测试体已移除；历史预期调整与故障检出依据保存在验证记录中。
 状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
-Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 35+59 个 JUnit 测试方法，
+Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 35+60 个 JUnit 测试方法，
 每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
 
 `GlyphScaleTest` 将旧脚本的 17 项真实像素断言迁为 1 个 Gradle/JUnit 方法；
@@ -40,14 +40,15 @@ Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。�
 
 `HyperOsIconLeaseTest` 的 9 个方法直接执行生产 lease 类，覆盖排队后换配置、只撤回模块增加的屏蔽项、
 多个 manager 隔离、灵动岛切换、两个移动 slot 别名、原生电池子视图恢复、延迟字段解析和 OEM 失败。
-17 项原交接断言在提取前后均通过。旧 ring-handoff 脚本的源码列表/fixture 已同步；
+17 项原交接断言现在由 RingHandoffTest 再执行一次当前 TrioHooks 的 8 个委托方法；
+生成器唯一定位方法，并保留灵动岛变更需同步锁屏的原约束。旧独立 javac 清单缺少当前 TrioZones 依赖，已由完整 Gradle 源清单补齐；
 macOS 没有 pwsh，本轮通过等价 Java 编译/执行核对工装，未声称执行过 PowerShell 引擎。
 
 `host-tests` 将 Drawable 宿主协议与渲染像素替身隔离。5 个参数化实例保留历史 156 项断言，
 另一个方法验证字段写入失败的直绘回退。直接编译生产 GlyphDrawable/Refl，生成当前实际 Hook 方法体的测试夹具；
 标记/边界改变即失败，不自动换用其他源码位置。普通 CI 和发版 CI 均已加入 `:host-tests:test`。
 host-tests 另迁入 18 组 Wi-Fi 组合/3 次转换和 44 项电池读数断言，增加温度充电过滤和原集成约束检查。
-十个旧 PS 入口已统一转发，Drawable 与 OS4 strip 的替代源码目录参数经过 Gradle 实跑验证。
+12 个旧 PS 入口已统一转发，Drawable 与 OS4 strip 的替代源码目录参数经过 Gradle 实跑验证。
 `host-tests:readoutTest` 还保留 76 项读数布局断言与 4 组集成约束，使用独立替身/报告；host-tests:test 自动依赖它。
 `CapsuleTest` 保留 78 项胶囊轮廓/电量/字体断言；`CapsuleSourceContractTest` 的 4 个方法保留测量、拟合、样式入口约束，
 并检查动态长度及上下组件的额外宿主高度。字号/字重独立性按真实文字绘制的独立像素层判断，避免旧固定分界误判。
@@ -56,7 +57,7 @@ host-tests 另迁入 18 组 Wi-Fi 组合/3 次转换和 44 项电池读数断言
 `host-tests:stripTest` 使用独立 ViewGroup 替身保留 2776 项 OS4 布局/预留检查，另补 144 项排序与优先级断言，
 同样由普通 host-tests:test 自动调用。
 `RingHitBoundaryTest` 两项检查覆盖 18 个极值描边/布局/宿主比例帧的逐像素命中和 ink 外点击拒绝。
-目前统计为 app 35、render 59、host 41（普通14+隔离读数5+环外布局2+历史 issue 20）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
+目前统计为 app 35、render 60、host 41（普通14+隔离读数5+环外布局2+历史 issue 20）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
 
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。
@@ -82,3 +83,8 @@ Wrapper 与依赖校验规则见 [TOOLCHAIN.md](TOOLCHAIN.md)。
 实际 TrioTint、TrioZones、OutRingLayout 与配置类直接编译；不代表 Android 服务或 HyperOS 固件实测。
 编辑路由 editingChargeScene 按现行文档排除持久相等性，另验证复制保留、线协议不携带；
 UI 源检查跟随 DrawingPreview/DrawingZones 的既有拆分。旧 -Suite 与 -SourceDirectory 已映射并验证底层 Gradle 参数。
+
+圆环与交接的替代源码参数分别为 `-PringTestProductionSources=...`（原 8 个文件）和
+`-PleaseTestProductionSources=...`（原 8 个文件加 TrioHooks）。其余测试依赖继续取项目源码，不要求替代目录扩为整个项目。
+两个最小目录已分别实跑；在目录内注入优先级反转、丢失 hideIcon 委托与丢失灵动岛同步，均使对应 Gradle 检查失败。
+`ring-handoff.ps1` 同时运行原 17 项桥接序列和 9 组 lease 测试；仍未执行 PowerShell 引擎。

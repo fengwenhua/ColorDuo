@@ -11,8 +11,8 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 
 ## 继续顺序与未完成边界
 
-1. **O-06：完整测试迁移**。现有 Gradle 门禁不等于 12 个历史 PowerShell 工装均已迁移。
-   先迁移真实渲染/配置测试，再为 HyperOS 原生图标、网络状态、时钟和读数提取建立保护。
+1. **O-06：完整测试迁移（已完成桌面/CI 迁移）**。12 个历史 PowerShell 入口均已转发至 Gradle，保留发版前真机验证层。
+   真实渲染/配置、HyperOS 原生图标、网络、时钟和读数均已建立保护；末节记录最后两个入口的收尾。
    旧测试中三分区编码、中部信号行和固定胶囊规则有过期预期；必须记录为什么调整，不能为通过而修改现有功能。
 2. **O-08：配置模型分组**。注册表已统一线协议和字段完整性检查，历史读取、copy、equality/hash 仍有直接映射。
    按 Content、Ring/Capsule Layout、Appearance 分组逐步提取，保留读取迁移和两种样式隔离的门禁。
@@ -31,8 +31,8 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | 历史测试组 | 当前 Gradle 覆盖 | 尚存边界 |
 | --- | --- | --- |
 | glyph-scale | GlyphScaleTest：17 项原像素断言及范围/default 契约 | 旧入口转发 Gradle；单次缩放/限幅以像素故障对照验证 |
-| ring-slots | 新增 FreeRingTest：6 个方法、624 项断言 | 原脚本保留；更新过期预期的依据及像素隔离修复见下文 |
-| ring-handoff | 新增 HyperOsIconLeaseTest：9 个方法直接执行生产类 | 17 项历史断言提取前后相同；View/OEM 模型不代表 HyperOS 固件实机 |
+| ring-slots | 新增 FreeRingTest：6 个方法、624 项断言 | 旧入口转发 Gradle，重复 Java 已移除；现行预期依据及像素隔离修复见下文 |
+| ring-handoff | HyperOsIconLeaseTest 9 组 + RingHandoffTest 1 组桥接 | 原 17 项由当前 8 个 Hook 委托执行；含岛变化源码约束，不代表 HyperOS 固件实机 |
 | capsule | CapsuleTest：78 项运行时断言；4 组源集成/宿主尺寸检查 | 修正动态宽度、上下组件预留高度及旧固定文字分界；旧入口转发 Gradle |
 | capsule-zones | CapsuleZonesTest：338 项四格编辑/像素/信号断言 | 旧固定时钟预期改为 LEFT 自由组件；正文记录像素归属边界变化 |
 | drawing-zones | DrawingZonesTest 15 方法 + DrawingSourceContractTest 4 方法 | 旧三带兼容路径与当前自由组件分别保护；迁移说明见下文，旧入口转发 Gradle |
@@ -40,7 +40,7 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | wifi-presence / battery-presence | host-tests：18 组 Wi-Fi 组合+3 次转换、44 项电池断言及温度过滤 | 当前实际方法体生成；不能代替真实 Android 服务/广播 |
 | perf-layout | 独立 readoutTest：76 项原断言、4 组集成约束，旧入口转发 | Paint/View 替身与主宿主测试隔离；不代表 Android 字体/OEM 测量 |
 | os4-layout | 独立 stripTest：2776 项布局/恢复及 144 项全排序断言 | 实际 14 个 Hook 方法+生产 OutRingLayout/Refl；不代表 HyperOS 固件实机 |
-| issue-regressions | 独立 issueTest：12 组/663 项运行时断言 + 8 组源契约 | 十个 PS 入口统一；其余两个旧 launcher 待收拢，不代表 Android 服务/Compose 手势实测 |
+| issue-regressions | 独立 issueTest：12 组/663 项运行时断言 + 8 组源契约 | 12 个 PS 入口已统一；不代表 Android 服务/Compose 手势实测 |
 
 GlyphScaleTest 的验证：`:render-tests:test --tests io.github.fengwenhua.colorduo.GlyphScaleTest` 成功，
 JUnit 输出 17 项断言。仅在 `.local` 临时源码中注入三种故障，忽略缩放、取消限幅、重复缩放均触发像素/边界断言失败；
@@ -252,3 +252,21 @@ JUnit 每例清理夹具静态状态，保持旧每组独立 JVM 的初始条件
 五文件最小替代源码目录、Suite 对应的底层 Gradle 方法筛选实跑；issue-regressions.ps1 成为第十个统一入口，保留参数与 CRLF。
 未执行 PowerShell 引擎，未操作手机或发布新版本。当前 app/render/host 为 35/59/41，共 135 个 JUnit 方法/实例。
 ring-slots 与 ring-handoff 的当前 Gradle 覆盖已存在，两个旧启动器仍待最后统一；O-06 不据此宣告全部收尾。
+
+### O-06 最后两个入口统一
+
+ring-slots.ps1 改为运行既有 FreeRingTest，6 组/624 项断言不变。
+ring-handoff.ps1 同时运行 9 组真实 lease 测试和新增的原始桥接序列：8 个委托方法取自当前 TrioHooks，
+原 17 项断言逐项保留。生成前仍要求 reactToIslandChange 调用 syncKeyguardRows，方法来源必须唯一。
+旧脚本直接 javac 的清单遗漏当前 TrioAppearance 引用的 TrioZones，因此原命令不能独立编译；
+补齐当前依赖后旧 Java 序列输出 17 项，新 Gradle 输出相同，没有改生产类来迁就工装。
+
+两个 -SourceDirectory 参数映射到独立 ringTestProductionSources / leaseTestProductionSources，
+分别以 8 文件、9 文件的最小目录实跑；未要求复制整个源码树，也不影响其他宿主替代源。
+临时目录反转插入优先级、删除真实 hideIcon 委托、删除灵动岛锁屏同步，三种故障均被拒绝，证明参数实际影响被测来源。
+重复的 tests/RingSlotsTest.java 删除，RingHandoffTest 移到受 Gradle 生成管理的模板；Git 历史保留旧工装。
+
+本地 app/render/host 为 35/60/41（136 个 JUnit 方法/实例），Lint/release 通过。
+12 个历史回归入口已统一，O-06 的纯逻辑/桌面测试和两级验证入口收尾；旧脚本引擎本身仍未在本机执行。
+真机验证仍由 verify-device.py 和既有签名候选流程承担，桌面替身不替代 OEM/Canvas/手势验收。
+本步骤没有改动手机或生产代码，下一步按计划进入 O-08 配置模型分组。

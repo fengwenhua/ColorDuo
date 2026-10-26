@@ -16,6 +16,11 @@ import java.util.*;
 
 public final class RingHandoffTest {
     static int checks;
+    @org.junit.Test public void productionDelegatesKeepTheOriginalHandoffSequence() {
+        checks = 0;
+        HandoffHooks.KEYGUARD_ROWS.clear(); HandoffHooks.COLLAPSED.clear();
+        main(new String[0]);
+    }
     static void ok(boolean value, String message) {
         checks++; if (!value) throw new AssertionError(message);
     }
@@ -23,7 +28,7 @@ public final class RingHandoffTest {
         TrioSettings s = TrioSettings.defaults(); s.enabled = true;
         s.showSim1 = true;
         s.ringZones = Prefs.decodeLayout("1||");
-        TrioConfig.settings = s;
+        HandoffConfig.settings = s;
         View wifi = new View(); wifi.slot = "wifi";
         HandoffHooks.hideIcon(wifi);
         s.ringZones = Prefs.decodeLayout("||"); // The user releases Wi-Fi before the posted hide executes.
@@ -102,13 +107,13 @@ public final class RingHandoffTest {
         public int style;
         boolean nativePercent;
         public void refresh() {
-            charging.setVisibility(TrioConfig.appearance().hidesNativeBolt() ? View.GONE : View.VISIBLE);
-            percent.setVisibility(nativePercent && !TrioConfig.appearance().ownsValue() ? View.VISIBLE : View.GONE);
+            charging.setVisibility(HandoffConfig.appearance().hidesNativeBolt() ? View.GONE : View.VISIBLE);
+            percent.setVisibility(nativePercent && !HandoffConfig.appearance().ownsValue() ? View.VISIBLE : View.GONE);
         }
     }
 }
 
-final class TrioConfig {
+final class HandoffConfig {
     static TrioSettings settings;
     static TrioAppearance appearance() { return TrioAppearance.of(settings); }
 }
@@ -119,7 +124,7 @@ final class HandoffHooks {
     static final List<String> WIFI_SLOTS = Arrays.asList("wifi");
     static final List<String> MOBILE_SLOTS = Arrays.asList("mobile");
     static final List<String> MANAGED_SLOTS = Arrays.asList("wifi", "mobile");
-    static final HyperOsIconLease ICON_LEASE = new HyperOsIconLease(TrioConfig::appearance,
+    static final HyperOsIconLease ICON_LEASE = new HyperOsIconLease(HandoffConfig::appearance,
             HandoffHooks::islandHideBattery, WIFI_SLOTS, MOBILE_SLOTS, HandoffHooks::slotOf,
             HandoffHooks::foldContainers, HandoffHooks::nativeFields, () -> false, message -> {});
     static final Map<View, Boolean> KEYGUARD_ROWS = ICON_LEASE.keyguardRows;
