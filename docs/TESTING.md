@@ -26,11 +26,11 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 可传 `--adb` 指定绝对路径。脚本拒绝降级/卸载，不清空 logcat，不输出原始 SystemUI dump；
 只保存模块自有状态与断言计数，报告权限 0600 且不覆盖已存在报告。新签名首次迁移不能使用覆盖安装参数。
 
-`tests/*.ps1` 中六个入口已转发到 Gradle，其余仍保留为历史回归工装；不把全部历史工装算成已经迁移。
+`tests/*.ps1` 中七个入口已转发到 Gradle，其余仍保留为历史回归工装；不把全部历史工装算成已经迁移。
 历史 `RingSlotsTest` 的过期三分区、聚合信号及中部信号行预期已在新 `FreeRingTest` 中按当前规则迁移；
 原脚本仍保留，不能据此宣称原脚本本身已通过。
 状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
-Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 28+34 个 JUnit 测试方法，
+Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 28+37 个 JUnit 测试方法，
 每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
 
 `GlyphScaleTest` 将旧脚本的 17 项真实像素断言迁为 1 个 Gradle/JUnit 方法；
@@ -47,11 +47,13 @@ macOS 没有 pwsh，本轮通过等价 Java 编译/执行核对工装，未声�
 另一个方法验证字段写入失败的直绘回退。直接编译生产 GlyphDrawable/Refl，生成当前实际 Hook 方法体的测试夹具；
 标记/边界改变即失败，不自动换用其他源码位置。普通 CI 和发版 CI 均已加入 `:host-tests:test`。
 host-tests 另迁入 18 组 Wi-Fi 组合/3 次转换和 44 项电池读数断言，增加温度充电过滤和原集成约束检查。
-六个旧 PS 入口已统一转发，Drawable 的替代源码目录参数经过 Gradle 实跑验证。
+七个旧 PS 入口已统一转发，Drawable 的替代源码目录参数经过 Gradle 实跑验证。
 `host-tests:readoutTest` 还保留 76 项读数布局断言与 4 组集成约束，使用独立替身/报告；host-tests:test 自动依赖它。
 `CapsuleTest` 保留 78 项胶囊轮廓/电量/字体断言；`CapsuleSourceContractTest` 的 4 个方法保留测量、拟合、样式入口约束，
 并检查动态长度及上下组件的额外宿主高度。字号/字重独立性按真实文字绘制的独立像素层判断，避免旧固定分界误判。
-目前统计为 app 28、render 34、host 19（普通14+隔离读数5）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
+`CapsuleZonesTest` 的 3 个方法覆盖 338 项四格编辑/像素/信号断言，包括两档长度下的 32 组极值帧。
+文字可沿整个 body 轨道增长，像素检查要求留在 body 且存在可编辑区域；左右锚点单独核对其命中区域。
+目前统计为 app 28、render 37、host 19（普通14+隔离读数5）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
 
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。

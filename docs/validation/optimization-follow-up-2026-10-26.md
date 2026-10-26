@@ -34,7 +34,8 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | ring-slots | 新增 FreeRingTest：6 个方法、624 项断言 | 原脚本保留；更新过期预期的依据及像素隔离修复见下文 |
 | ring-handoff | 新增 HyperOsIconLeaseTest：9 个方法直接执行生产类 | 17 项历史断言提取前后相同；View/OEM 模型不代表 HyperOS 固件实机 |
 | capsule | CapsuleTest：78 项运行时断言；4 组源集成/宿主尺寸检查 | 修正动态宽度、上下组件预留高度及旧固定文字分界；旧入口转发 Gradle |
-| capsule-zones / drawing-zones | 待迁移 | 固定胶囊历史规则与当前自由布局有差异，需要区分历史与现行断言 |
+| capsule-zones | CapsuleZonesTest：338 项四格编辑/像素/信号断言 | 旧固定时钟预期改为 LEFT 自由组件；正文记录像素归属边界变化 |
+| drawing-zones | 待迁移 | 历史三带与当前四格、动态缺口规则有差异，需要区分历史与现行断言 |
 | glyph-drawable | 新增 host-tests：5 种形态保留 156 项断言，另加写槽失败回退 | Hook 方法体来自当前源码的隔离生成；不代替 Xposed/OEM/GPU 验证 |
 | wifi-presence / battery-presence | host-tests：18 组 Wi-Fi 组合+3 次转换、44 项电池断言及温度过滤 | 当前实际方法体生成；不能代替真实 Android 服务/广播 |
 | perf-layout | 独立 readoutTest：76 项原断言、4 组集成约束，旧入口转发 | Paint/View 替身与主宿主测试隔离；不代表 Android 字体/OEM 测量 |
@@ -147,3 +148,22 @@ capsule.ps1 原 Java 夹具引用已改为函数的 CAP_INK_W/CAP_DOT_CX，原�
 临时反转电量填充、把时钟字号/字重各自绑到电量设置，三种故障均触发断言失败。
 独立 Java main 和 Gradle 均输出 78 项通过；不宣称原过期脚本原样通过。
 capsule.ps1 成为第六个统一 Gradle 入口；未执行 PowerShell 引擎，未操作手机。
+
+### 胶囊四格编辑工装迁移
+
+CapsuleZonesTest 保留像素归属/可编辑性、编辑后场景稳定、组件放置及信号数据四类检查，扩至 3 个 JUnit 方法、338 项断言。
+旧脚本因 CAP_DOT_CX 常量移除而无法原样编译；改为 capDotCx()，并按当前 UI 规则更新夹具：
+
+- 时钟属于独立 LEFT 格，四格均可清空或放置文字/图标，使用实际编辑器的 withPiece/placementChoices。
+  旧“TOP 是不可移除固定时钟”“右格不接受时钟”的预期已过期；不改变旧 assign 兼容入口来迁就测试。
+- 初始显式四格 `7|3|8|6`，逐格清空并核对 4 种 Wi-Fi/充电组合以及其他三格，防止清空被旧外部左格配置覆盖。
+  全部从未放置的空布局继续有历史默认回退，不把它当成某个格子的清空结果。
+- 在原描边/字号/电量极值组合上增加两档胶囊长度，共 32 帧。全部墨迹必须有可编辑区域，
+  时钟/电量差分必须留在 body，左右文字锚点必须各自命中 LEFT/CENTRE。
+  当前读数可在整条轨道上从边缘增长，所以不再以旧固定文字分界裁切墨迹来判断部件归属；
+  独立设置是否相互影响由上一组实际文字像素层检查保护，没有降低到“画了东西就算通过”。
+- 原 4 项移动强度/电量无关/双卡差异像素检查全部保留。
+
+在临时副本中将右侧命中区误放到左侧、用电量驱动信号、忽略清空，三种故障均失败。
+全部 app/render/host、Lint/release 通过，计数为 28/37/19。旧 capsule-zones.ps1 转发统一 Gradle 入口，
+没有运行 PowerShell 引擎，没有更改生产绘制或编辑代码，没有操作手机。
