@@ -33,7 +33,8 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | glyph-scale | GlyphScaleTest：17 项原像素断言及范围/default 契约 | 旧入口转发 Gradle；单次缩放/限幅以像素故障对照验证 |
 | ring-slots | 新增 FreeRingTest：6 个方法、624 项断言 | 原脚本保留；更新过期预期的依据及像素隔离修复见下文 |
 | ring-handoff | 新增 HyperOsIconLeaseTest：9 个方法直接执行生产类 | 17 项历史断言提取前后相同；View/OEM 模型不代表 HyperOS 固件实机 |
-| capsule / capsule-zones / drawing-zones | 待迁移 | 固定胶囊历史规则与当前自由布局有差异，需要区分历史与现行断言 |
+| capsule | CapsuleTest：78 项运行时断言；4 组源集成/宿主尺寸检查 | 修正动态宽度、上下组件预留高度及旧固定文字分界；旧入口转发 Gradle |
+| capsule-zones / drawing-zones | 待迁移 | 固定胶囊历史规则与当前自由布局有差异，需要区分历史与现行断言 |
 | glyph-drawable | 新增 host-tests：5 种形态保留 156 项断言，另加写槽失败回退 | Hook 方法体来自当前源码的隔离生成；不代替 Xposed/OEM/GPU 验证 |
 | wifi-presence / battery-presence | host-tests：18 组 Wi-Fi 组合+3 次转换、44 项电池断言及温度过滤 | 当前实际方法体生成；不能代替真实 Android 服务/广播 |
 | perf-layout | 独立 readoutTest：76 项原断言、4 组集成约束，旧入口转发 | Paint/View 替身与主宿主测试隔离；不代表 Android 字体/OEM 测量 |
@@ -127,3 +128,22 @@ TextView 替身名称对齐 android.widget；绘制参数与原 Java 工装相�
 临时忽略读数尺寸、按当前数字测量预留宽度、将多行宽度求和三种故障均被拒绝。
 perf-layout.ps1 改为统一启动器，底层两项 --tests 参数和全部项目门禁实跑通过。
 当前为 app 28、render 29、host 19（普通14+隔离读数5），Lint/release 成功；没有操作手机或宣称 Android 字体实测。
+
+### 胶囊轮廓与文字像素迁移
+
+capsule.ps1 原 Java 夹具引用已改为函数的 CAP_INK_W/CAP_DOT_CX，原样编译失败；
+其旧宿主只增宽、不增高，也不再符合上下开口组件已预留高度的现行规则。
+迁移到 CapsuleTest 后读取 capInkW()/capDotCx()，宽宿主同时采用 capHostHeightPx，
+轮廓保持原状态栏高度，上下 band 使用新增空间。仍保留 78 项轮廓增长/方向、边距、
+双宿主比例、信号开口、旧几何辅助契约、字号/字重及 Bundle 回退断言。
+
+现行左右读数各自靠边绘制，不再按旧文字宽度比例的固定分界裁切。
+旧半图比较会把跨过旧分界的时钟墨迹误报为电量变化；新夹具将实际 drawText 调用按文字分别绘制到独立像素层，
+比较完整文字像素，要求两帧均实际绘制该文字。时钟的尺寸可达性按现行整条阅读轨道检查。
+没有修改生产绘制代码，也没有把缺失的文字当成“没有变化”。
+
+另 4 个 JUnit 方法保留原源码集成约束，并检查两档长度/三档宿主高度的 body scale 与 band 空间。
+修正读取样式时的正常空白差异；其余旧测量、View setter、单次整体缩放、点行中心线、共享文字 fitter 和 UI ID 映射约束保留。
+临时反转电量填充、把时钟字号/字重各自绑到电量设置，三种故障均触发断言失败。
+独立 Java main 和 Gradle 均输出 78 项通过；不宣称原过期脚本原样通过。
+capsule.ps1 成为第六个统一 Gradle 入口；未执行 PowerShell 引擎，未操作手机。

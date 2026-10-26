@@ -25,5 +25,6 @@ tasks.named<JavaCompile>("compileTestJava") {
 }
 tasks.test {
     systemProperty("java.awt.headless", "true")
+    systemProperty("colorduo.projectRoot", rootProject.projectDir.absolutePath)
     maxHeapSize = "512m"
 }
