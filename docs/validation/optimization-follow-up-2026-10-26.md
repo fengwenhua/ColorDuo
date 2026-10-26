@@ -35,7 +35,7 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | ring-handoff | 新增 HyperOsIconLeaseTest：9 个方法直接执行生产类 | 17 项历史断言提取前后相同；View/OEM 模型不代表 HyperOS 固件实机 |
 | capsule | CapsuleTest：78 项运行时断言；4 组源集成/宿主尺寸检查 | 修正动态宽度、上下组件预留高度及旧固定文字分界；旧入口转发 Gradle |
 | capsule-zones | CapsuleZonesTest：338 项四格编辑/像素/信号断言 | 旧固定时钟预期改为 LEFT 自由组件；正文记录像素归属边界变化 |
-| drawing-zones | 待迁移 | 历史三带与当前四格、动态缺口规则有差异，需要区分历史与现行断言 |
+| drawing-zones | DrawingZonesTest 15 方法 + DrawingSourceContractTest 4 方法 | 旧三带兼容路径与当前自由组件分别保护；迁移说明见下文，旧入口转发 Gradle |
 | glyph-drawable | 新增 host-tests：5 种形态保留 156 项断言，另加写槽失败回退 | Hook 方法体来自当前源码的隔离生成；不代替 Xposed/OEM/GPU 验证 |
 | wifi-presence / battery-presence | host-tests：18 组 Wi-Fi 组合+3 次转换、44 项电池断言及温度过滤 | 当前实际方法体生成；不能代替真实 Android 服务/广播 |
 | perf-layout | 独立 readoutTest：76 项原断言、4 组集成约束，旧入口转发 | Paint/View 替身与主宿主测试隔离；不代表 Android 字体/OEM 测量 |
@@ -199,3 +199,24 @@ drawing-zones 原 Java 夹具能编译，但在最大描边的闭合圆环中发
 按维护者最新要求，本轮完成此修复、提交并通过 CI 后发布 1.1.2，不继续展开后续优化。
 drawing-zones 全组、issue-regressions、配置模型分组、剩余宿主职责提取、golden 与键盘/焦点验收仍留在本清单，
 不将两项新增边界测试视为整组历史工装迁移完成。
+
+### 绘制区域工装迁移（O-06 当前步骤）
+
+15 个运行时方法覆盖 22 种配置、3 档电量和两种 Wi-Fi 状态的 132 帧矩阵，
+另保留变换/预览 inset、三位数列宽、可绘制组件、兼容 assign 最少修改/拒绝穷举/清空及点大小检查。
+四个源契约方法保留共享变换、预览委托、逆变换和矩形切线的原集成约束。
+
+旧原样夹具在当前自由布局规则下不能通过。新夹具显式启用 SIM、关闭类型的 Wi-Fi 互斥过滤，
+用实际布局决定闪电的放置/移除，排除胶囊专用 LEFT，动态缺口比较同时覆盖上下开口。
+组件归属由逐像素差分检查；电池弧重排时仅断言绘制改变，保留历史 Wi-Fi 相邻带容许范围，
+更严格的现行自由圆环组件边界另由 FreeRingTest 保护。未改变生产代码以迁就旧夹具。
+
+矩形为已退役的兼容渲染路径：桌面字体在最大字号时略过固定上切线，
+仅在中心列和切线前 1 设计单位内允许该差异，仍保留三位数横向严格边界。
+JUnit 每例恢复原独立 JVM 的 CENTER 画笔初始状态，避免先运行的胶囊测试残留左右对齐；
+不逐帧重置，不将此项算作现行样式切换验证。
+临时副本将矩形读数上移 4 单位、允许零级 Wi-Fi、反转兼容三带逆变换，三项均被新测试拒绝。
+
+完整 app/render/host 为 33/58/21，Lint 通过；drawing-zones.ps1 成为第九个统一入口。
+没有运行 PowerShell 引擎，没有操作手机。O-06 仍有 issue-regressions 等历史入口未完成迁移。
+按用户最新要求，提交此项后优先修复开启充电功率、插电时圆环消失的问题。
