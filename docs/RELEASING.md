@@ -18,6 +18,18 @@ gh workflow run release.yml --ref main -f tag=v1.1.0 -f prune_old_releases=false
 四个附件为 APK、APK.sha256、release-manifest.json、release-manifest.sig。两仓必须上传同一组附件。
 同 tag 重试只接受一致的标题、说明和附件，不覆盖已发布的不同内容，不删除同名 APK 后重传。
 
+上传报错后，先确认上一次任务已经结束，再用相同 tag 和同源 dist 重试。发布器会先查已发布版本，
+再分页查找该 tag 的已有草稿；有且只有一个匹配项时复用原 Release ID。
+若服务器已经保存附件但客户端没收到成功响应，重试会回读它并校验摘要，只补缺少的附件。
+同 tag 的多个草稿、说明不一致、重复/额外附件会在上传前停止，保留原现场。
+`starter` 或其他未完成附件状态也会停止，不自动删除或重启仍可能进行中的上传。
+只有四个已完成附件全部回读校验通过，才发布草稿；完整的公开版本重跑仅做只读校验。
+
+依据：[GitHub 发布查询](https://docs.github.com/en/rest/releases/releases#get-a-release-by-tag-name)
+面向已发布版本，带权限的发布列表包含草稿；[附件 API](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)
+另说明了上游失败可能遗留空 starter 的情况。不能把一次客户端超时当作服务器未保存附件的证据。
+
+
 需要在已安装生产签名的手机上测试修复时，可设置 `publish_release=false`：
 仍通过完整 build 门禁和受保护 sign job，仅生成 `signed-release` artifact，跳过发布、同步与清理。
 从该 artifact 核验签名后安装，避免为了测试再换回公开 debug 签名或卸载用户配置。

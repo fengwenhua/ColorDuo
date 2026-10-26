@@ -78,6 +78,27 @@ def artifacts(directory):
     return [apk, sha, directory / "release-manifest.json", directory / "release-manifest.sig"]
 
 
+def find_release(api, base, tag):
+    # GitHub's tag endpoint finds published releases. Authenticated release lists
+    # also include drafts, including one whose upload response was lost.
+    current = api.optional(base + "/releases/tags/" + urllib.parse.quote(tag, safe=""))
+    if current is not None:
+        return current
+    matches = {}
+    page = 1
+    while True:
+        items = api.request(base + f"/releases?per_page=100&page={page}")
+        for item in items:
+            if item["tag_name"] == tag:
+                matches[item["id"]] = item
+        if len(items) < 100:
+            break
+        page += 1
+    if len(matches) > 1:
+        raise RuntimeError("Multiple releases share this tag; inspect them before retrying")
+    return next(iter(matches.values()), None)
+
+
 def publish(api, repo, tag, directory):
     stamp = version()
     if tag != tag_for(repo, stamp): raise RuntimeError("Unexpected release tag")
@@ -86,21 +107,30 @@ def publish(api, repo, tag, directory):
     if stamp["versionName"] == "1.1.0" and not all(text in notes for text in ["先卸载旧版本", "清除", "LSPosed"]):
         raise RuntimeError("Signing migration notice is required")
     base = "repos/" + repo
-    current = api.optional(base + "/releases/tags/" + tag)
+    current = find_release(api, base, tag)
     if current is None:
         current = api.request(base + "/releases", "POST", {"tag_name": tag, "name": stamp["versionName"],
             "body": notes, "draft": True, "prerelease": False,
             "target_commitish": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
                 if repo == "fengwenhua/ColorDuo" else "main"})
-    elif current["name"] != stamp["versionName"] or current["body"] != notes or current["prerelease"]:
+    if (current["tag_name"] != tag or current["name"] != stamp["versionName"]
+            or current["body"] != notes or current["prerelease"]):
         raise RuntimeError("Existing release differs; refusing replacement")
     existing = {a["name"]: a for a in current["assets"]}
+    if len(existing) != len(current["assets"]) or set(existing) - {file.name for file in files}:
+        raise RuntimeError("Unexpected or duplicate release assets; inspect them before retrying")
+    if any(asset.get("state") != "uploaded" for asset in existing.values()):
+        # A starter can also be an in-flight upload. Do not delete/restart it just
+        # because a response timed out; the previous attempt must finish first.
+        raise RuntimeError("Release asset upload has not completed; inspect the previous attempt before retrying")
     for file in files:
         asset = existing.get(file.name)
         if asset is None:
             if not current["draft"]: raise RuntimeError("Published release is incomplete; refusing mutation")
             asset = api.request(current["upload_url"].split("{", 1)[0] + "?name=" + urllib.parse.quote(file.name),
                 "POST", blob=file.read_bytes())
+        if asset.get("state") != "uploaded":
+            raise RuntimeError("Release asset upload has not completed; inspect the previous attempt before retrying")
         data = api.request(base + "/releases/assets/" + str(asset["id"]), accept="application/octet-stream", binary=True)
         if hashlib.sha256(data).digest() != hashlib.sha256(file.read_bytes()).digest():
             raise RuntimeError("Remote asset verification failed: " + file.name)
