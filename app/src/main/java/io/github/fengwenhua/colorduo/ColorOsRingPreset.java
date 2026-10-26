@@ -7,35 +7,34 @@ final class ColorOsRingPreset {
                                ColorOsNetworkAdapter.Plan plan) {
         TrioSettings paint = settings.copy();
         paint.trioStyle = Prefs.STYLE_RING;
-        paint.showWifi = plan.wifi >= 1;
-        paint.showMobile = plan.mobile >= 0;
-        paint.showSim1 = paint.showMobile && plan.mobileSlot == 0;
-        paint.showSim2 = paint.showMobile && plan.mobileSlot == 1;
-        paint.signalMode = Prefs.SIGNAL_IN_RING;
-        paint.showBolt = false;
-        paint.showValue = settings.showValue && !outsidePercent;
-        paint.mobileTypeMode = Prefs.MOBILE_TYPE_OFF;
-        paint.perfPower = paint.perfTemp = false;
+        ContentSettings c = settings.content;
+        boolean mobile = plan.mobile >= 0;
+        paint.content = new ContentSettings(
+                plan.wifi >= 1, mobile, c.showValue() && !outsidePercent, false,
+                Prefs.MOBILE_TYPE_OFF, c.valueCentred(), c.dualSim(), Prefs.SIGNAL_IN_RING,
+                c.stackedSignal(), mobile && plan.mobileSlot == 0, mobile && plan.mobileSlot == 1,
+                c.typeHideOnWifi(), c.chargingShowsValue(), false, false, c.perfTempChargingOnly());
         paint.roleColors = false;
         paint.fontPath = "";
         paint.ringZones = Prefs.decodeLayout(network
-                ? (paint.showWifi ? "1" : "") + "|" + (paint.showValue ? "3" : "") + "|"
-                    + (paint.showMobile ? (plan.mobileSlot == 0 ? "7" : "8") : "")
-                : (paint.showValue ? "3||" : Prefs.EMPTY_LAYOUT));
+                ? (paint.content.showWifi() ? "1" : "") + "|" + (paint.content.showValue() ? "3" : "") + "|"
+                    + (paint.content.showMobile() ? (plan.mobileSlot == 0 ? "7" : "8") : "")
+                : (paint.content.showValue() ? "3||" : Prefs.EMPTY_LAYOUT));
         return paint;
     }
 
     static TrioSettings userLayout(TrioSettings settings, boolean outsidePercent, ColorOsNetworkAdapter.Plan plan) {
         TrioSettings paint = settings.copy();
-        paint.showWifi = settings.showWifi && plan.wifi >= 1;
-        paint.showMobile = settings.showMobile && plan.mobile >= 0;
-        paint.showSim1 = settings.showSim1 && plan.mobile >= 0 && plan.mobileSlot == 0;
-        paint.showSim2 = settings.showSim2 && plan.mobile >= 0 && plan.mobileSlot == 1;
-        paint.showValue = settings.showValue && !outsidePercent;
-        paint.showBolt = settings.showBolt; // The drawn battery leases the native charge icon separately.
-        paint.mobileTypeMode = !plan.typeLabel.isEmpty() && settings.mobileTypeMode == Prefs.MOBILE_TYPE_IN_RING
-                ? Prefs.MOBILE_TYPE_IN_RING : Prefs.MOBILE_TYPE_OFF;
-        paint.perfPower = paint.perfTemp = false;
+        ContentSettings c = settings.content;
+        paint.content = new ContentSettings(
+                c.showWifi() && plan.wifi >= 1, c.showMobile() && plan.mobile >= 0,
+                c.showValue() && !outsidePercent, c.showBolt(),
+                !plan.typeLabel.isEmpty() && c.mobileTypeMode() == Prefs.MOBILE_TYPE_IN_RING
+                        ? Prefs.MOBILE_TYPE_IN_RING : Prefs.MOBILE_TYPE_OFF,
+                c.valueCentred(), c.dualSim(), c.signalMode(), c.stackedSignal(),
+                c.showSim1() && plan.mobile >= 0 && plan.mobileSlot == 0,
+                c.showSim2() && plan.mobile >= 0 && plan.mobileSlot == 1,
+                c.typeHideOnWifi(), c.chargingShowsValue(), false, false, c.perfTempChargingOnly());
         paint.fontPath = "";
         return paint;
     }

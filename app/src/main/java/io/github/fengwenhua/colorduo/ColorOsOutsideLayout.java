@@ -38,11 +38,11 @@ final class ColorOsOutsideLayout {
     static ColorOsOutsideLayout create(TrioSettings settings, ColorOsNetworkAdapter.Plan source,
                                        int height, int room, float density, boolean rtl, ColorOsReadoutSource.State readings, boolean wifiInk) {
         TrioAppearance appearance = TrioAppearance.of(settings);
-        boolean typeWanted = settings.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING && !source.typeLabel.isEmpty();
+        boolean typeWanted = settings.content.mobileTypeMode() == Prefs.MOBILE_TYPE_OUT_RING && !source.typeLabel.isEmpty();
         boolean suppress = typeWanted && appearance.hidesTypeForWifi(source.wifi >= 1)
                 && wifiInk;
         String type = typeWanted && !suppress ? source.typeLabel : "";
-        int signal = settings.showMobile && settings.signalMode == Prefs.SIGNAL_OUT_RING && settings.stackedSignal ? source.mobile : -1;
+        int signal = settings.content.showMobile() && settings.content.signalMode() == Prefs.SIGNAL_OUT_RING && settings.content.stackedSignal() ? source.mobile : -1;
         int signalHeight = Math.min(height, TrioRenderer.outSignalHeight(settings.outSignalSize, density));
         float size = Math.min(settings.outTypeSize * density, height * 0.8f);
         String readout = readings.text(settings);

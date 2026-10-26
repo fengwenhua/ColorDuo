@@ -23,8 +23,8 @@ public final class HyperOsIconLeaseTest {
                 view -> view.slot, view -> ((Bar) view).folds++, () -> fields, () -> false, log::add);
         Fixture() {
             settings.enabled = true; settings.trioStyle = Prefs.STYLE_RING;
-            settings.showWifi = settings.showMobile = settings.showValue = settings.showBolt = true;
-            settings.showSim1 = settings.showSim2 = true;
+            settings.setShowWifi(settings.setShowMobile(settings.setShowValue(settings.setShowBolt(true))));
+            settings.setShowSim1(settings.setShowSim2(true));
             layout("1||");
         }
         void layout(String value) { settings.ringZones = Prefs.decodeLayout(value); }

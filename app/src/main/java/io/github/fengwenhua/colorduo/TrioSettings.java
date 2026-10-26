@@ -29,42 +29,13 @@ import android.os.Bundle;
 public final class TrioSettings {
 
     public boolean enabled;
-    public boolean showWifi;
-    public boolean showMobile;
-    public boolean showValue;
-    public boolean showBolt;
-    /**
-     * Where the mobile network type is drawn: {@link Prefs#MOBILE_TYPE_OFF},
-     * {@link Prefs#MOBILE_TYPE_IN_RING} or {@link Prefs#MOBILE_TYPE_OUT_RING}.
-     * Clamped to that range wherever it is read.
-     */
-    public int mobileTypeMode;
-    /**
-     * Draws the battery percentage enlarged in the middle of the ring, with the
-     * Wi-Fi arcs shrunk into the 12 o'clock notch. While charging the bolt owns
-     * the middle and the arcs stay in the notch.
-     *
-     * <p>Stored under the frozen key {@link Prefs#KEY_VALUE_CENTRED}.
-     */
-    public boolean valueCentred;
-    /**
-     * Which three-in-one layout is drawn: {@link Prefs#STYLE_RING},
-     * {@link Prefs#STYLE_RECT} or {@link Prefs#STYLE_CAPSULE}. Clamped to that
-     * range wherever it is read.
-     *
-     * <p>All three read the same keys, but they are not interchangeable: the
-     * rectangular one ignores {@link #valueCentred} (its value has a fixed place)
-     * and reads {@link #arcStroke} as the Wi-Fi arcs' stroke width, which also
-     * decides their vertical position; the capsule ignores {@link #valueCentred}
-     * too, draws the time inside the glyph - which is what makes it hide the
-     * bar's own clock, see {@link TrioAppearance#hidesStatusClock()} - and reads
-     * {@link #ringStroke} as the outline's thickness. {@link TrioAppearance} is
-     * where those differences are resolved, so nothing else has to know them.
-     */
+    /** Visibility and placement shared safely by immutable snapshots. */
+    public ContentSettings content = ContentSettings.EMPTY;
     /** Bottom-bar material; see {@link Prefs#KEY_NAV_STYLE}. */
     public int navStyle;
     /** Bottom-bar label mode; see {@link Prefs#KEY_NAV_LABELS}. */
     public int navLabels;
+    /** Ring, rectangle or capsule; style-specific behavior is resolved by TrioAppearance. */
     public int trioStyle;
     /**
      * The ring layout: for each of the three zones, an ordered list of candidate pieces.
@@ -85,49 +56,6 @@ public final class TrioSettings {
      */
     public int[][] ringZones = Prefs.decodeLayout(Prefs.EMPTY_LAYOUT);
 
-    /**
-     * Draws one row of level dots per SIM - SIM 1 on top, SIM 2 below - instead
-     * of a single row for the current data SIM.
-     *
-     * <p>Only ever honoured while no Wi-Fi ink is on screen and no charger is
-     * plugged in, because a plugged-in phone already says so with the ring's
-     * colour, and one state should read as one reading - see
-     * {@link TrioAppearance#dualSimRows(boolean, boolean, int)}.
-     */
-    public boolean dualSim;
-    /**
-     * Where the mobile signal reading goes: the glyph's own thirds, or back to MIUI.
-     *
-     * <p>An int holding one of the {@code Prefs.SIGNAL_*} constants. Out of the ring the
-     * module draws no level dots at all and the native icon keeps its place - so this is
-     * the same "return it to the system" option the other pieces' position rows offer,
-     * which is why the settings screen calls it 环外.
-     *
-     * <p>It does <em>not</em> say which third a card sits in: that is the ring layout's
-     * job, as {@code Prefs.PART_SIM_1} / {@code PART_SIM_2}. Keeping the two apart is what
-     * lets "in the ring" stay a single choice while the two cards still each pick a slot.
-     */
-    public int signalMode;
-    /**
-     * Draws the module's own stacked reading while the signal is out of the ring.
-     *
-     * <p>Out of the ring there are two outcomes and the user picks between them: leave the
-     * native icon in place (this off), or draw the stacked bars-and-dots reading beside the
-     * battery (this on). Inside the ring it is not consulted - the glyph's own rows are the
-     * signal there - which is why the settings screen only enables the row out of ring.
-     */
-    public boolean stackedSignal;
-    /**
-     * Draws SIM 1's own row of four dots, as a placed component.
-     *
-     * <p>Independent of {@link #dualSim} and of {@link #showSim2}: the dual
-     * switch describes the aggregate meter's two-row shape, while this pair
-     * describes the cards themselves, and those are arranged by the user rather
-     * than by a rule - see {@link Prefs#KEY_SHOW_SIM_1}.
-     */
-    public boolean showSim1;
-    /** Draws SIM 2's own row of four dots; see {@link #showSim1}. */
-    public boolean showSim2;
     /**
      * Draws only the current data SIM in the out-of-ring reading, leaving the other out.
      */
@@ -206,10 +134,7 @@ public final class TrioSettings {
     public int boltScale;
     /** Wi-Fi arcs' size, in percent; see {@link Prefs#KEY_WIFI_SCALE}. */
     public int wifiScale;
-    /** Drop the network type while Wi-Fi is up; see {@link Prefs#KEY_TYPE_HIDE_ON_WIFI}. */
-    public boolean typeHideOnWifi;
-    /** While charging the ring centre shows the percentage; see {@link Prefs#KEY_CHARGING_SHOWS_VALUE}. */
-    public boolean chargingShowsValue;
+    /** Optional per-style component arrangements for charging and fast charging. */
     public String chargingLayout = "";
     public String quickChargingLayout = "";
     /** Editor-only routing, excluded from persisted settings and equality. */
@@ -244,30 +169,6 @@ public final class TrioSettings {
     public int trackAlpha;
 
     /**
-     * Draws the battery's charging power beside the out-of-ring reading.
-     *
-     * <p>Follows {@link #outSignalSize}/{@link #outTypeSize} rather than the ring:
-     * like them it is a status-bar element whose box must be laid out and
-     * reserved, not a glyph drawn inside a canvas this module owns. It has no
-     * size setting of its own - the text matches the out-of-ring type, so it
-     * never needs a second slider to keep the two readings looking alike.
-     *
-     * <p>Shown only while a charger is attached; see {@link Prefs#KEY_PERF_POWER}.
-     */
-    public boolean perfPower;
-    /**
-     * Draws the battery's temperature beside the out-of-ring reading.
-     *
-     * <p>The two readouts share one view and one reserved strip, which is why
-     * they are two flags rather than a two-entry list: turning both off takes the
-     * view away entirely, and turning either on brings back the same view with
-     * only the requested segment drawn.
-     */
-    public boolean perfTemp;
-    /** Drops the temperature unless charging; see {@link Prefs#KEY_PERF_TEMP_CHARGING_ONLY}. */
-    public boolean perfTempChargingOnly;
-
-    /**
      * Overall size of the two readouts, as a percentage of the size the adaptive
      * fit settles on. 100 leaves that answer alone, which is the shipped state.
      *
@@ -299,27 +200,80 @@ public final class TrioSettings {
     /** Only used by the settings app: the hooked side reads this via {@code TrioConfig}. */
     public boolean debugLog;
 
+    // Snapshot assembly helpers. Published snapshots are never edited in place.
+    public boolean setShowWifi(boolean value) {
+        content = content.withShowWifi(value);
+        return value;
+    }
+    public boolean setShowMobile(boolean value) {
+        content = content.withShowMobile(value);
+        return value;
+    }
+    public boolean setShowValue(boolean value) {
+        content = content.withShowValue(value);
+        return value;
+    }
+    public boolean setShowBolt(boolean value) {
+        content = content.withShowBolt(value);
+        return value;
+    }
+    public int setMobileTypeMode(int value) {
+        content = content.withMobileTypeMode(value);
+        return value;
+    }
+    public boolean setValueCentred(boolean value) {
+        content = content.withValueCentred(value);
+        return value;
+    }
+    public boolean setDualSim(boolean value) {
+        content = content.withDualSim(value);
+        return value;
+    }
+    public int setSignalMode(int value) {
+        content = content.withSignalMode(value);
+        return value;
+    }
+    public boolean setStackedSignal(boolean value) {
+        content = content.withStackedSignal(value);
+        return value;
+    }
+    public boolean setShowSim1(boolean value) {
+        content = content.withShowSim1(value);
+        return value;
+    }
+    public boolean setShowSim2(boolean value) {
+        content = content.withShowSim2(value);
+        return value;
+    }
+    public boolean setTypeHideOnWifi(boolean value) {
+        content = content.withTypeHideOnWifi(value);
+        return value;
+    }
+    public boolean setChargingShowsValue(boolean value) {
+        content = content.withChargingShowsValue(value);
+        return value;
+    }
+    public boolean setPerfPower(boolean value) {
+        content = content.withPerfPower(value);
+        return value;
+    }
+    public boolean setPerfTemp(boolean value) {
+        content = content.withPerfTemp(value);
+        return value;
+    }
+    public boolean setPerfTempChargingOnly(boolean value) {
+        content = content.withPerfTempChargingOnly(value);
+        return value;
+    }
+
     public static TrioSettings defaults() {
         TrioSettings s = new TrioSettings();
         s.enabled = Prefs.DEF_ENABLED;
-        s.showWifi = Prefs.DEF_SHOW_WIFI;
-        s.showMobile = Prefs.DEF_SHOW_MOBILE;
-        s.showValue = Prefs.DEF_SHOW_VALUE;
-        s.showBolt = Prefs.DEF_SHOW_BOLT;
-        s.mobileTypeMode = Prefs.DEF_MOBILE_TYPE_MODE;
-        s.valueCentred = Prefs.DEF_VALUE_CENTRED;
+        s.content = ContentSettings.DEFAULT;
         s.navStyle = Prefs.DEF_NAV_STYLE;
         s.navLabels = Prefs.DEF_NAV_LABELS;
         s.trioStyle = Prefs.DEF_TRIO_STYLE;
-        s.dualSim = Prefs.DEF_DUAL_SIM;
-        s.signalMode = Prefs.DEF_SIGNAL_MODE;
-        s.stackedSignal = Prefs.DEF_STACKED_SIGNAL;
-        s.showSim1 = Prefs.DEF_SHOW_SIM_1;
-        s.showSim2 = Prefs.DEF_SHOW_SIM_2;
         s.dataSimOnly = Prefs.DEF_DATA_SIM_ONLY;
-        s.perfPower = Prefs.DEF_PERF_POWER;
-        s.perfTemp = Prefs.DEF_PERF_TEMP;
-        s.perfTempChargingOnly = Prefs.DEF_PERF_TEMP_CHARGING_ONLY;
         s.perfScale = Prefs.DEF_PERF_SCALE;
         s.perfWeight = Prefs.DEF_PERF_WEIGHT;
         s.glyphScale = Prefs.DEF_GLYPH_SCALE;
@@ -349,8 +303,6 @@ public final class TrioSettings {
         s.typeSuffixScale = Prefs.DEF_TYPE_SUFFIX_SCALE;
         s.boltScale = Prefs.DEF_BOLT_SCALE;
         s.wifiScale = Prefs.DEF_WIFI_SCALE;
-        s.typeHideOnWifi = Prefs.DEF_TYPE_HIDE_ON_WIFI;
-        s.chargingShowsValue = Prefs.DEF_CHARGING_SHOWS_VALUE;
         s.fontPath = Prefs.DEF_FONT_PATH;
         s.dotScale = Prefs.DEF_DOT_SCALE;
         s.outOrder = Prefs.OUT_DEFAULT_ORDER.clone();
@@ -409,46 +361,16 @@ public final class TrioSettings {
                 ? Prefs.normalizeTrioStyle(styleOverride)
                 : Prefs.normalizeTrioStyle(
                         p.getInt(Prefs.KEY_TRIO_STYLE, Prefs.DEF_TRIO_STYLE));
+        s.content = ContentSettings.read(p, s.trioStyle,
+                Prefs.mentionsRetiredMeter(readRingLayout(p, s.trioStyle)));
 
         // Every one of these is per-arrangement now: the ring's own key is the historical,
         // unsuffixed name, and the capsule reads its own with a fallback to the ring's value -
         // so an install that upgrades inherits the look it had instead of getting defaults.
-        s.showWifi = readStyledBoolean(p, Prefs.KEY_SHOW_WIFI, Prefs.DEF_SHOW_WIFI, s.trioStyle);
-        s.showMobile = readStyledBoolean(p, Prefs.KEY_SHOW_MOBILE, Prefs.DEF_SHOW_MOBILE,
-                s.trioStyle);
-        s.showValue = readStyledBoolean(p, Prefs.KEY_SHOW_VALUE, Prefs.DEF_SHOW_VALUE,
-                s.trioStyle);
-        s.showBolt = readStyledBoolean(p, Prefs.KEY_SHOW_BOLT, Prefs.DEF_SHOW_BOLT, s.trioStyle);
-        s.mobileTypeMode = readMobileTypeMode(p, s.trioStyle);
-        s.valueCentred = readStyledBoolean(p, Prefs.KEY_VALUE_CENTRED, Prefs.DEF_VALUE_CENTRED,
-                s.trioStyle);
         s.ringZones = Prefs.decodeLayout(readRingLayout(p, s.trioStyle));
         s.chargingLayout = ChargeLayout.normalize(p.getString(Prefs.styledKey(Prefs.KEY_CHARGING_LAYOUT, s.trioStyle), ""));
         s.quickChargingLayout = ChargeLayout.normalize(p.getString(Prefs.styledKey(Prefs.KEY_QUICK_CHARGING_LAYOUT, s.trioStyle), ""));
-        s.dualSim = readStyledBoolean(p, Prefs.KEY_DUAL_SIM, Prefs.DEF_DUAL_SIM, s.trioStyle);
-        s.signalMode = Prefs.clamp(
-                readStyledInt(p, Prefs.KEY_SIGNAL_MODE, Prefs.DEF_SIGNAL_MODE, s.trioStyle),
-                Prefs.MIN_SIGNAL_MODE, Prefs.MAX_SIGNAL_MODE);
-        s.stackedSignal = readStyledBoolean(p, Prefs.KEY_STACKED_SIGNAL,
-                Prefs.DEF_STACKED_SIGNAL, s.trioStyle);
-        s.showSim1 = readStyledBoolean(p, Prefs.KEY_SHOW_SIM_1, Prefs.DEF_SHOW_SIM_1,
-                s.trioStyle);
-        s.showSim2 = readStyledBoolean(p, Prefs.KEY_SHOW_SIM_2, Prefs.DEF_SHOW_SIM_2,
-                s.trioStyle);
-        // The stored layout may predate the retirement of the aggregate meter. Prefs
-        // migrates the id to SIM 1's row when it decodes, but that row also needs its
-        // switch - and the switch's default is off - so an upgrading install would see a
-        // zone that reserves room and draws nothing. Asking the RAW string (not the decoded
-        // layout, which can no longer contain the old id) keeps this to exactly those
-        // installs, and never re-enables a switch the user turned off afterwards.
-        if (Prefs.mentionsRetiredMeter(readRingLayout(p, s.trioStyle))) {
-            s.showSim1 = true;
-        }
         s.dataSimOnly = p.getBoolean(Prefs.KEY_DATA_SIM_ONLY, Prefs.DEF_DATA_SIM_ONLY);
-        s.perfPower = p.getBoolean(Prefs.KEY_PERF_POWER, Prefs.DEF_PERF_POWER);
-        s.perfTemp = p.getBoolean(Prefs.KEY_PERF_TEMP, Prefs.DEF_PERF_TEMP);
-        s.perfTempChargingOnly = p.getBoolean(Prefs.KEY_PERF_TEMP_CHARGING_ONLY,
-                Prefs.DEF_PERF_TEMP_CHARGING_ONLY);
         s.perfScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_PERF_SCALE, Prefs.DEF_PERF_SCALE),
                 Prefs.MIN_PERF_SCALE, Prefs.MAX_PERF_SCALE);
@@ -519,10 +441,6 @@ public final class TrioSettings {
         s.wifiScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_WIFI_SCALE, Prefs.DEF_WIFI_SCALE),
                 Prefs.MIN_WIFI_SCALE, Prefs.MAX_WIFI_SCALE);
-        s.typeHideOnWifi = p.getBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI,
-                Prefs.DEF_TYPE_HIDE_ON_WIFI);
-        s.chargingShowsValue = p.getBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE,
-                Prefs.DEF_CHARGING_SHOWS_VALUE);
         s.fontPath = readFontPath(p.getString(Prefs.KEY_FONT_PATH, Prefs.DEF_FONT_PATH));
         s.dotScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_DOT_SCALE, Prefs.DEF_DOT_SCALE),
@@ -540,35 +458,6 @@ public final class TrioSettings {
     }
 
     /**
-     * Reads the three-way network-type placement, migrating the legacy boolean.
-     *
-     * <p>The new int key wins whenever it is present. Only while it is absent -
-     * i.e. on an install that predates it - is the old
-     * {@link Prefs#KEY_SHOW_MOBILE_TYPE} boolean consulted, and an existing
-     * "on" maps to {@link Prefs#MOBILE_TYPE_IN_RING} so that user keeps the
-     * placement they had. The legacy key is never written again, so this runs at
-     * most until the user's first write of the new key.
-     */
-    private static int readMobileTypeMode(SharedPreferences p, int style) {
-        final String own = Prefs.styledKey(Prefs.KEY_MOBILE_TYPE_MODE, style);
-        if (p.contains(own)) {
-            return Prefs.clamp(
-                    p.getInt(own, Prefs.DEF_MOBILE_TYPE_MODE),
-                    Prefs.MIN_MOBILE_TYPE_MODE, Prefs.MAX_MOBILE_TYPE_MODE);
-        }
-        // Not set for this arrangement: inherit the ring's, which may itself still need the
-        // legacy boolean consulted below.
-        if (style == Prefs.STYLE_CAPSULE && p.contains(Prefs.KEY_MOBILE_TYPE_MODE)) {
-            return Prefs.clamp(
-                    p.getInt(Prefs.KEY_MOBILE_TYPE_MODE, Prefs.DEF_MOBILE_TYPE_MODE),
-                    Prefs.MIN_MOBILE_TYPE_MODE, Prefs.MAX_MOBILE_TYPE_MODE);
-        }
-        return p.getBoolean(Prefs.KEY_SHOW_MOBILE_TYPE, Prefs.DEF_SHOW_MOBILE_TYPE)
-                ? Prefs.MOBILE_TYPE_IN_RING
-                : Prefs.MOBILE_TYPE_OFF;
-    }
-
-    /**
      * Reads the out-of-ring type size, migrating the retired raw-pixel key.
      *
      * <p>The dp key wins whenever it is present. Only an install that predates
@@ -576,8 +465,7 @@ public final class TrioSettings {
      * - has that value converted once, by dividing by the display density that
      * gives the pixels their physical size. An install that never touched the
      * old slider has no old key at all and simply gets the dp default. The old
-     * key is never written again, so like
-     * {@link #readMobileTypeMode(SharedPreferences)} this runs at most until the
+     * key is never written again, so migration is needed only until the
      * user's first write of the new key.
      *
      * <p>The conversion rounds before clamping so a user's tuned value lands as
@@ -644,61 +532,6 @@ public final class TrioSettings {
                 packedAsString(bundle, Prefs.KEY_RING_SLOTS));
     }
 
-    // ------------------------------------------- per-arrangement component state
-    //
-    // The switches these read decide WHAT the glyph draws and WHERE. They are stored once per
-    // arrangement (see Prefs.STYLED_KEYS) so that setting up the ring cannot empty the capsule
-    // or move a piece the other arrangement placed.
-    //
-    // Each of them falls back to the ring's value when the capsule's key is absent, and only
-    // then. That fallback is the whole migration: an install from before the split keeps its
-    // values under the ring's historical keys, so the capsule inherits exactly the look the
-    // user had, and starts diverging only once they change something in capsule mode.
-
-    /** One per-arrangement boolean, with the ring's value as the capsule's fallback. */
-    private static boolean readStyledBoolean(SharedPreferences p, String base, boolean def,
-                                             int style) {
-        return readStyled(p, base, style, new Reader<Boolean>() {
-            @Override
-            public Boolean read(String key) {
-                return p.getBoolean(key, def);
-            }
-        });
-    }
-
-    /** One per-arrangement int, with the ring's value as the capsule's fallback. */
-    private static int readStyledInt(SharedPreferences p, String base, int def, int style) {
-        return readStyled(p, base, style, new Reader<Integer>() {
-            @Override
-            public Integer read(String key) {
-                return p.getInt(key, def);
-            }
-        });
-    }
-
-    /** A value read from one storage key - the small seam the two typed readers share. */
-    private interface Reader<T> {
-        T read(String key);
-    }
-
-    /**
-     * Reads {@code base} under {@code style}, falling back to the ring's key.
-     *
-     * <p>Reads through {@link SharedPreferences#contains} rather than substituting a default,
-     * because "absent" and "present but equal to the default" are different answers here: an
-     * absent capsule key means "inherit", while a present one means "this is what the user
-     * chose", even if that happens to be the default.
-     */
-    private static <T> T readStyled(SharedPreferences p, String base, int style,
-                                    Reader<T> reader) {
-        final String own = Prefs.styledKey(base, style);
-        if (p.contains(own)) {
-            return reader.read(own);
-        }
-        // Ring, or a capsule that has not been edited yet: the historical key is the answer.
-        return reader.read(base);
-    }
-
     /**
      * One retired packed key as the string {@link Prefs#migrateLayout} expects, or null.
      *
@@ -745,66 +578,12 @@ public final class TrioSettings {
         }
         final TrioSettings s = copy();
         s.trioStyle = Prefs.normalizeTrioStyle(style);
-        s.showWifi = other.showWifi;
-        s.showMobile = other.showMobile;
-        s.showValue = other.showValue;
-        s.showBolt = other.showBolt;
-        s.showSim1 = other.showSim1;
-        s.showSim2 = other.showSim2;
-        s.mobileTypeMode = other.mobileTypeMode;
-        s.valueCentred = other.valueCentred;
-        s.dualSim = other.dualSim;
-        s.signalMode = other.signalMode;
-        s.stackedSignal = other.stackedSignal;
+        s.content = content.withStyledFrom(other.content);
         s.ringZones = copyZones(other.ringZones);
         s.chargingLayout = other.chargingLayout;
         s.quickChargingLayout = other.quickChargingLayout;
         s.editingChargeScene = ChargeLayout.BASE;
         return s;
-    }
-
-    /**
-     * The broadcast-extras mirror of {@link #readMobileTypeMode(SharedPreferences)}.
-     *
-     * <p>The legacy fallback cannot actually fire here - the settings app only
-     * ever puts the new int key into the bundle - but it is kept for symmetry
-     * with the stored read, so a bundle built by an older writer still migrates
-     * the same way instead of silently resetting to off.
-     */
-    private static int readMobileTypeMode(Bundle bundle, int style) {
-        final String own = Prefs.styledKey(Prefs.KEY_MOBILE_TYPE_MODE, style);
-        if (bundle.containsKey(own)) {
-            return Prefs.clamp(
-                    bundle.getInt(own, Prefs.DEF_MOBILE_TYPE_MODE),
-                    Prefs.MIN_MOBILE_TYPE_MODE, Prefs.MAX_MOBILE_TYPE_MODE);
-        }
-        if (style == Prefs.STYLE_CAPSULE && bundle.containsKey(Prefs.KEY_MOBILE_TYPE_MODE)) {
-            return Prefs.clamp(
-                    bundle.getInt(Prefs.KEY_MOBILE_TYPE_MODE, Prefs.DEF_MOBILE_TYPE_MODE),
-                    Prefs.MIN_MOBILE_TYPE_MODE, Prefs.MAX_MOBILE_TYPE_MODE);
-        }
-        return bundle.getBoolean(Prefs.KEY_SHOW_MOBILE_TYPE, Prefs.DEF_SHOW_MOBILE_TYPE)
-                ? Prefs.MOBILE_TYPE_IN_RING
-                : Prefs.MOBILE_TYPE_OFF;
-    }
-
-    /** One per-arrangement boolean out of the broadcast extras. */
-    private static boolean readStyledBoolean(Bundle bundle, String base, boolean def,
-                                             int style) {
-        final String own = Prefs.styledKey(base, style);
-        if (bundle.containsKey(own)) {
-            return bundle.getBoolean(own, def);
-        }
-        return bundle.getBoolean(base, def);
-    }
-
-    /** One per-arrangement int out of the broadcast extras. */
-    private static int readStyledInt(Bundle bundle, String base, int def, int style) {
-        final String own = Prefs.styledKey(base, style);
-        if (bundle.containsKey(own)) {
-            return bundle.getInt(own, def);
-        }
-        return bundle.getInt(base, def);
     }
 
     /**
@@ -814,25 +593,12 @@ public final class TrioSettings {
     public TrioSettings copy() {
         TrioSettings s = new TrioSettings();
         s.enabled = enabled;
-        s.showWifi = showWifi;
-        s.showMobile = showMobile;
-        s.showValue = showValue;
-        s.showBolt = showBolt;
-        s.mobileTypeMode = mobileTypeMode;
-        s.valueCentred = valueCentred;
+        s.content = content;
         s.navStyle = navStyle;
         s.navLabels = navLabels;
         s.trioStyle = trioStyle;
         s.ringZones = copyZones(ringZones);
-        s.dualSim = dualSim;
-        s.signalMode = signalMode;
-        s.stackedSignal = stackedSignal;
-        s.showSim1 = showSim1;
-        s.showSim2 = showSim2;
         s.dataSimOnly = dataSimOnly;
-        s.perfPower = perfPower;
-        s.perfTemp = perfTemp;
-        s.perfTempChargingOnly = perfTempChargingOnly;
         s.perfScale = perfScale;
         s.perfWeight = perfWeight;
         s.glyphScale = glyphScale;
@@ -862,8 +628,6 @@ public final class TrioSettings {
         s.typeSuffixScale = typeSuffixScale;
         s.boltScale = boltScale;
         s.wifiScale = wifiScale;
-        s.typeHideOnWifi = typeHideOnWifi;
-        s.chargingShowsValue = chargingShowsValue;
         s.chargingLayout = chargingLayout;
         s.quickChargingLayout = quickChargingLayout;
         s.editingChargeScene = editingChargeScene;
@@ -903,27 +667,27 @@ public final class TrioSettings {
         }
         switch (key) {
             case Prefs.KEY_ENABLED: enabled = src.enabled; return true;
-            case Prefs.KEY_SHOW_WIFI: showWifi = src.showWifi; return true;
-            case Prefs.KEY_SHOW_MOBILE: showMobile = src.showMobile; return true;
-            case Prefs.KEY_SHOW_VALUE: showValue = src.showValue; return true;
-            case Prefs.KEY_SHOW_BOLT: showBolt = src.showBolt; return true;
-            case Prefs.KEY_MOBILE_TYPE_MODE: mobileTypeMode = src.mobileTypeMode; return true;
-            case Prefs.KEY_VALUE_CENTRED: valueCentred = src.valueCentred; return true;
+            case Prefs.KEY_SHOW_WIFI: setShowWifi(src.content.showWifi()); return true;
+            case Prefs.KEY_SHOW_MOBILE: setShowMobile(src.content.showMobile()); return true;
+            case Prefs.KEY_SHOW_VALUE: setShowValue(src.content.showValue()); return true;
+            case Prefs.KEY_SHOW_BOLT: setShowBolt(src.content.showBolt()); return true;
+            case Prefs.KEY_MOBILE_TYPE_MODE: setMobileTypeMode(src.content.mobileTypeMode()); return true;
+            case Prefs.KEY_VALUE_CENTRED: setValueCentred(src.content.valueCentred()); return true;
             case Prefs.KEY_NAV_STYLE: navStyle = Prefs.normalizeNavStyle(src.navStyle); return true;
             case Prefs.KEY_NAV_LABELS: navLabels = Prefs.normalizeNavLabels(src.navLabels); return true;
             case Prefs.KEY_TRIO_STYLE: trioStyle = Prefs.normalizeTrioStyle(src.trioStyle); return true;
             case Prefs.KEY_RING_LAYOUT: ringZones = copyZones(src.ringZones); return true;
             case Prefs.KEY_CHARGING_LAYOUT: chargingLayout = src.chargingLayout; return true;
             case Prefs.KEY_QUICK_CHARGING_LAYOUT: quickChargingLayout = src.quickChargingLayout; return true;
-            case Prefs.KEY_DUAL_SIM: dualSim = src.dualSim; return true;
-            case Prefs.KEY_SIGNAL_MODE: signalMode = src.signalMode; return true;
-            case Prefs.KEY_STACKED_SIGNAL: stackedSignal = src.stackedSignal; return true;
-            case Prefs.KEY_SHOW_SIM_1: showSim1 = src.showSim1; return true;
-            case Prefs.KEY_SHOW_SIM_2: showSim2 = src.showSim2; return true;
+            case Prefs.KEY_DUAL_SIM: setDualSim(src.content.dualSim()); return true;
+            case Prefs.KEY_SIGNAL_MODE: setSignalMode(src.content.signalMode()); return true;
+            case Prefs.KEY_STACKED_SIGNAL: setStackedSignal(src.content.stackedSignal()); return true;
+            case Prefs.KEY_SHOW_SIM_1: setShowSim1(src.content.showSim1()); return true;
+            case Prefs.KEY_SHOW_SIM_2: setShowSim2(src.content.showSim2()); return true;
             case Prefs.KEY_DATA_SIM_ONLY: dataSimOnly = src.dataSimOnly; return true;
-            case Prefs.KEY_PERF_POWER: perfPower = src.perfPower; return true;
-            case Prefs.KEY_PERF_TEMP: perfTemp = src.perfTemp; return true;
-            case Prefs.KEY_PERF_TEMP_CHARGING_ONLY: perfTempChargingOnly = src.perfTempChargingOnly; return true;
+            case Prefs.KEY_PERF_POWER: setPerfPower(src.content.perfPower()); return true;
+            case Prefs.KEY_PERF_TEMP: setPerfTemp(src.content.perfTemp()); return true;
+            case Prefs.KEY_PERF_TEMP_CHARGING_ONLY: setPerfTempChargingOnly(src.content.perfTempChargingOnly()); return true;
             case Prefs.KEY_PERF_SCALE: perfScale = src.perfScale; return true;
         case Prefs.KEY_PERF_WEIGHT: perfWeight = src.perfWeight; return true;
             case Prefs.KEY_GLYPH_SCALE: glyphScale = src.glyphScale; return true;
@@ -955,8 +719,8 @@ public final class TrioSettings {
             case Prefs.KEY_TYPE_SUFFIX_SCALE: typeSuffixScale = src.typeSuffixScale; return true;
             case Prefs.KEY_BOLT_SCALE: boltScale = src.boltScale; return true;
             case Prefs.KEY_WIFI_SCALE: wifiScale = src.wifiScale; return true;
-            case Prefs.KEY_TYPE_HIDE_ON_WIFI: typeHideOnWifi = src.typeHideOnWifi; return true;
-            case Prefs.KEY_CHARGING_SHOWS_VALUE: chargingShowsValue = src.chargingShowsValue; return true;
+            case Prefs.KEY_TYPE_HIDE_ON_WIFI: setTypeHideOnWifi(src.content.typeHideOnWifi()); return true;
+            case Prefs.KEY_CHARGING_SHOWS_VALUE: setChargingShowsValue(src.content.chargingShowsValue()); return true;
             case Prefs.KEY_FONT_PATH: fontPath = src.fontPath; return true;
             case Prefs.KEY_DOT_SCALE: dotScale = src.dotScale; return true;
             case Prefs.KEY_OUT_ORDER:
@@ -990,36 +754,11 @@ public final class TrioSettings {
         s.navLabels = Prefs.normalizeNavLabels(bundle.getInt(Prefs.KEY_NAV_LABELS, Prefs.DEF_NAV_LABELS));
         s.trioStyle = Prefs.normalizeTrioStyle(bundle.getInt(Prefs.KEY_TRIO_STYLE, Prefs.DEF_TRIO_STYLE));
 
-        s.showWifi = readStyledBoolean(bundle, Prefs.KEY_SHOW_WIFI, Prefs.DEF_SHOW_WIFI,
-                s.trioStyle);
-        s.showMobile = readStyledBoolean(bundle, Prefs.KEY_SHOW_MOBILE, Prefs.DEF_SHOW_MOBILE,
-                s.trioStyle);
-        s.showValue = readStyledBoolean(bundle, Prefs.KEY_SHOW_VALUE, Prefs.DEF_SHOW_VALUE,
-                s.trioStyle);
-        s.showBolt = readStyledBoolean(bundle, Prefs.KEY_SHOW_BOLT, Prefs.DEF_SHOW_BOLT,
-                s.trioStyle);
-        s.mobileTypeMode = readMobileTypeMode(bundle, s.trioStyle);
-        s.valueCentred = readStyledBoolean(bundle, Prefs.KEY_VALUE_CENTRED,
-                Prefs.DEF_VALUE_CENTRED, s.trioStyle);
+        s.content = ContentSettings.read(bundle, s.trioStyle);
         s.ringZones = Prefs.decodeLayout(readRingLayout(bundle, s.trioStyle));
         s.chargingLayout = ChargeLayout.normalize(bundle.getString(Prefs.styledKey(Prefs.KEY_CHARGING_LAYOUT, s.trioStyle), ""));
         s.quickChargingLayout = ChargeLayout.normalize(bundle.getString(Prefs.styledKey(Prefs.KEY_QUICK_CHARGING_LAYOUT, s.trioStyle), ""));
-        s.dualSim = readStyledBoolean(bundle, Prefs.KEY_DUAL_SIM, Prefs.DEF_DUAL_SIM,
-                s.trioStyle);
-        s.signalMode = Prefs.clamp(
-                readStyledInt(bundle, Prefs.KEY_SIGNAL_MODE, Prefs.DEF_SIGNAL_MODE, s.trioStyle),
-                Prefs.MIN_SIGNAL_MODE, Prefs.MAX_SIGNAL_MODE);
-        s.stackedSignal = readStyledBoolean(bundle, Prefs.KEY_STACKED_SIGNAL,
-                Prefs.DEF_STACKED_SIGNAL, s.trioStyle);
-        s.showSim1 = readStyledBoolean(bundle, Prefs.KEY_SHOW_SIM_1, Prefs.DEF_SHOW_SIM_1,
-                s.trioStyle);
-        s.showSim2 = readStyledBoolean(bundle, Prefs.KEY_SHOW_SIM_2, Prefs.DEF_SHOW_SIM_2,
-                s.trioStyle);
         s.dataSimOnly = bundle.getBoolean(Prefs.KEY_DATA_SIM_ONLY, Prefs.DEF_DATA_SIM_ONLY);
-        s.perfPower = bundle.getBoolean(Prefs.KEY_PERF_POWER, Prefs.DEF_PERF_POWER);
-        s.perfTemp = bundle.getBoolean(Prefs.KEY_PERF_TEMP, Prefs.DEF_PERF_TEMP);
-        s.perfTempChargingOnly = bundle.getBoolean(
-                Prefs.KEY_PERF_TEMP_CHARGING_ONLY, Prefs.DEF_PERF_TEMP_CHARGING_ONLY);
         s.perfScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_PERF_SCALE, Prefs.DEF_PERF_SCALE),
                 Prefs.MIN_PERF_SCALE, Prefs.MAX_PERF_SCALE);
@@ -1089,10 +828,6 @@ public final class TrioSettings {
         s.wifiScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_WIFI_SCALE, Prefs.DEF_WIFI_SCALE),
                 Prefs.MIN_WIFI_SCALE, Prefs.MAX_WIFI_SCALE);
-        s.typeHideOnWifi = bundle.getBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI,
-                Prefs.DEF_TYPE_HIDE_ON_WIFI);
-        s.chargingShowsValue = bundle.getBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE,
-                Prefs.DEF_CHARGING_SHOWS_VALUE);
         s.fontPath = readFontPath(bundle.getString(Prefs.KEY_FONT_PATH, Prefs.DEF_FONT_PATH));
         s.dotScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_DOT_SCALE, Prefs.DEF_DOT_SCALE),
@@ -1140,12 +875,6 @@ public final class TrioSettings {
     }
 
     /**
-     * Field-wise equality. Exists for one caller - the boot-time re-read in
-     * {@code TrioConfig}, which must not notify the listeners (and re-fold every
-     * container) when the delayed read saw the same values the first one did -
-     * but a full comparison is also what a snapshot type ought to answer.
-     */
-    /**
      * Normalises a stored font path to a non-null string.
      *
      * <p>Null is folded to the empty string here rather than at every reader,
@@ -1167,42 +896,12 @@ public final class TrioSettings {
         }
         final TrioSettings s = (TrioSettings) o;
         return enabled == s.enabled
-                && showWifi == s.showWifi
-                && showMobile == s.showMobile
-                && showValue == s.showValue
-                && showBolt == s.showBolt
-                && mobileTypeMode == s.mobileTypeMode
-                && valueCentred == s.valueCentred
+                && content.equals(s.content)
                 && navStyle == s.navStyle
                 && navLabels == s.navLabels
                 && trioStyle == s.trioStyle
                 && java.util.Arrays.deepEquals(ringZones, s.ringZones)
-                && dualSim == s.dualSim
-                && signalMode == s.signalMode
-                && stackedSignal == s.stackedSignal
-                // Two switches of their own, and issue 25 applies: left out, a tap
-                // on either row would write a value the screen cannot see change.
-                && showSim1 == s.showSim1
-                && showSim2 == s.showSim2
                 && dataSimOnly == s.dataSimOnly
-                // The two performance readouts are stored settings like any
-                // other, and the same issue 25 trap applies: the settings screen
-                // holds the snapshot in a mutableStateOf whose default policy is
-                // equality, so omitting a field here means a write that changed
-                // only that field schedules no recomposition and the switch goes
-                // on showing its old state.
-                && perfPower == s.perfPower
-                && perfTemp == s.perfTemp
-                // issue 45's own flag. It spent one release outside this list, and the
-                // symptom was exactly the one described above: the switch could be
-                // turned on, the value reached storage and SystemUI, and the row went on
-                // showing it off until some unrelated write forced a recomposition.
-                && perfTempChargingOnly == s.perfTempChargingOnly
-                // The two size sliders are stored settings like any other, and
-                // the issue 25 trap above applies unchanged: with either one left
-                // out, moving that slider would change nothing the screen can
-                // see, no recomposition would be scheduled, and the row would go
-                // on showing the value it had.
                 && perfScale == s.perfScale
                 // The readout's weight is a stored setting too, and issue 25
                 // applies to it exactly as it does to the size above: the slider
@@ -1210,12 +909,6 @@ public final class TrioSettings {
                 // the old number on the next recomposition.
                 && perfWeight == s.perfWeight
                 && glyphScale == s.glyphScale
-                // The four capsule nudges, and the reason this defect was noticed at all:
-                // they were added to defaults(), from(), copy(), applyKeyFrom() and both
-                // bundle directions - the whole pipeline except this list - so the only
-                // row in the module that could not move was the one they belong to. The
-                // readout row next to them is in the list, which is why dragging THAT one
-                // refreshed the whole page and made the nudges catch up.
                 && capsuleLayout.equals(s.capsuleLayout)
                 && roleColors == s.roleColors
                 && criticalOnDark == s.criticalOnDark
@@ -1240,8 +933,6 @@ public final class TrioSettings {
                 && typeSuffixScale == s.typeSuffixScale
                 && boltScale == s.boltScale
                 && wifiScale == s.wifiScale
-                && typeHideOnWifi == s.typeHideOnWifi
-                && chargingShowsValue == s.chargingShowsValue
                 && chargingLayout.equals(s.chargingLayout)
                 && quickChargingLayout.equals(s.quickChargingLayout)
                 // Objects.equals, not ==: the font path is the one reference-typed
@@ -1259,17 +950,11 @@ public final class TrioSettings {
 
     @Override
     public int hashCode() {
-        // Fields are small ints and booleans; a cheap fold is enough. The class
-        // is used as a value only through equals() - nothing hashes it - but the
-        // two performance switches are folded in anyway so that the contract
-        // holds if anything ever does.
-        int h = (enabled ? 1 : 0) ^ (mobileTypeMode << 1) ^ trioStyle;
-        h = h * 31 + (perfPower ? 1 : 0);
-        h = h * 31 + (perfTemp ? 1 : 0);
+        // Immutable groups provide structural hashes; equal snapshots share this fold.
+        int h = (enabled ? 1 : 0) ^ content.hashCode() ^ trioStyle;
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;
-        h = h * 31 + (perfTempChargingOnly ? 1 : 0);
         h = h * 31 + capsuleLayout.hashCode();
         return h != 0 ? h : 1;
     }

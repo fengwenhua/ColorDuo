@@ -279,29 +279,29 @@ public final class TrioAppearance {
         ringZones = TrioSettings.copyZones(c.ringZones);
 
         glyph = c.enabled;
-        wifi = c.showWifi;
-        mobile = c.showMobile;
-        signalOutOfRing = c.signalMode == Prefs.SIGNAL_OUT_RING;
-        stackedSignal = c.stackedSignal;
-        dualSim = c.dualSim;
-        showSim1 = c.showSim1;
-        showSim2 = c.showSim2;
+        wifi = c.content.showWifi();
+        mobile = c.content.showMobile();
+        signalOutOfRing = c.content.signalMode() == Prefs.SIGNAL_OUT_RING;
+        stackedSignal = c.content.stackedSignal();
+        dualSim = c.content.dualSim();
+        showSim1 = c.content.showSim1();
+        showSim2 = c.content.showSim2();
         dataSimOnly = c.dataSimOnly;
-        value = c.showValue;
+        value = c.content.showValue();
         // The bolt is a PLACED piece like every other, not a switch of its own: a charger
         // must show what it is doing, and what it shows is decided by where the bolt sits in
         // the layout. A separate row could contradict the list it was meant to describe.
         boltWanted = true;
-        centreValue = c.valueCentred && ring;
-        typeMode = c.mobileTypeMode;
-        typeInRing = c.mobileTypeMode == Prefs.MOBILE_TYPE_IN_RING;
-        typeOutOfRing = c.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING;
-        typeHideOnWifi = c.typeHideOnWifi;
-        chargingShowsValue = c.chargingShowsValue;
+        centreValue = c.content.valueCentred() && ring;
+        typeMode = c.content.mobileTypeMode();
+        typeInRing = c.content.mobileTypeMode() == Prefs.MOBILE_TYPE_IN_RING;
+        typeOutOfRing = c.content.mobileTypeMode() == Prefs.MOBILE_TYPE_OUT_RING;
+        typeHideOnWifi = c.content.typeHideOnWifi();
+        chargingShowsValue = c.content.chargingShowsValue();
         fontPath = c.fontPath == null ? "" : c.fontPath;
-        perfPower = c.perfPower;
-        perfTemp = c.perfTemp;
-        perfTempChargingOnly = c.perfTempChargingOnly;
+        perfPower = c.content.perfPower();
+        perfTemp = c.content.perfTemp();
+        perfTempChargingOnly = c.content.perfTempChargingOnly();
         perfScale = c.perfScale;
         perfWeight = c.perfWeight;
         glyphScale = c.glyphScale;

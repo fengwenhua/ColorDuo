@@ -918,13 +918,13 @@ public final class TrioZones {
         next.ringZones = zones;
         // A placed piece needs its own switch on, or the zone would reserve space it then
         // draws nothing in.
-        if (want == Part.WIFI) next.showWifi = true;
-        if (want == Part.VALUE) next.showValue = true;
-        if (want == Part.BOLT) next.showBolt = true;
-        if (want == Part.MOBILE) next.showMobile = true;
-        if (want == Part.SIM_1) { next.showMobile = true; next.showSim1 = true; }
-        if (want == Part.SIM_2) { next.showMobile = true; next.showSim2 = true; }
-        if (want == Part.TYPE) next.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING;
+        if (want == Part.WIFI) next.setShowWifi(true);
+        if (want == Part.VALUE) next.setShowValue(true);
+        if (want == Part.BOLT) next.setShowBolt(true);
+        if (want == Part.MOBILE) next.setShowMobile(true);
+        if (want == Part.SIM_1) { next.setShowMobile(true); next.setShowSim1(true); }
+        if (want == Part.SIM_2) { next.setShowMobile(true); next.setShowSim2(true); }
+        if (want == Part.TYPE) next.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
         return next;
     }
 
@@ -1239,15 +1239,15 @@ public final class TrioZones {
      */
     private static int hidden(TrioSettings s) {
         int n = 0;
-        if (!s.showWifi) { n++; }
-        if (!s.showMobile) { n++; }
-        if (!s.showValue) { n++; }
-        if (s.mobileTypeMode == Prefs.MOBILE_TYPE_OFF) { n++; }
+        if (!s.content.showWifi()) { n++; }
+        if (!s.content.showMobile()) { n++; }
+        if (!s.content.showValue()) { n++; }
+        if (s.content.mobileTypeMode() == Prefs.MOBILE_TYPE_OFF) { n++; }
         // The two per-card switches hide a piece exactly as the others do, so
         // leaving them out would make "switch a card off" look free and let the
         // tie-break prefer it over moving a piece that is on screen.
-        if (!s.showSim1) { n++; }
-        if (!s.showSim2) { n++; }
+        if (!s.content.showSim1()) { n++; }
+        if (!s.content.showSim2()) { n++; }
         return n;
     }
 
@@ -1259,14 +1259,14 @@ public final class TrioZones {
         // out would report "moved a component to another slot" as zero changes and make
         // the smallest-edit tie-break meaningless.
         if (!java.util.Arrays.deepEquals(a.ringZones, b.ringZones)) { n++; }
-        if (a.showWifi != b.showWifi) { n++; }
-        if (a.showMobile != b.showMobile) { n++; }
-        if (a.showValue != b.showValue) { n++; }
-        if (a.showBolt != b.showBolt) { n++; }
-        if (a.showSim1 != b.showSim1) { n++; }
-        if (a.showSim2 != b.showSim2) { n++; }
-        if (a.valueCentred != b.valueCentred) { n++; }
-        if (a.mobileTypeMode != b.mobileTypeMode) { n++; }
+        if (a.content.showWifi() != b.content.showWifi()) { n++; }
+        if (a.content.showMobile() != b.content.showMobile()) { n++; }
+        if (a.content.showValue() != b.content.showValue()) { n++; }
+        if (a.content.showBolt() != b.content.showBolt()) { n++; }
+        if (a.content.showSim1() != b.content.showSim1()) { n++; }
+        if (a.content.showSim2() != b.content.showSim2()) { n++; }
+        if (a.content.valueCentred() != b.content.valueCentred()) { n++; }
+        if (a.content.mobileTypeMode() != b.content.mobileTypeMode()) { n++; }
         return n;
     }
 
@@ -1286,13 +1286,14 @@ public final class TrioZones {
     private static java.util.List<TrioSettings> candidates(TrioSettings current, boolean rect,
                                                            Zone zone) {
         final java.util.List<TrioSettings> out = new java.util.ArrayList<>();
+        final ContentSettings c = current.content;
         final boolean[] bools = { false, true };
         final boolean capsule = current.trioStyle == Prefs.STYLE_CAPSULE;
-        final boolean[] centres = capsule ? new boolean[] { current.valueCentred } : bools;
+        final boolean[] centres = capsule ? new boolean[] { current.content.valueCentred() } : bools;
         // Keep an existing outside label when a request does not need to change it.
         // The editor places pieces inside the glyph, so it may preserve OUT_RING
         // but must not turn that separate label on as a side effect of clearing ink.
-        final int[] typeModes = current.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING
+        final int[] typeModes = current.content.mobileTypeMode() == Prefs.MOBILE_TYPE_OUT_RING
                 ? new int[] { Prefs.MOBILE_TYPE_OFF, Prefs.MOBILE_TYPE_IN_RING,
                               Prefs.MOBILE_TYPE_OUT_RING }
                 : new int[] { Prefs.MOBILE_TYPE_OFF, Prefs.MOBILE_TYPE_IN_RING };
@@ -1301,7 +1302,7 @@ public final class TrioZones {
         // everywhere else: this page places pieces, it is not the place to decide
         // whether the signal is drawn at all.
         final boolean[] mobiles = (zone == Zone.BOTTOM) ? bools
-                : new boolean[] { current.showMobile };
+                : new boolean[] { current.content.showMobile() };
         // The two per-card rows are placed by a slot and by their own switch, and
         // they can sit in any of the three zones - so unlike the aggregate meter
         // they are varied everywhere. Their switches are also what makes them
@@ -1319,14 +1320,11 @@ public final class TrioZones {
                                 for (boolean sim1 : sim1s) {
                                     for (boolean sim2 : sim2s) {
                                         final TrioSettings s = current.copy();
-                                        s.showWifi = wifi;
-                                        s.showValue = value;
-                                        s.valueCentred = centred;
-                                        s.showBolt = bolt;
-                                        s.mobileTypeMode = typeMode;
-                                        s.showMobile = mobile;
-                                        s.showSim1 = sim1;
-                                        s.showSim2 = sim2;
+                                        s.content = new ContentSettings(
+                                                wifi, mobile, value, bolt, typeMode, centred,
+                                                c.dualSim(), c.signalMode(), c.stackedSignal(), sim1, sim2,
+                                                c.typeHideOnWifi(), c.chargingShowsValue(), c.perfPower(),
+                                                c.perfTemp(), c.perfTempChargingOnly());
                                         out.add(s);
                                     }
                                 }

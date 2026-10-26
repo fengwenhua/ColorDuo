@@ -56,7 +56,7 @@ public final class ConfigCodecProbe {
         drawing.trioStyle = Prefs.STYLE_RING;
         drawing.ringZones = Prefs.decodeLayout("3||");
         drawing.fontPath = "";
-        drawing.showValue = true;
+        drawing.setShowValue(true);
         Bitmap image = Bitmap.createBitmap(120, 100, Bitmap.Config.ARGB_8888);
         image.eraseColor(Color.MAGENTA);
         Canvas canvas = new Canvas(image);
@@ -100,11 +100,11 @@ public final class ConfigCodecProbe {
         check(preview.hasPresented(next), "new reading ready after draw");
         preview.useNativeFallback();
         check(!preview.hasPresented(next), "fallback revokes network ownership readiness");
-        check(drawing.showSim1 && drawing.ringZones[2][0] == Prefs.PART_SIM_1,
+        check(drawing.content.showSim1() && drawing.ringZones[2][0] == Prefs.PART_SIM_1,
                 "production preset uses a supported SIM row");
         boolean missingInkRejected = false;
         TrioSettings missingMobile = drawing.copy();
-        missingMobile.showSim1 = false;
+        missingMobile.setShowSim1(false);
         try { new ColorOsBatteryDrawable.Frame(67, Color.BLACK, missingMobile,
                 new ColorOsNetworkAdapter.Plan(4, 3, null, null, null)); }
         catch (IllegalStateException expected) { missingInkRejected = true; }
@@ -122,7 +122,7 @@ public final class ConfigCodecProbe {
         ColorOsNetworkAdapter.Plan claimed = ColorOsRingPreset.represented(customPaint, 67, false, raw);
         check(claimed.wifi == -1 && claimed.mobile == 3, "priority fallback retains native Wi-Fi when value wins");
         custom.ringZones = Prefs.decodeLayout("1|3|8");
-        custom.showSim2 = true;
+        custom.setShowSim2(true);
         ColorOsNetworkAdapter.Plan second = new ColorOsNetworkAdapter.Plan(4, 2, null, null, null, 1);
         customPaint = ColorOsRingPreset.userLayout(custom, false, second);
         claimed = ColorOsRingPreset.represented(customPaint, 67, false, second);
@@ -133,7 +133,7 @@ public final class ConfigCodecProbe {
         claimed = ColorOsRingPreset.represented(customPaint, 67, false, raw);
         check(claimed.mobile == -1, "unrepresented card remains native");
         custom.ringZones = Prefs.decodeLayout("|1|7");
-        custom.chargingShowsValue = true;
+        custom.setChargingShowsValue(true);
         customPaint = ColorOsRingPreset.userLayout(custom, false, raw);
         claimed = ColorOsRingPreset.represented(customPaint, 67, true, raw);
         check(claimed.wifi == -1, "charging centre override returns displaced Wi-Fi to native");
@@ -141,7 +141,7 @@ public final class ConfigCodecProbe {
         ColorOsPowerSource.State charging = new ColorOsPowerSource.State(true, true, false, true, false, false);
         check(!full.same(charging), "full and actively charging are distinct frames");
         custom.ringZones = Prefs.decodeLayout("1|5|7");
-        custom.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING;
+        custom.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
         ColorOsNetworkAdapter.Plan typePlan = new ColorOsNetworkAdapter.Plan(4, 3, null, null, null, 0,
                 "5G", null, true);
         customPaint = ColorOsRingPreset.userLayout(custom, false, typePlan);
@@ -155,7 +155,7 @@ public final class ConfigCodecProbe {
                 "4G", null, true);
         check(!typed.same(new ColorOsBatteryDrawable.Frame(67, Color.BLACK, customPaint, changedType)),
                 "changed network type invalidates drawing readiness");
-        custom.mobileTypeMode = Prefs.MOBILE_TYPE_OFF;
+        custom.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);
         custom.ringZones = Prefs.decodeLayout(Prefs.EMPTY_LAYOUT);
         customPaint = ColorOsRingPreset.userLayout(custom, false, typePlan);
         check(!ColorOsRingPreset.represented(customPaint, 67, false, typePlan).hideType,
@@ -241,10 +241,10 @@ public final class ConfigCodecProbe {
         } finally { TrioRenderer.setLoadedFont("", null); }
         check(TrioRenderer.fontPath().isEmpty() && !TrioRenderer.fontFailed(), "clearing loaded font restores default");
         TrioSettings external = TrioSettings.defaults();
-        external.signalMode = Prefs.SIGNAL_OUT_RING;
-        external.stackedSignal = true;
-        external.mobileTypeMode = Prefs.MOBILE_TYPE_OUT_RING;
-        external.typeHideOnWifi = false;
+        external.setSignalMode(Prefs.SIGNAL_OUT_RING);
+        external.setStackedSignal(true);
+        external.setMobileTypeMode(Prefs.MOBILE_TYPE_OUT_RING);
+        external.setTypeHideOnWifi(false);
         external.ringZones = Prefs.decodeLayout("|3|");
         ColorOsNetworkAdapter.Plan externalSource = new ColorOsNetworkAdapter.Plan(-1, 4, null, null, null, 0, "5G", null, false);
         ColorOsOutsideLayout strip = ColorOsOutsideLayout.create(external, externalSource, 52, 240, 3.25f, false);
@@ -270,13 +270,13 @@ public final class ConfigCodecProbe {
         check(compositeView.getLayoutParams().width == 85 + strip.reserve, "outside strip occupies real width beside ring");
         compositeSize.restore();
         check(compositeView.getLayoutParams().width == 85 && compositeView.getLayoutParams().height == 52, "outside release restores OEM dimensions");
-        external.perfPower = external.perfTemp = true;
+        external.setPerfPower(external.setPerfTemp(true));
         check(ColorOsReadoutSource.State.UNKNOWN.text(external).isEmpty(), "unknown readings never invent zero watts");
         ColorOsReadoutSource.State readings = new ColorOsReadoutSource.State(true, 0.7f, 30);
         check(readings.text(external).equals("0.7W\n30\u00b0C"), "attached known readings form two lines");
         ColorOsReadoutSource.State unplugged = new ColorOsReadoutSource.State(false, 0.7f, 30);
         check(unplugged.text(external).equals("30\u00b0C"), "unplugged power disappears while temperature remains");
-        external.perfTempChargingOnly = true;
+        external.setPerfTempChargingOnly(true);
         check(unplugged.text(external).isEmpty(), "temperature charging-only filter follows attachment");
         ColorOsOutsideLayout readoutStrip = ColorOsOutsideLayout.create(external, externalSource, 52, 240, 3.25f, false, readings);
         check(readoutStrip.description().contains("0.7W") && readoutStrip.description().contains("30\u00b0C"), "drawn readouts have accessibility text");
@@ -285,13 +285,13 @@ public final class ConfigCodecProbe {
         ColorOsOutsideLayout narrowStrip = ColorOsOutsideLayout.create(external, externalSource, 52, 70, 3.25f, false, readings);
         check(narrowStrip.hasSignal() && !narrowStrip.hasType() && !narrowStrip.description().contains("W"),
                 "narrow allocation sacrifices type then readouts before signal");
-        external.stackedSignal = false;
+        external.setStackedSignal(false);
         check(!ColorOsOutsideLayout.create(external, externalSource, 52, 240, 3.25f, false).hasSignal(), "stacked-off leaves native outside signal");
-        external.showBolt = true;
-        check(ColorOsRingPreset.userLayout(external, false, externalSource).showBolt,
+        external.setShowBolt(true);
+        check(ColorOsRingPreset.userLayout(external, false, externalSource).content.showBolt(),
                 "native icon visibility does not change the user charging arrangement");
-        external.stackedSignal = true;
-        external.mobileTypeMode = Prefs.MOBILE_TYPE_OFF;
+        external.setStackedSignal(true);
+        external.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);
         ColorOsNetworkAdapter.Plan offTypeSource = new ColorOsNetworkAdapter.Plan(-1, 4, null, null, null, 0, "5G", null, true);
         ColorOsOutsideLayout onlySignal = ColorOsOutsideLayout.create(external, offTypeSource, 52, 240, 3.25f, false);
         check(ColorOsRingPreset.represented(ColorOsRingPreset.userLayout(external, false, offTypeSource), 67, false,
@@ -343,9 +343,9 @@ public final class ConfigCodecProbe {
             for (int state = 0; state < sources.length; state++) for (int order = 0; order < orders.length; order++) {
                 TrioSettings arranged = TrioSettings.defaults();
                 arranged.trioStyle = style;
-                arranged.showWifi = arranged.showMobile = arranged.showSim1 = arranged.showValue = arranged.showBolt = true;
-                arranged.typeHideOnWifi = true;
-                arranged.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING;
+                arranged.setShowWifi(arranged.setShowMobile(arranged.setShowSim1(arranged.setShowValue(arranged.setShowBolt(true)))));
+                arranged.setTypeHideOnWifi(true);
+                arranged.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
                 arranged.ringZones = Prefs.decodeLayout(orders[order] + "|3|7|");
                 ColorOsNetworkAdapter.Plan source = sources[state];
                 TrioSettings paint = ColorOsRingPreset.userLayout(arranged, false, source);
@@ -364,7 +364,7 @@ public final class ConfigCodecProbe {
                 if (state == 0 && order == 2)
                     check(frame.readings.wifi == 4 && frame.network.wifi == -1,
                             "returning native Wi-Fi retains its connection for the same priority decision");
-                arranged.typeHideOnWifi = false;
+                arranged.setTypeHideOnWifi(false);
                 if (state == 0 && order == 0) {
                     TrioSettings keepType = ColorOsRingPreset.userLayout(arranged, false, source);
                     int top = style == Prefs.STYLE_CAPSULE

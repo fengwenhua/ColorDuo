@@ -294,3 +294,15 @@ GitHub 按 tag 查询只找到公开版本；上传超时留下的草稿需从�
 三种临时模型故障与可选源码覆盖故障均检出，原最小替代目录继续可用。
 当前 app/render/host 为 35/63/41，Lint、debug/release 通过，没有操作手机。
 后续仍有 Content、环布局、Appearance 分组及最终新增设置单声明验收，详见 capsule-settings-group-2026-10-26.md。
+
+### O-08 第二组：组件内容
+
+胶囊几何提交 9065c93 的 CI 40342641447 通过后，提取不可变 ContentSettings，
+覆盖 11 项样式组件设置与 5 项全局标志。偏好/Bundle 共用迁移读取，copy/equality 使用整组，
+单 key 更新和跨样式组件复制保持各自作用范围。ColorOS 绘制、充电解码和布局求解候选批量构造内容组。
+61 项逻辑字段与 Schema VERSION=1 保持不变，两种系统的已解析 TrioAppearance 接口不变。
+
+84 组规范线值及 336 帧像素与修改前相同；六个新 JUnit 方法和三种故障对照覆盖历史回退、
+局部更新及全局标志隔离。配置组登记也与 record 成员逐一核对，旧 issue 的 663 项断言继续执行。
+环布局、Appearance 和最终新增设置单声明验收仍待继续，未将当前步骤计为 O-08 全部完成。
+详见 content-settings-group-2026-10-26.md。

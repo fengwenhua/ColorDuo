@@ -30,7 +30,7 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 历史 `RingSlotsTest` 的过期三分区、聚合信号及中部信号行预期已在新 `FreeRingTest` 中按当前规则迁移；
 旧的重复 Java 测试体已移除；历史预期调整与故障检出依据保存在验证记录中。
 状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
-Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 35+63 个 JUnit 测试方法，
+Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前 app/render 共 35+69 个 JUnit 测试方法，
 每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
 
 `GlyphScaleTest` 将旧脚本的 17 项真实像素断言迁为 1 个 Gradle/JUnit 方法；
@@ -92,3 +92,8 @@ UI 源检查跟随 DrawingPreview/DrawingZones 的既有拆分。旧 -Suite 与 
 `CapsuleLayoutSettingsTest` 新增三组不可变副本、单 key 更新隔离与缺失值默认回归。
 胶囊模型提取前后，70 组输入的规范 Bundle 值相同，140 帧像素摘要逐一相同；不把这些对照称作固定 golden。
 记录见 [胶囊模型分组](validation/capsule-settings-group-2026-10-26.md)。当前 app/render/host 为 35/63/41，共 139 项。
+
+O-08 内容组新增 ContentSettingsTest 六个方法，覆盖不可变副本、显式胶囊默认值、旧配置迁移、
+单项更新隔离、跨样式预览的全局标志保留，以及 1024 种充电位标志编码。
+前后对照为 84 组线值和 336 帧像素，三种故障对照均被拒绝。
+见 [组件配置分组](validation/content-settings-group-2026-10-26.md)；当前 app/render/host 为 35/69/41，共 145 项。

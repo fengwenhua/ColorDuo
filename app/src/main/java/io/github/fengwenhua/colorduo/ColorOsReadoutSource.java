@@ -23,11 +23,11 @@ final class ColorOsReadoutSource {
         }
         String text(TrioSettings settings) {
             String power = "";
-            if (settings.perfPower && attached && Float.isFinite(watts) && watts >= 0) {
+            if (settings.content.perfPower() && attached && Float.isFinite(watts) && watts >= 0) {
                 int tenths = Math.round(watts * 10f);
                 power = tenths >= 100 ? tenths / 10 + "W" : tenths / 10 + "." + tenths % 10 + "W";
             }
-            String temp = settings.perfTemp && temperature != Integer.MIN_VALUE && (!settings.perfTempChargingOnly || attached)
+            String temp = settings.content.perfTemp() && temperature != Integer.MIN_VALUE && (!settings.content.perfTempChargingOnly() || attached)
                     ? temperature + "\u00b0C" : "";
             return power.isEmpty() ? temp : temp.isEmpty() ? power : power + "\n" + temp;
         }

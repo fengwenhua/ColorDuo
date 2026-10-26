@@ -47,7 +47,7 @@ final class ChargeRegressionProbe {
             check(FirstRunDefaults.install(prefs), "fresh install receives the captured appearance profile");
             TrioSettings firstRing = TrioSettings.from(prefs, 3.25f, Prefs.STYLE_RING);
             TrioSettings firstCapsule = TrioSettings.from(prefs, 3.25f, Prefs.STYLE_CAPSULE);
-            check(firstRing.trioStyle == Prefs.STYLE_RING && firstRing.typeHideOnWifi,
+            check(firstRing.trioStyle == Prefs.STYLE_RING && firstRing.content.typeHideOnWifi(),
                     "first-install ring and Wi-Fi type policy match the phone");
             check(Prefs.encodeLayout(firstRing.ringZones).equals("5,1|3|7|"),
                     "first-install ring exactly matches the captured layout");
@@ -73,19 +73,19 @@ final class ChargeRegressionProbe {
             for (int style : new int[]{Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
                 TrioSettings base = TrioSettings.defaults();
                 base.trioStyle = style;
-                base.showWifi = base.showMobile = base.showSim1 = base.showValue = true;
+                base.setShowWifi(base.setShowMobile(base.setShowSim1(base.setShowValue(true))));
                 base.ringZones = Prefs.decodeLayout("1|3|7|6");
                 check(centre(base, true, false) == Prefs.PART_VALUE, "legacy ordinary charge layout retained");
                 check(centre(base, true, true) == Prefs.PART_VALUE, "legacy fast charge layout retained");
                 TrioSettings ordinary = ChargeLayout.forScene(base, ChargeLayout.CHARGING);
                 ordinary.ringZones = Prefs.decodeLayout("1|3|7|6");
-                ordinary.chargingShowsValue = false;
+                ordinary.setChargingShowsValue(false);
                 TrioSettings fast = ChargeLayout.forScene(base, ChargeLayout.QUICK);
                 fast.ringZones = Prefs.decodeLayout("1|4|7|6");
-                fast.chargingShowsValue = false;
+                fast.setChargingShowsValue(false);
                 base.chargingLayout = ChargeLayout.encode(ordinary);
                 base.quickChargingLayout = ChargeLayout.encode(fast);
-                base.chargingShowsValue = true; // A legacy global override must not defeat an explicit scene.
+                base.setChargingShowsValue(true); // A legacy global override must not defeat an explicit scene.
                 check(centre(base, true, false) == Prefs.PART_VALUE, "ordinary charge keeps number");
                 check(centre(base, true, true) == Prefs.PART_BOLT, "fast charge keeps bolt");
                 check(centre(base, false, true) == Prefs.PART_VALUE, "fast flag without charging uses base");
@@ -233,11 +233,11 @@ final class ChargeRegressionProbe {
                     "editing ordinary charge cannot overwrite fast charge");
             fast.setShowValue(false);
             ordinary.setShowValue(true);
-            check(ordinary.read().showValue && !fast.read().showValue,
+            check(ordinary.read().content.showValue() && !fast.read().content.showValue(),
                     "component switches in their sheets also follow the selected scene");
             fast.setChargingShowsValue(false);
             ordinary.setChargingShowsValue(true);
-            check(ordinary.read().chargingShowsValue && !fast.read().chargingShowsValue,
+            check(ordinary.read().content.chargingShowsValue() && !fast.read().content.chargingShowsValue(),
                     "legacy centre override can be set separately for each charging scene");
         } finally {
             SharedPreferences.Editor edit = prefs.edit();

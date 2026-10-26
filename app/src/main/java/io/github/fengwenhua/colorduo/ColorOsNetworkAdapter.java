@@ -363,15 +363,15 @@ final class ColorOsNetworkAdapter {
                 mobileSlot = entry.getValue().slot;
                 mobileRoot = root;
             }
-            if (wifiCount != 1 || !settings.showWifi || latestWifi < 1) wifi = null;
+            if (wifiCount != 1 || !settings.content.showWifi() || latestWifi < 1) wifi = null;
             if (wifi != null) {
                 ViewParent parent = wifi.getParent();
                 container = parent instanceof View && containerType.isInstance(parent) ? (View) parent : null;
                 if (container == null || !"wifi".equals(slot.invoke(wifi))
                         || (ignored(container) && !ownsWifi(container))) wifi = container = null;
             }
-            if (mobileCount != 1 || !settings.showMobile
-                    || (settings.signalMode != Prefs.SIGNAL_IN_RING && !"outside".equals(BuildConfig.COLOROS_STAGE)) || mobile < 0
+            if (mobileCount != 1 || !settings.content.showMobile()
+                    || (settings.content.signalMode() != Prefs.SIGNAL_IN_RING && !"outside".equals(BuildConfig.COLOROS_STAGE)) || mobile < 0
                     || mobileSlot < 0 || mobileSlot > 1
                     || (signal.getVisibility() != View.VISIBLE && !ownsSignal(signal))) signal = null;
             String label = "";
@@ -385,7 +385,7 @@ final class ColorOsNetworkAdapter {
                     label = ColorOsNetworkPolicy.typeLabel(row.label, dataEnabled.get());
                     typeImage = (ImageView) view;
                     // OUT_RING uses the native label until the custom outside strip is available.
-                    hideType = suppressType || settings.mobileTypeMode != Prefs.MOBILE_TYPE_OUT_RING;
+                    hideType = suppressType || settings.content.mobileTypeMode() != Prefs.MOBILE_TYPE_OUT_RING;
                 }
             }
             return new Plan(wifi == null ? -1 : latestWifi, signal == null ? -1 : mobile, wifi, container, signal,

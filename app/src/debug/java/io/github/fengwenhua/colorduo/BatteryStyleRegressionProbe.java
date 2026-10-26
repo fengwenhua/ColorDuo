@@ -28,7 +28,7 @@ final class BatteryStyleRegressionProbe {
         for (int style : new int[]{Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
             TrioSettings settings = TrioSettings.defaults();
             settings.trioStyle = style;
-            settings.showValue = true;
+            settings.setShowValue(true);
             settings.ringZones = Prefs.decodeLayout("|3||");
             int width = style == Prefs.STYLE_CAPSULE ? 111 : 85;
             int height = style == Prefs.STYLE_CAPSULE ? 65 : 52;

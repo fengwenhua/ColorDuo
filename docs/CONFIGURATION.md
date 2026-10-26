@@ -36,12 +36,12 @@ Android `SettingsBufferProbe` 在独立文件中验证 240 次输入合并为一
 样式/充电维度、分组和格式版本。`TrioSettings.toBundle()` 由注册表生成，ConfigPacket JSON 复用该输出；
 接收端先用注册表拒绝已知 key 的错误类型并约束数值，再执行历史迁移。
 未知标量 key 忽略；不支持的 schema 版本明确拒绝。旧环布局、旧网络类型布尔值、胶囊继承圆环、
-旧像素尺寸和时钟随数字字号回退仍由原读取器处理，避免迁移语义在重构中变化。
+旧像素尺寸和时钟随数字字号回退仍保留原读取语义，避免迁移规则在重构中变化。
 
 `SettingsSchemaTest` 自动枚举两种样式的每个字段，核对 SharedPreferences、Bundle、JSON、
 copy、equality/hash 和局部更新。模型新增字段但未注册，或注册后漏改旧映射，测试均会失败。
-序列化只声明一次；当前阶段仍保留其他组的历史读取和直接字段，胶囊几何组已提取为不可变 CapsuleLayoutSettings；新增字段也必须通过这些门禁。
-后续按注册表分组逐步提取 Content/布局/Appearance 模型，不一次替换绘制路径使用的快照。
+序列化只声明一次；当前阶段仍保留其他组的历史读取和直接字段，胶囊几何和组件内容已分别提取为不可变 CapsuleLayoutSettings/ContentSettings；新增字段也必须通过这些门禁。
+后续按注册表分组逐步提取环布局/Appearance 模型，不一次替换绘制路径使用的快照。
 
 ## 胶囊几何配置组
 
@@ -50,4 +50,16 @@ copy、equality/hash 和局部更新。模型新增字段但未注册，或注�
 Schema 仍输出原五个扁平 key，VERSION 保持 1；老配置与环/胶囊样式维度、独立充电布局规则不变。
 copy 共享不可变值，修改某一项生成新值；单 key 更新必须保留本组其他四项，不能直接替换为远端整组。
 SettingsSchemaTest 自动展开 record 的五个逻辑字段，继续与完整 61 项注册表逐项核对。
-其余 Content/环布局/Appearance 仍待按计划提取，不将第一组视为 O-08 全部完成。
+其余环布局/Appearance 仍待按计划提取，最终新增设置单声明验收也尚未完成。
+
+## 组件内容配置组
+
+`TrioSettings.content` 持有不可变 `ContentSettings`：11 项随样式保存的组件开关/位置，
+以及 5 项全局标志（Wi-Fi 下隐藏类型、充电中部数字、功率、温度、仅充电显示温度）。
+偏好和 Bundle 共用读取逻辑，保留显式胶囊值优先、缺失时继承圆环、旧网络类型布尔值迁移和数值限幅。
+偏好中的退役聚合信号布局仍补开 SIM 1；Bundle 保持原有不补开的行为。
+
+copy 共享不可变组，单项编辑用 with 方法替换；TrioSettings 的 set 方法仅用于发布前组装快照。
+单 key 接收只改该项；withComponentsFrom 只复制样式项，保留接收方五个全局标志。
+充电场景解码、ColorOS 绘制配置和旧布局求解候选均一次构造内容组，避免逐字段产生中间对象。
+持久化 key、扁平 Bundle/JSON、Schema VERSION=1 和 61 项逻辑声明保持不变。

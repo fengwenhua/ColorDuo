@@ -295,8 +295,8 @@ internal fun DrawingReadoutSample(settings: TrioSettings, dark: Boolean, modifie
     // the type it sizes: one line, because the single-reading size is what the
     // "overall reading size" row acts on when only one reading exists.
     val readings = listOfNotNull(
-        if (settings.perfPower) "9.6W" else null,
-        if (settings.perfTemp) "32°C" else null,
+        if (settings.content.perfPower()) "9.6W" else null,
+        if (settings.content.perfTemp()) "32°C" else null,
     ).ifEmpty { listOf("32°C") }
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current

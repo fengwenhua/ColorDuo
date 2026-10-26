@@ -35,13 +35,13 @@ public final class PolicyRegressionTest {
         var withoutSuppression = new ColorOsNetworkAdapter.Plan(-1, -1, null, null, null, 0, "", null, true, false);
         assertFalse(source.same(withoutSuppression));
         TrioSettings settings = TrioSettings.defaults();
-        settings.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING;
-        settings.showMobile = settings.showWifi = false;
+        settings.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
+        settings.setShowMobile(settings.setShowWifi(false));
         settings.ringZones = Prefs.decodeLayout("5|||");
         for (int style : new int[] {Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
             settings.trioStyle = style;
             TrioSettings paint = ColorOsRingPreset.userLayout(settings, false, source);
-            assertEquals(Prefs.MOBILE_TYPE_OFF, paint.mobileTypeMode);
+            assertEquals(Prefs.MOBILE_TYPE_OFF, paint.content.mobileTypeMode());
             assertTrue(ColorOsRingPreset.represented(paint, 79, false, source).hideType);
         }
     }

@@ -35,7 +35,7 @@ public class IssueRegressionTest {
  static void ok(String message,boolean value){if(!value)throw new AssertionError(message);checks++;}
  static View host(Context c){ViewGroup row=new ViewGroup(c);View v=new View(c);v.parent=row;row.host=v;return v;}
  static void signal() {
-  TrioConfig.settings=TrioSettings.defaults();TrioConfig.settings.dualSim=false;
+  TrioConfig.settings=TrioSettings.defaults();TrioConfig.settings.setDualSim(false);
   TrioState.sMobileLevel=-1;TrioState.sSlotLevels=new int[]{-1,-1};TrioState.sSimsDueAt=0;TrioState.polls=0;
   TrioState s=new TrioState(host(new Context()));TrioState.nextLevel=2;s.refresh();
   ok("initial telephony fallback",s.mobileLevel==2 && TrioState.polls==1);
@@ -47,7 +47,7 @@ public class IssueRegressionTest {
   ok("known icon source skips unnecessary telephony polling",s.mobileLevel==3 && TrioState.polls==2);
  }
  static void tint() throws Throwable {
-  TrioConfig.settings=TrioSettings.defaults();TrioConfig.settings.mobileTypeMode=Prefs.MOBILE_TYPE_IN_RING;
+  TrioConfig.settings=TrioSettings.defaults();TrioConfig.settings.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
   View a=host(new Context()),b=host(new Context());ViewGroup ar=(ViewGroup)a.parent,br=(ViewGroup)b.parent;
   TrioHooks.ROW_INK.put(ar,0xFFFFFFFF);TrioHooks.ROW_INK.put(br,0xFFFFFFFF);
   for(float intensity:new float[]{0f,0.5f,1f}) {
@@ -58,7 +58,7 @@ public class IssueRegressionTest {
    ok("draw and meter agree "+intensity,new TrioState(a).foreground()==want);
    ok("other row remains independent",TrioHooks.rowInk(br)==0xFFFFFFFF);
   }
-  TrioConfig.settings.mobileTypeMode=Prefs.MOBILE_TYPE_OFF;
+  TrioConfig.settings.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);
   TrioHooks.tint(a,0f,true,0xFF123456);TrioHooks.tint(b,0f,true,0xFF654321);
   ok("type disabled still receives tint",TrioHooks.rowInk(ar)==0xFF123456 && ar.ink==0xFF123456);
   ok("interleaved row tint remains local",TrioHooks.rowInk(br)==0xFF654321 && TrioHooks.rowInk(ar)==0xFF123456);
@@ -97,17 +97,17 @@ public class IssueRegressionTest {
  static void wifi() {
   // A fresh install starts blank, so this places the arcs explicitly - the point of the
   // case is the READING, not the default layout.
-  TrioSettings s=TrioSettings.defaults();s.showValue=false;s.mobileTypeMode=Prefs.MOBILE_TYPE_OFF;s.dualSim=false;
+  TrioSettings s=TrioSettings.defaults();s.setShowValue(false);s.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);s.setDualSim(false);
   s.ringZones=Prefs.decodeLayout("|1|");
   ok("no Wi-Fi reading leaves the middle empty",TrioZones.occupant(TrioZones.Zone.CENTRE,TrioAppearance.of(s),79,false,-1,"5G",2)==null);
   ok("a live Wi-Fi reading still names the arcs",TrioZones.occupant(TrioZones.Zone.CENTRE,TrioAppearance.of(s),79,false,3,"5G",2)==TrioZones.Part.WIFI);
-  s.showWifi=false;
+  s.setShowWifi(false);
   ok("the Wi-Fi switch still controls live arcs",TrioZones.occupant(TrioZones.Zone.CENTRE,TrioAppearance.of(s),79,false,3,"5G",2)==null);
  }
  static void clear() {
   for(int style:new int[]{Prefs.STYLE_RING,Prefs.STYLE_RECT}) {
-   TrioSettings s=TrioSettings.defaults();s.trioStyle=style;s.showValue=false;s.valueCentred=true;
-   s.dualSim=false;s.mobileTypeMode=Prefs.MOBILE_TYPE_IN_RING;
+   TrioSettings s=TrioSettings.defaults();s.trioStyle=style;s.setShowValue(false);s.setValueCentred(true);
+   s.setDualSim(false);s.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
    for(TrioZones.Zone zone:TrioZones.Zone.values()) {
    // LEFT is the capsule's fourth cell; the ring and the rectangle have three.
    // Asserting a clear on a cell an arrangement does not have would be asserting
@@ -124,20 +124,20 @@ public class IssueRegressionTest {
   // Independent exhaustive check for clearing the middle when both the battery
   // number and the no-Wi-Fi type compete with the arcs. The implementation searches
   // a restricted candidate set; compare its answer with every legal switch edit.
-  TrioSettings cur=TrioSettings.defaults();cur.mobileTypeMode=Prefs.MOBILE_TYPE_IN_RING;
+  TrioSettings cur=TrioSettings.defaults();cur.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
   TrioZones.Assignment solved=TrioZones.assign(TrioZones.Zone.CENTRE,false,null,cur,2);
   int minimum=Integer.MAX_VALUE;
   for(int bits=0;bits<64;bits++)for(int mode:new int[]{Prefs.MOBILE_TYPE_OFF,Prefs.MOBILE_TYPE_IN_RING}) {
-   TrioSettings c=cur.copy();c.showWifi=(bits&1)!=0;c.showValue=(bits&2)!=0;c.valueCentred=(bits&4)!=0;
-   c.showBolt=(bits&8)!=0;c.dualSim=(bits&16)!=0;c.showMobile=(bits&32)!=0;c.mobileTypeMode=mode;
+   TrioSettings c=cur.copy();c.setShowWifi((bits&1)!=0);c.setShowValue((bits&2)!=0);c.setValueCentred((bits&4)!=0);
+   c.setShowBolt((bits&8)!=0);c.setDualSim((bits&16)!=0);c.setShowMobile((bits&32)!=0);c.setMobileTypeMode(mode);
    boolean empty=true;
    for(boolean charging:new boolean[]{false,true})for(int wifi:new int[]{-1,3}) {
     empty &= TrioZones.occupant(TrioZones.Zone.CENTRE,TrioAppearance.of(c),79,charging,wifi,"5G",2)==null;
    }
    if(empty) {
-    int changes=(c.showWifi!=cur.showWifi?1:0)+(c.showValue!=cur.showValue?1:0)
-     +(c.valueCentred!=cur.valueCentred?1:0)+(c.showBolt!=cur.showBolt?1:0)
-     +(c.dualSim!=cur.dualSim?1:0)+(c.showMobile!=cur.showMobile?1:0)+(c.mobileTypeMode!=cur.mobileTypeMode?1:0);
+    int changes=(c.content.showWifi()!=cur.content.showWifi()?1:0)+(c.content.showValue()!=cur.content.showValue()?1:0)
+     +(c.content.valueCentred()!=cur.content.valueCentred()?1:0)+(c.content.showBolt()!=cur.content.showBolt()?1:0)
+     +(c.content.dualSim()!=cur.content.dualSim()?1:0)+(c.content.showMobile()!=cur.content.showMobile()?1:0)+(c.content.mobileTypeMode()!=cur.content.mobileTypeMode()?1:0);
     minimum=Math.min(minimum,changes);
    }
   }
@@ -148,14 +148,14 @@ public class IssueRegressionTest {
   // switch alone - the placement lives in the layout, not in the switch.
   {
    TrioSettings s=TrioSettings.defaults();s.trioStyle=Prefs.STYLE_RING;
-   s.mobileTypeMode=Prefs.MOBILE_TYPE_OUT_RING;
+   s.setMobileTypeMode(Prefs.MOBILE_TYPE_OUT_RING);
    TrioSettings placed=TrioZones.withPiece(s,TrioZones.Zone.BOTTOM.ordinal(),TrioZones.Part.MOBILE);
-   ok("placing mobile leaves outside type unchanged",placed.mobileTypeMode==Prefs.MOBILE_TYPE_OUT_RING);
+   ok("placing mobile leaves outside type unchanged",placed.content.mobileTypeMode()==Prefs.MOBILE_TYPE_OUT_RING);
    ok("the placed piece heads the zone's list",
       placed.ringZones[TrioZones.Zone.BOTTOM.ordinal()][0]==Prefs.PART_MOBILE);
    TrioSettings cleared=TrioZones.withPiece(placed,TrioZones.Zone.BOTTOM.ordinal(),null);
    ok("clearing empties the zone, not the switch",
-      cleared.ringZones[TrioZones.Zone.BOTTOM.ordinal()].length==0 && cleared.showMobile);
+      cleared.ringZones[TrioZones.Zone.BOTTOM.ordinal()].length==0 && cleared.content.showMobile());
    // Dropping one entry is a different operation and reveals the candidate behind it.
    TrioSettings two=TrioZones.withPiece(placed,TrioZones.Zone.BOTTOM.ordinal(),TrioZones.Part.WIFI);
    ok("a second piece goes to the front",
@@ -167,13 +167,13 @@ public class IssueRegressionTest {
   // Rectangle: still one switch per zone, and the solver still answers.
   {
    int style=Prefs.STYLE_RECT;
-   TrioSettings s=TrioSettings.defaults();s.trioStyle=style;s.mobileTypeMode=Prefs.MOBILE_TYPE_OUT_RING;
+   TrioSettings s=TrioSettings.defaults();s.trioStyle=style;s.setMobileTypeMode(Prefs.MOBILE_TYPE_OUT_RING);
    TrioZones.Assignment a=TrioZones.assign(TrioZones.Zone.BOTTOM,true,TrioZones.Part.MOBILE,s,2);
-   ok("rect: selecting existing mobile leaves outside type unchanged",a!=null && a.changes==0 && a.settings.mobileTypeMode==Prefs.MOBILE_TYPE_OUT_RING);
+   ok("rect: selecting existing mobile leaves outside type unchanged",a!=null && a.changes==0 && a.settings.content.mobileTypeMode()==Prefs.MOBILE_TYPE_OUT_RING);
    a=TrioZones.assign(TrioZones.Zone.BOTTOM,true,null,s,2);
-   ok("rect: clearing mobile switches it off",a!=null && a.changes==1 && !a.settings.showMobile);
+   ok("rect: clearing mobile switches it off",a!=null && a.changes==1 && !a.settings.content.showMobile());
   }
-  TrioSettings s=TrioSettings.defaults();s.dualSim=false;
+  TrioSettings s=TrioSettings.defaults();s.setDualSim(false);
   // Two cards are two placed pieces now, not a second row of the aggregate meter, so
   // what has to be reachable is each card's own component.
   ok("either card's row can be placed",TrioZones.assign(TrioZones.Zone.TOP,false,TrioZones.Part.SIM_1,s,2)!=null
@@ -226,7 +226,7 @@ public class IssueRegressionTest {
    ok("a laid-out left cell is not overridden by the shipped look",
       TrioConfig.appearance().capsule(73,false,3,"5GA",1)
               .parts[TrioZones.Zone.LEFT.ordinal()]==Prefs.PART_VALUE);
-   TrioConfig.settings.mobileTypeMode=Prefs.MOBILE_TYPE_IN_RING;
+   TrioConfig.settings.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
    TrioConfig.settings.ringZones=new int[][]{{},{},{},{Prefs.PART_TYPE,Prefs.PART_VALUE}};
    ok("and the order decides between two live candidates",
       TrioConfig.appearance().capsule(73,false,3,"5GA",1)
@@ -238,16 +238,16 @@ public class IssueRegressionTest {
    // is why the default has to stay off.
    TrioSettings tempOff=TrioSettings.defaults();
    ok("temperature is not tied to the charger by default",
-      !tempOff.perfTempChargingOnly && !Prefs.DEF_PERF_TEMP_CHARGING_ONLY);
-   tempOff.perfTemp=true;tempOff.perfTempChargingOnly=true;
+      !tempOff.content.perfTempChargingOnly() && !Prefs.DEF_PERF_TEMP_CHARGING_ONLY);
+   tempOff.setPerfTemp(true);tempOff.setPerfTempChargingOnly(true);
    ok("the flag survives appearance resolution",
       TrioAppearance.of(tempOff).perfTempChargingOnly);
    ok("and can be carried alone",
       !TrioAppearance.of(tempOff.copy()).perfTempChargingOnly==false);
    TrioSettings tempCopy=tempOff.copy();
-   ok("copy() carries the flag",tempCopy.perfTempChargingOnly);
+   ok("copy() carries the flag",tempCopy.content.perfTempChargingOnly());
    ok("and the bundle round-trips it",
-      TrioSettings.fromBundle(tempOff.toBundle()).perfTempChargingOnly);
+      TrioSettings.fromBundle(tempOff.toBundle()).content.perfTempChargingOnly());
  }
  /**
   * A signal row may not be placed in the ring's middle band, and every path that could
@@ -298,7 +298,7 @@ public class IssueRegressionTest {
    int code=TrioZones.encodePart(row);
    for(int[] chain:new int[][]{{code},{code,Prefs.PART_WIFI}}) {
     TrioSettings stale=s.copy();
-    stale.showSim1=stale.showSim2=true;stale.showMobile=true;stale.showWifi=true;
+    stale.setShowSim1(stale.setShowSim2(true));stale.setShowMobile(true);stale.setShowWifi(true);
     // Index 1 is the middle band; 0 and 2 are the openings.
     stale.ringZones=new int[][]{{},chain,{}};
     int slot=TrioAppearance.of(stale).ring(79,false,3,"5G",2)
@@ -571,7 +571,7 @@ public class IssueRegressionTest {
    ok("an untouched capsule draws the bottom row",cap.dotsIn(TrioZones.Zone.BOTTOM));
    // Out of ring releases the rows exactly as before.
    TrioSettings outside=legacy.copy();
-   outside.signalMode=Prefs.SIGNAL_OUT_RING;
+   outside.setSignalMode(Prefs.SIGNAL_OUT_RING);
    ok("out of ring still releases both rows",
       !TrioAppearance.of(outside).capsule(79,false,-1,"5GA",2).dots);
   }
@@ -591,7 +591,7 @@ public class IssueRegressionTest {
    // SIM 1 in the top opening only: the two bands are independent.
    TrioSettings topOnly=TrioSettings.defaults();
    topOnly.trioStyle=Prefs.STYLE_CAPSULE;
-   topOnly.showSim1=true;
+   topOnly.setShowSim1(true);
    topOnly.ringZones=Prefs.decodeLayout("7|3|");
    TrioAppearance.Capsule top=TrioAppearance.of(topOnly).capsule(79,false,-1,"5GA",2);
    ok("a top-only placement draws the top row",top.dotsIn(TrioZones.Zone.TOP));
@@ -601,7 +601,7 @@ public class IssueRegressionTest {
    // The bottom opening is a placement target in its own right.
    TrioSettings bottomOnly=TrioSettings.defaults();
    bottomOnly.trioStyle=Prefs.STYLE_CAPSULE;
-   bottomOnly.showSim2=true;
+   bottomOnly.setShowSim2(true);
    bottomOnly.ringZones=Prefs.decodeLayout("|3|8");
    TrioAppearance.Capsule bot=TrioAppearance.of(bottomOnly).capsule(79,false,-1,"5GA",2);
    ok("a bottom-only placement draws the bottom row",bot.dotsIn(TrioZones.Zone.BOTTOM));
@@ -612,7 +612,7 @@ public class IssueRegressionTest {
   {
    TrioSettings topOnly=TrioSettings.defaults();
    topOnly.trioStyle=Prefs.STYLE_CAPSULE;
-   topOnly.showSim1=true;
+   topOnly.setShowSim1(true);
    topOnly.ringZones=Prefs.decodeLayout("7|3|");
    TrioAppearance a=TrioAppearance.of(topOnly);
    ok("the top band reports an occupant",
@@ -744,7 +744,7 @@ public class IssueRegressionTest {
    prefs.m.put(Prefs.KEY_SHOW_VALUE,false);
    prefs.m.put(Prefs.KEY_RING_LAYOUT,"1|3|");
    TrioSettings capsule=TrioSettings.from(prefs,3f,Prefs.STYLE_CAPSULE);
-   ok("the capsule inherits the pre-split switch",!capsule.showWifi && !capsule.showValue);
+   ok("the capsule inherits the pre-split switch",!capsule.content.showWifi() && !capsule.content.showValue());
    ok("the capsule inherits the pre-split layout",
       java.util.Arrays.equals(capsule.ringZones[0],new int[]{Prefs.PART_WIFI}));
   }
@@ -758,11 +758,11 @@ public class IssueRegressionTest {
    prefs.m.put(Prefs.styledKey(Prefs.KEY_SHOW_WIFI,Prefs.STYLE_CAPSULE),false);
    prefs.m.put(Prefs.styledKey(Prefs.KEY_RING_LAYOUT,Prefs.STYLE_CAPSULE),"||1");
    TrioSettings capsule=TrioSettings.from(prefs,3f,Prefs.STYLE_CAPSULE);
-   ok("the capsule reads its own switch",!capsule.showWifi);
+   ok("the capsule reads its own switch",!capsule.content.showWifi());
    ok("the capsule reads its own layout",
       java.util.Arrays.equals(capsule.ringZones[2],new int[]{Prefs.PART_WIFI}));
    TrioSettings ring=TrioSettings.from(prefs,3f,Prefs.STYLE_RING);
-   ok("the ring kept its switch after a capsule edit",ring.showWifi);
+   ok("the ring kept its switch after a capsule edit",ring.content.showWifi());
    ok("the ring kept its layout after a capsule edit",
       java.util.Arrays.equals(ring.ringZones[0],new int[]{Prefs.PART_WIFI}));
    ok("and the capsule layout did not leak upward",ring.ringZones[2].length==0);
@@ -777,9 +777,9 @@ public class IssueRegressionTest {
    prefs.m.put(Prefs.KEY_SHOW_VALUE,false);
    prefs.m.put(Prefs.KEY_RING_LAYOUT,"1|3|");
    TrioSettings ring=TrioSettings.from(prefs,3f,Prefs.STYLE_RING);
-   ok("the ring edit applied to the ring",!ring.showValue);
+   ok("the ring edit applied to the ring",!ring.content.showValue());
    TrioSettings capsule=TrioSettings.from(prefs,3f,Prefs.STYLE_CAPSULE);
-   ok("the capsule kept its own value switch",capsule.showValue);
+   ok("the capsule kept its own value switch",capsule.content.showValue());
    ok("the capsule kept its own layout",
       java.util.Arrays.equals(capsule.ringZones[2],new int[]{Prefs.PART_WIFI}));
    ok("and did not inherit the ring's new placement",
@@ -791,11 +791,11 @@ public class IssueRegressionTest {
   {
    TrioSettings snap=TrioSettings.defaults();
    snap.trioStyle=Prefs.STYLE_CAPSULE;
-   snap.showWifi=false;
+   snap.setShowWifi(false);
    TrioSettings target=TrioSettings.defaults();
    ok("a suffixed remote key writes its field",
       target.applyKeyFrom(snap,Prefs.styledKey(Prefs.KEY_SHOW_WIFI,Prefs.STYLE_CAPSULE))
-      && !target.showWifi);
+      && !target.content.showWifi());
    android.os.Bundle bundle=snap.toBundle();
    ok("the capsule bundle carries its own key",
       bundle.containsKey(Prefs.styledKey(Prefs.KEY_SHOW_WIFI,Prefs.STYLE_CAPSULE)));
@@ -871,6 +871,19 @@ public class IssueRegressionTest {
     // suites; this sweep is about the scalars, which are the ones a list can silently
     // stop growing.
     Class<?> t=f.getType();
+    if(t==ContentSettings.class) {
+     for(var component:ContentSettings.class.getRecordComponents()) {
+      String name=component.getName();
+      TrioSettings moved=base.copy();
+      try {
+       Object current=component.getAccessor().invoke(base.content);
+       Object changed=component.getType()==boolean.class ? !(Boolean)current : (Integer)current+1;
+       TrioSettings.class.getMethod("set"+Character.toUpperCase(name.charAt(0))+name.substring(1),component.getType()).invoke(moved,changed);
+      } catch(ReflectiveOperationException ex) { throw new AssertionError(name,ex); }
+      ok("equals() sees a change in "+name,!base.equals(moved));compared++;
+     }
+     continue;
+    }
     if(t==CapsuleLayoutSettings.class) {
      for(var component:CapsuleLayoutSettings.class.getRecordComponents()) {
       String name="capsule"+Character.toUpperCase(component.getName().charAt(0))+component.getName().substring(1);
@@ -944,7 +957,7 @@ public class IssueRegressionTest {
   // 5. issue 45's flag, found by the same audit and left out of equals() too.
   {
    TrioSettings s=TrioSettings.defaults();
-   TrioSettings on=s.copy();on.perfTempChargingOnly=true;
+   TrioSettings on=s.copy();on.setPerfTempChargingOnly(true);
    ok("the charging-only temperature participates in equality",!s.equals(on));
   }
   // 12. A charger can put the number in the ring centre (issue 34).
@@ -952,14 +965,14 @@ public class IssueRegressionTest {
    // The request: "replace whatever is displayed inside the ring with the battery percentage
    // while charging, and return to the previous display when charging stops."
    TrioSettings s = TrioSettings.defaults();
-   ok("the centre keeps its own content by default", !s.chargingShowsValue);
+   ok("the centre keeps its own content by default", !s.content.chargingShowsValue());
    s.trioStyle = Prefs.STYLE_RING;
    TrioSettings on = s.copy();
-   on.chargingShowsValue = true;
+   on.setChargingShowsValue(true);
    ok("the setting reaches the appearance", TrioAppearance.of(on).chargingShowsValue);
-   ok("and copy() carries it", on.copy().chargingShowsValue);
+   ok("and copy() carries it", on.copy().content.chargingShowsValue());
    ok("and the bundle round-trips it",
-      TrioSettings.fromBundle(on.toBundle()).chargingShowsValue);
+      TrioSettings.fromBundle(on.toBundle()).content.chargingShowsValue());
    ok("and the remote key applies it",
       TrioSettings.defaults().applyKeyFrom(on, Prefs.KEY_CHARGING_SHOWS_VALUE));
    ok("it participates in equality", !s.equals(on));
@@ -979,7 +992,7 @@ public class IssueRegressionTest {
    // Negative control: the SAME layout with the switch off must keep the arcs in the middle,
    // otherwise the assertion above could pass for the wrong reason.
    final TrioSettings off = on.copy();
-   off.chargingShowsValue = false;
+   off.setChargingShowsValue(false);
    ok("with the switch off the layout keeps the centre",
       TrioAppearance.of(off).ring(66, true, 3, "5G", 1)
         .parts[TrioZones.Zone.CENTRE.ordinal()] == Prefs.PART_WIFI);
@@ -992,16 +1005,16 @@ public class IssueRegressionTest {
   // 11. The network type can step aside while Wi-Fi is up (issue 48).
   {
    TrioSettings s = TrioSettings.defaults();
-   ok("the label stays put by default", !s.typeHideOnWifi
+   ok("the label stays put by default", !s.content.typeHideOnWifi()
       && !Prefs.DEF_TYPE_HIDE_ON_WIFI);
    // The flag reaches the appearance, which is what the renderer consults.
    TrioSettings hiding = s.copy();
-   hiding.typeHideOnWifi = true;
+   hiding.setTypeHideOnWifi(true);
    ok("the flag survives appearance resolution",
       TrioAppearance.of(hiding).typeHideOnWifi);
-   ok("and copy() carries it", hiding.copy().typeHideOnWifi);
+   ok("and copy() carries it", hiding.copy().content.typeHideOnWifi());
    ok("and the bundle round-trips it",
-      TrioSettings.fromBundle(hiding.toBundle()).typeHideOnWifi);
+      TrioSettings.fromBundle(hiding.toBundle()).content.typeHideOnWifi());
    ok("and the remote key applies it",
       TrioSettings.defaults().applyKeyFrom(hiding, Prefs.KEY_TYPE_HIDE_ON_WIFI));
    ok("it participates in equality", !s.equals(hiding));

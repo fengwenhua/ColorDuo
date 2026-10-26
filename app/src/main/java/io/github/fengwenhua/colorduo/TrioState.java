@@ -294,7 +294,7 @@ final class TrioState {
         // when the second row is wanted, when the out-of-ring reading needs a
         // level per SIM, or when the icon chain has never answered and the data
         // SIM's own reading is the only thing left to fall back on.
-        if (TrioConfig.get().dualSim || TrioConfig.appearance().drawsAnySimRow()
+        if (TrioConfig.get().content.dualSim() || TrioConfig.appearance().drawsAnySimRow()
                 || sMobileLevel < 0) {
             sampleSimsIfDue();
         }

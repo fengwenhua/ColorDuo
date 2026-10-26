@@ -103,7 +103,7 @@ class SettingsRepository @JvmOverloads constructor(
         if (scene != ChargeLayout.BASE) {
             val snapshot = next.copy()
             // An explicit placement takes precedence over the legacy charging-centre override.
-            if (layoutEdit) snapshot.chargingShowsValue = false
+            if (layoutEdit) snapshot.setChargingShowsValue(false)
             val key = Prefs.styledKey(ChargeLayout.key(scene), next.trioStyle)
             val encoded = ChargeLayout.encode(snapshot)
             preferences().edit() { putString(key, encoded) }
@@ -116,13 +116,13 @@ class SettingsRepository @JvmOverloads constructor(
         val write: (SharedPreferences.Editor) -> Unit = { e ->
             e.putString(Prefs.styledKey(Prefs.KEY_RING_LAYOUT, style),
                 Prefs.encodeLayout(next.ringZones))
-            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_WIFI, style), next.showWifi)
-            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_MOBILE, style), next.showMobile)
-            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_VALUE, style), next.showValue)
-            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_BOLT, style), next.showBolt)
-            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_SIM_1, style), next.showSim1)
-            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_SIM_2, style), next.showSim2)
-            e.putInt(Prefs.styledKey(Prefs.KEY_MOBILE_TYPE_MODE, style), next.mobileTypeMode)
+            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_WIFI, style), next.content.showWifi())
+            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_MOBILE, style), next.content.showMobile())
+            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_VALUE, style), next.content.showValue())
+            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_BOLT, style), next.content.showBolt())
+            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_SIM_1, style), next.content.showSim1())
+            e.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_SIM_2, style), next.content.showSim2())
+            e.putInt(Prefs.styledKey(Prefs.KEY_MOBILE_TYPE_MODE, style), next.content.mobileTypeMode())
         }
         val editor = preferences().edit()
         write(editor)
@@ -166,9 +166,10 @@ class SettingsRepository @JvmOverloads constructor(
                 next.ringZones[zone] = next.ringZones[zone].filter { it != id }.toIntArray()
             }
             if (part == io.github.fengwenhua.colorduo.TrioZones.Part.TYPE) {
-                next.mobileTypeMode =
+                next.setMobileTypeMode(
                     if (position == slots.size + 1) Prefs.MOBILE_TYPE_OUT_RING
                     else Prefs.MOBILE_TYPE_OFF
+                )
             }
             applyRingAssignment(next)
         }
@@ -205,11 +206,11 @@ class SettingsRepository @JvmOverloads constructor(
             val next = io.github.fengwenhua.colorduo.TrioZones.withPiece(
                 current, slots[position - 1].ordinal,
                 io.github.fengwenhua.colorduo.TrioZones.Part.WIFI)
-            next.showWifi = true
+            next.setShowWifi(true)
             applyRingAssignment(next)
         } else {
             val next = current.copy()
-            next.showWifi = false
+            next.setShowWifi(false)
             val id = io.github.fengwenhua.colorduo.TrioZones.encodePart(
                 io.github.fengwenhua.colorduo.TrioZones.Part.WIFI)
             next.ringZones = TrioSettings.copyZones(current.ringZones)

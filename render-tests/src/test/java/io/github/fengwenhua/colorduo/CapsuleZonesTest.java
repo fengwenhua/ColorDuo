@@ -28,10 +28,10 @@ public final class CapsuleZonesTest {
         s.trioStyle = Prefs.STYLE_CAPSULE;
         s.roleColors = false;
         s.trackAlpha = 40;
-        s.showWifi = false;
-        s.showBolt = false;
-        s.showValue = s.showMobile = s.showSim1 = s.showSim2 = true;
-        s.typeHideOnWifi = false;
+        s.setShowWifi(false);
+        s.setShowBolt(false);
+        s.setShowValue(s.setShowMobile(s.setShowSim1(s.setShowSim2(true))));
+        s.setTypeHideOnWifi(false);
         s.ringZones = Prefs.decodeLayout("7|3|8|6");
         return s;
     }
@@ -83,7 +83,7 @@ public final class CapsuleZonesTest {
                             s.clockSize = clock; s.valueSize = value;
                             BufferedImage on = paint(s, level, 2, new int[] {2, 4}, "19:41");
                             differencesStayInBody(on, paint(s, level, 2, new int[] {2, 4}, ""), s, "clock");
-                            TrioSettings off = s.copy(); off.showValue = false;
+                            TrioSettings off = s.copy(); off.setShowValue(false);
                             differencesStayInBody(on, paint(off, level, 2, new int[] {2, 4}, "19:41"), s, "value");
                             float[] t = transform(s); TrioAppearance a = TrioAppearance.of(s);
                             for (int y = 0; y < SIZE; y++) for (int x = 0; x < SIZE; x++) {
@@ -112,13 +112,13 @@ public final class CapsuleZonesTest {
             }
             for (Part part : new Part[] {Part.BOLT, Part.WIFI, Part.VALUE, Part.TYPE, Part.CLOCK}) {
                 TrioSettings ready = s.copy();
-                ready.showBolt = ready.showWifi = true;
-                ready.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING;
+                ready.setShowBolt(ready.setShowWifi(true));
+                ready.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
                 TrioSettings placed = TrioZones.withPiece(ready, zone.ordinal(), part);
                 ok("picker accepts " + part + " in " + zone, TrioZones.placementChoices(zone, ready, 2).contains(part));
                 ok("placed item leads the priority list", placed.ringZones[zone.ordinal()][0] == TrioZones.encodePart(part));
                 ok("placed item is rendered", occupant(placed, zone, part == Part.BOLT, 3) == part);
-                ok("capsule ignores ring centring switch", placed.valueCentred == ready.valueCentred);
+                ok("capsule ignores ring centring switch", placed.content.valueCentred() == ready.content.valueCentred());
                 ok("placement leaves original snapshot unchanged", java.util.Arrays.deepEquals(ready.ringZones, s.ringZones));
             }
         }
@@ -143,7 +143,7 @@ public final class CapsuleZonesTest {
         ok("second dot inactive at level one", alpha(weak, s, 1, false) < alpha(weak, s, 0, false));
         BufferedImage low = paint(s, 5, 1, null, "19:41");
         ok("signal independent of battery", alpha(low, s, 1, false) == alpha(weak, s, 1, false));
-        s.dualSim = true;
+        s.setDualSim(true);
         BufferedImage dual = paint(s, 79, 0, new int[] {2, 4}, "19:41");
         ok("independent SIM levels", alpha(dual, s, 2, true) > alpha(dual, s, 2, false));
     }

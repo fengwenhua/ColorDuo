@@ -143,16 +143,16 @@ internal fun applyZoneAssignment(
         repository.applyRingAssignment(next)
         return
     }
-    if (next.showWifi != settings.showWifi) repository.setShowWifi(next.showWifi)
-    if (next.showMobile != settings.showMobile) repository.setShowMobile(next.showMobile)
-    if (next.showValue != settings.showValue) repository.setShowValue(next.showValue)
-    if (next.showBolt != settings.showBolt) repository.setShowBolt(next.showBolt)
-    if (next.dualSim != settings.dualSim) repository.setDualSim(next.dualSim)
-    if (next.valueCentred != settings.valueCentred) {
-        repository.setValueCentred(next.valueCentred)
+    if (next.content.showWifi() != settings.content.showWifi()) repository.setShowWifi(next.content.showWifi())
+    if (next.content.showMobile() != settings.content.showMobile()) repository.setShowMobile(next.content.showMobile())
+    if (next.content.showValue() != settings.content.showValue()) repository.setShowValue(next.content.showValue())
+    if (next.content.showBolt() != settings.content.showBolt()) repository.setShowBolt(next.content.showBolt())
+    if (next.content.dualSim() != settings.content.dualSim()) repository.setDualSim(next.content.dualSim())
+    if (next.content.valueCentred() != settings.content.valueCentred()) {
+        repository.setValueCentred(next.content.valueCentred())
     }
-    if (next.mobileTypeMode != settings.mobileTypeMode) {
-        repository.setMobileTypeMode(next.mobileTypeMode)
+    if (next.content.mobileTypeMode() != settings.content.mobileTypeMode()) {
+        repository.setMobileTypeMode(next.content.mobileTypeMode())
     }
 }
 

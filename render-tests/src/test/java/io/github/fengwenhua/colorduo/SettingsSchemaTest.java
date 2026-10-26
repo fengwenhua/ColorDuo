@@ -24,6 +24,10 @@ public final class SettingsSchemaTest {
                         String name = component.getName();
                         assertTrue(model.add("capsule" + Character.toUpperCase(name.charAt(0)) + name.substring(1)));
                     }
+                } else if (field.getType() == ContentSettings.class) {
+                    for (var component : ContentSettings.class.getRecordComponents()) {
+                        assertTrue(model.add(component.getName()));
+                    }
                 } else assertTrue(model.add(field.getName()));
             }
         Set<String> registered = new HashSet<>();
@@ -93,7 +97,7 @@ public final class SettingsSchemaTest {
                 Prefs.KEY_SHOW_MOBILE_TYPE, true);
         TrioSettings read = TrioSettings.from(new PreferencesSnapshot(legacy));
         assertEquals(read.valueSize, read.clockSize); assertEquals(700, read.clockWeight);
-        assertFalse(read.showWifi); assertEquals(Prefs.MOBILE_TYPE_IN_RING, read.mobileTypeMode);
+        assertFalse(read.content.showWifi()); assertEquals(Prefs.MOBILE_TYPE_IN_RING, read.content.mobileTypeMode());
     }
 
     private static Object different(SettingsSchema.Entry entry, int style) {
@@ -113,7 +117,7 @@ public final class SettingsSchemaTest {
         if (entry.field().equals("fontPath")) return "/system/fonts/Roboto-Regular.ttf";
         TrioSettings charging = TrioSettings.defaults();
         charging.ringZones = Prefs.decodeLayout("1|4|7|6");
-        charging.showWifi = false;
+        charging.setShowWifi(false);
         return ChargeLayout.encode(charging);
     }
 }

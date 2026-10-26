@@ -152,13 +152,13 @@ public final class DrawingZonesTest {
         for (boolean rect : new boolean[] { false, true }) {
             scenes.add(matrixCfg(rect, s -> { }));
             // (The old "percentage centred" scene is gone: the field is no longer read.)
-            scenes.add(matrixCfg(rect, s -> s.showWifi = false));
-            scenes.add(matrixCfg(rect, s -> s.showValue = false));
-            scenes.add(matrixCfg(rect, s -> s.showMobile = false));
-            scenes.add(matrixCfg(rect, s -> { s.showWifi = false; s.showValue = false;
-                    s.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING; }));
-            scenes.add(matrixCfg(rect, s -> { s.showWifi = false; s.showValue = false;
-                    s.dualSim = true; }));
+            scenes.add(matrixCfg(rect, s -> s.setShowWifi(false)));
+            scenes.add(matrixCfg(rect, s -> s.setShowValue(false)));
+            scenes.add(matrixCfg(rect, s -> s.setShowMobile(false)));
+            scenes.add(matrixCfg(rect, s -> { s.setShowWifi(false); s.setShowValue(false);
+                    s.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING); }));
+            scenes.add(matrixCfg(rect, s -> { s.setShowWifi(false); s.setShowValue(false);
+                    s.setDualSim(true); }));
             // A card left unplaced: the reading goes back to the status bar and the glyph's
             // bottom goes empty. This replaces the old "signal out of ring" scene - same
             // picture, but expressed as an absent placement rather than a switch.
@@ -167,13 +167,13 @@ public final class DrawingZonesTest {
             scenes.add(matrixCfg(rect, s -> { s.valueSize = Prefs.MAX_VALUE_SIZE;
                     s.typeSize = Prefs.MAX_TYPE_SIZE; s.arcStroke = Prefs.MAX_ARC_STROKE;
                     s.ringStroke = Prefs.MAX_RING_STROKE;
-                    s.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING; }));
+                    s.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING); }));
             scenes.add(matrixCfg(rect, s -> { s.valueSize = Prefs.MIN_VALUE_SIZE;
                     s.typeSize = Prefs.MIN_TYPE_SIZE; s.arcStroke = Prefs.MIN_ARC_STROKE;
                     s.ringStroke = Prefs.MIN_RING_STROKE; }));
             // Charging, which is the only frame the bolt can appear on.
             scenes.add(matrixCfg(rect, s -> { }).charging());
-            scenes.add(matrixCfg(rect, s -> s.valueCentred = true).charging());
+            scenes.add(matrixCfg(rect, s -> s.setValueCentred(true)).charging());
         }
 
         for (Scene base : scenes) {
@@ -187,10 +187,10 @@ public final class DrawingZonesTest {
                 final Scene scene = base.atWifi(wifiLevel).atLevel(level);
                 final TrioSettings c = scene.settings;
                 final String what = (c.trioStyle == Prefs.STYLE_RECT ? "rect/" : "ring/")
-                        + "w" + (c.showWifi ? 1 : 0) + "v" + (c.showValue ? 1 : 0)
-                        + "m" + (c.showMobile ? 1 : 0)
-                        + "/c" + (c.valueCentred ? 1 : 0) + "d" + (c.dualSim ? 1 : 0)
-                        + "t" + c.mobileTypeMode + "g" + (scene.charging ? 1 : 0)
+                        + "w" + (c.content.showWifi() ? 1 : 0) + "v" + (c.content.showValue() ? 1 : 0)
+                        + "m" + (c.content.showMobile() ? 1 : 0)
+                        + "/c" + (c.content.valueCentred() ? 1 : 0) + "d" + (c.content.dualSim() ? 1 : 0)
+                        + "t" + c.content.mobileTypeMode() + "g" + (scene.charging ? 1 : 0)
                         + "z" + Prefs.encodeLayout(c.ringZones)
                         + "/v" + c.valueSize + "y" + c.typeSize
                         + "/a" + c.arcStroke + "r" + c.ringStroke
@@ -230,8 +230,8 @@ public final class DrawingZonesTest {
     private static Scene cfg(boolean rect, java.util.function.Consumer<TrioSettings> f) {
         final TrioSettings s = TrioSettings.defaults();
         s.trioStyle = rect ? Prefs.STYLE_RECT : Prefs.STYLE_RING;
-        s.showSim1 = s.showSim2 = true;
-        s.typeHideOnWifi = false;
+        s.setShowSim1(s.setShowSim2(true));
+        s.setTypeHideOnWifi(false);
         f.accept(s);
         return new Scene(s, false);
     }
@@ -447,12 +447,12 @@ public final class DrawingZonesTest {
     /** Turns one piece's switch off, leaving everything else alone. */
     private static void switchOff(TrioSettings s, Part piece) {
         switch (piece) {
-            case WIFI: s.showWifi = false; break;
-            case MOBILE: s.showMobile = false; break;
-            case VALUE: s.showValue = false; break;
-            case TYPE: s.mobileTypeMode = Prefs.MOBILE_TYPE_OFF; break;
+            case WIFI: s.setShowWifi(false); break;
+            case MOBILE: s.setShowMobile(false); break;
+            case VALUE: s.setShowValue(false); break;
+            case TYPE: s.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF); break;
             case BOLT:
-                s.showBolt = false;
+                s.setShowBolt(false);
                 // The historical flag is retained in storage, but placement is the
                 // active bolt control. Remove only this candidate, preserving fallbacks.
                 for (int z = 0; z < s.ringZones.length; z++) {
@@ -460,17 +460,17 @@ public final class DrawingZonesTest {
                             .filter(id -> id != Prefs.PART_BOLT).toArray();
                 }
                 break;
-            case SIM_1: s.showSim1 = false; break;
-            case SIM_2: s.showSim2 = false; break;
+            case SIM_1: s.setShowSim1(false); break;
+            case SIM_2: s.setShowSim2(false); break;
             default: throw new AssertionError("unreachable " + piece);
         }
     }
 
     private static boolean sameConfig(TrioSettings a, TrioSettings b) {
-        return a.showWifi == b.showWifi && a.showMobile == b.showMobile
-                && a.showValue == b.showValue && a.mobileTypeMode == b.mobileTypeMode
-                && a.dualSim == b.dualSim && a.showBolt == b.showBolt
-                && a.showSim1 == b.showSim1 && a.showSim2 == b.showSim2
+        return a.content.showWifi() == b.content.showWifi() && a.content.showMobile() == b.content.showMobile()
+                && a.content.showValue() == b.content.showValue() && a.content.mobileTypeMode() == b.content.mobileTypeMode()
+                && a.content.dualSim() == b.content.dualSim() && a.content.showBolt() == b.content.showBolt()
+                && a.content.showSim1() == b.content.showSim1() && a.content.showSim2() == b.content.showSim2()
                 && java.util.Arrays.deepEquals(a.ringZones, b.ringZones);
     }
 
@@ -641,14 +641,14 @@ public final class DrawingZonesTest {
             s.trioStyle = rect;
             s.valueSize = valueSize;
             // Value only, so the diff isolates the percentage's own ink.
-            s.showWifi = false;
-            s.showMobile = false;
-            s.mobileTypeMode = Prefs.MOBILE_TYPE_OFF;
-            s.showValue = true;
+            s.setShowWifi(false);
+            s.setShowMobile(false);
+            s.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);
+            s.setShowValue(true);
 
             final Scene on = new Scene(s, false, 100);
             final TrioSettings off = s.copy();
-            off.showValue = false;
+            off.setShowValue(false);
             final Scene offScene = new Scene(off, false, 100);
 
             final boolean[] withValue = ink(on);
@@ -684,13 +684,13 @@ public final class DrawingZonesTest {
         for (int level : LEVELS) {
             final TrioSettings s = TrioSettings.defaults();
             s.trioStyle = rect;
-            s.showValue = false;
-            s.showWifi = false;
-            s.mobileTypeMode = Prefs.MOBILE_TYPE_OFF;
-            s.showMobile = true;
+            s.setShowValue(false);
+            s.setShowWifi(false);
+            s.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);
+            s.setShowMobile(true);
             final Scene scene = new Scene(s, false, level);
             final TrioSettings off = s.copy();
-            off.showMobile = false;
+            off.setShowMobile(false);
             final boolean[] withDots = ink(scene);
             final boolean[] without = ink(new Scene(off, false, level));
             final float[] t = transform(scene.settings);
@@ -739,14 +739,14 @@ public final class DrawingZonesTest {
         // The type is drawn where a slot names it, so its frame has to place it - the
         // shipped layout holds the arcs in the middle, where the label would otherwise go.
         movesInk(rect, Part.TYPE, s -> {
-            s.showWifi = false;
+            s.setShowWifi(false);
             if (!rect) s.ringZones = Prefs.decodeLayout("3|5|2");
         });
         movesInk(rect, Part.MOBILE, s -> placeRing(s, rect, Prefs.PART_MOBILE));
         // The bolt replaces the percentage, so the frame draws that percentage - and in the
         // ring it also needs a slot of its own, because the slots are the layout.
         movesInkCharging(rect, Part.BOLT, s -> {
-            s.showValue = true;
+            s.setShowValue(true);
             if (rect) s.ringZones = Prefs.decodeLayout("4|||");
             if (!rect) s.ringZones = Prefs.decodeLayout("4|1|2");
         });
@@ -854,13 +854,13 @@ public final class DrawingZonesTest {
                         for (int typeMode = 0; typeMode <= Prefs.MOBILE_TYPE_IN_RING;
                                 typeMode++) {
                             final TrioSettings s = cur.copy();
-                            s.showWifi = (bits & 1) != 0;
-                            s.showValue = (bits & 2) != 0;
-                            s.valueCentred = (bits & 4) != 0;
-                            s.showBolt = (bits & 8) != 0;
-                            s.dualSim = (bits & 16) != 0;
-                            s.showMobile = (bits & 32) != 0;
-                            s.mobileTypeMode = typeMode;
+                            s.setShowWifi((bits & 1) != 0);
+                            s.setShowValue((bits & 2) != 0);
+                            s.setValueCentred((bits & 4) != 0);
+                            s.setShowBolt((bits & 8) != 0);
+                            s.setDualSim((bits & 16) != 0);
+                            s.setShowMobile((bits & 32) != 0);
+                            s.setMobileTypeMode(typeMode);
                             if (switchDistance(cur, s) >= as.changes) {
                                 continue;
                             }
@@ -900,13 +900,13 @@ public final class DrawingZonesTest {
                         for (int typeMode = 0; typeMode <= Prefs.MOBILE_TYPE_IN_RING;
                                 typeMode++) {
                             final TrioSettings s = cur.copy();
-                            s.showWifi = (bits & 1) != 0;
-                            s.showValue = (bits & 2) != 0;
-                            s.valueCentred = (bits & 4) != 0;
-                            s.showBolt = (bits & 8) != 0;
-                            s.dualSim = (bits & 16) != 0;
-                            s.showMobile = (bits & 32) != 0;
-                            s.mobileTypeMode = typeMode;
+                            s.setShowWifi((bits & 1) != 0);
+                            s.setShowValue((bits & 2) != 0);
+                            s.setValueCentred((bits & 4) != 0);
+                            s.setShowBolt((bits & 8) != 0);
+                            s.setDualSim((bits & 16) != 0);
+                            s.setShowMobile((bits & 32) != 0);
+                            s.setMobileTypeMode(typeMode);
                             for (boolean charging : new boolean[] { false, true }) {
                                 if (where(s, zone, charging, 2) == want) {
                                     throw new AssertionError((rect ? "rect/" : "ring/")
@@ -958,8 +958,8 @@ public final class DrawingZonesTest {
           for (boolean fallbackType : new boolean[] { false, true }) {
             final TrioSettings cur = cfg(rect, s -> {
                 if (fallbackType) {
-                    s.showValue = false;
-                    s.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING;
+                    s.setShowValue(false);
+                    s.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
                 }
             }).settings;
             for (Zone zone : bands()) {
@@ -981,9 +981,9 @@ public final class DrawingZonesTest {
     /** A named Wi-Fi occupant must have ink in this runtime frame, not just a switch. */
     private static void wifiOccupantNeedsPixels() {
         final Scene base = cfg(false, s -> {
-            s.showValue = false;
-            s.mobileTypeMode = Prefs.MOBILE_TYPE_OFF;
-            s.dualSim = false;
+            s.setShowValue(false);
+            s.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);
+            s.setDualSim(false);
             // The arcs are placed, because a fresh install is blank: this case is about a
             // live Wi-Fi READING, not about whether anything is placed.
             s.ringZones = Prefs.decodeLayout("|1|");
@@ -991,7 +991,7 @@ public final class DrawingZonesTest {
         for (int level : new int[] { -1, 0 }) {
             final Scene absent = base.atWifi(level);
             final Scene off = absent.copy();
-            off.settings.showWifi = false;
+            off.settings.setShowWifi(false);
             ok("Wi-Fi without ink has no middle occupant " + level,
                     occupantOf(absent, Zone.CENTRE) == null);
             ok("Wi-Fi without ink contributes no pixels " + level,
@@ -1000,7 +1000,7 @@ public final class DrawingZonesTest {
         for (int level : new int[] { 1, 3 }) {
             final Scene present = base.atWifi(level);
             final Scene disabled = present.copy();
-            disabled.settings.showWifi = false;
+            disabled.settings.setShowWifi(false);
             ok("live Wi-Fi names its middle occupant " + level,
                     occupantOf(present, Zone.CENTRE) == Part.WIFI);
             ok("live Wi-Fi contributes pixels " + level,
@@ -1011,21 +1011,21 @@ public final class DrawingZonesTest {
     /** How many switches differ between two snapshots. */
     private static int switchDistance(TrioSettings a, TrioSettings b) {
         int n = 0;
-        if (a.showWifi != b.showWifi) { n++; }
-        if (a.showMobile != b.showMobile) { n++; }
-        if (a.showValue != b.showValue) { n++; }
-        if (a.showBolt != b.showBolt) { n++; }
-        if (a.dualSim != b.dualSim) { n++; }
-        if (a.valueCentred != b.valueCentred) { n++; }
-        if (a.mobileTypeMode != b.mobileTypeMode) { n++; }
+        if (a.content.showWifi() != b.content.showWifi()) { n++; }
+        if (a.content.showMobile() != b.content.showMobile()) { n++; }
+        if (a.content.showValue() != b.content.showValue()) { n++; }
+        if (a.content.showBolt() != b.content.showBolt()) { n++; }
+        if (a.content.dualSim() != b.content.dualSim()) { n++; }
+        if (a.content.valueCentred() != b.content.valueCentred()) { n++; }
+        if (a.content.mobileTypeMode() != b.content.mobileTypeMode()) { n++; }
         return n;
     }
 
     private static String describe(TrioSettings s) {
-        return "wifi=" + (s.showWifi ? 1 : 0) + " value=" + (s.showValue ? 1 : 0)
-                + " centre=" + (s.valueCentred ? 1 : 0) + " bolt=" + (s.showBolt ? 1 : 0)
-                + " dual=" + (s.dualSim ? 1 : 0) + " type=" + s.mobileTypeMode
-                + " mobile=" + (s.showMobile ? 1 : 0);
+        return "wifi=" + (s.content.showWifi() ? 1 : 0) + " value=" + (s.content.showValue() ? 1 : 0)
+                + " centre=" + (s.content.valueCentred() ? 1 : 0) + " bolt=" + (s.content.showBolt() ? 1 : 0)
+                + " dual=" + (s.content.dualSim() ? 1 : 0) + " type=" + s.content.mobileTypeMode()
+                + " mobile=" + (s.content.showMobile() ? 1 : 0);
     }
 
     private static void movesInk(boolean rect, Part piece,
@@ -1051,13 +1051,13 @@ public final class DrawingZonesTest {
     /** Turns one piece's switch on, leaving everything else alone. */
     private static void switchOn(TrioSettings s, Part piece) {
         switch (piece) {
-            case WIFI: s.showWifi = true; break;
-            case MOBILE: s.showMobile = true; break;
-            case VALUE: s.showValue = true; break;
-            case TYPE: s.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING; break;
-            case BOLT: s.showBolt = true; break;
-            case SIM_1: s.showSim1 = true; break;
-            case SIM_2: s.showSim2 = true; break;
+            case WIFI: s.setShowWifi(true); break;
+            case MOBILE: s.setShowMobile(true); break;
+            case VALUE: s.setShowValue(true); break;
+            case TYPE: s.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING); break;
+            case BOLT: s.setShowBolt(true); break;
+            case SIM_1: s.setShowSim1(true); break;
+            case SIM_2: s.setShowSim2(true); break;
             default: throw new AssertionError("unreachable " + piece);
         }
     }
@@ -1119,13 +1119,13 @@ public final class DrawingZonesTest {
         // The reference look: one card's row in each opening, nothing else competing for
         // the body, so the ink that changes is the dots' own.
         final TrioSettings base = cfg(false, s -> {
-            s.showValue = false;
-            s.showWifi = false;
-            s.showBolt = false;
-            s.showMobile = true;
-            s.showSim1 = true;
-            s.showSim2 = true;
-            s.mobileTypeMode = Prefs.MOBILE_TYPE_OFF;
+            s.setShowValue(false);
+            s.setShowWifi(false);
+            s.setShowBolt(false);
+            s.setShowMobile(true);
+            s.setShowSim1(true);
+            s.setShowSim2(true);
+            s.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);
             // SIM 1 in the top opening, SIM 2 in the bottom: both rows, both caps.
             s.ringZones = Prefs.decodeLayout("7||8");
         }).settings;
@@ -1206,7 +1206,7 @@ public final class DrawingZonesTest {
         final Canvas canvas = new Canvas(g);
         TrioRenderer.drawInto(canvas, SIZE, SIZE, scene.level, scene.charging, false, false, false,
                 scene.wifiLevel, 4, TWO_SIMS,
-                cfg.mobileTypeMode == Prefs.MOBILE_TYPE_IN_RING ? "5G" : "",
+                cfg.content.mobileTypeMode() == Prefs.MOBILE_TYPE_IN_RING ? "5G" : "",
                 0xFF000000, cfg, true);
         g.dispose();
         return painted(img);
@@ -1233,7 +1233,7 @@ public final class DrawingZonesTest {
         canvas.translate(pad, pad);
         TrioRenderer.drawInto(canvas, inner, inner, scene.level, scene.charging, false, false, false,
                 scene.wifiLevel, 4, TWO_SIMS,
-                cfg.mobileTypeMode == Prefs.MOBILE_TYPE_IN_RING ? "5G" : "",
+                cfg.content.mobileTypeMode() == Prefs.MOBILE_TYPE_IN_RING ? "5G" : "",
                 0xFF000000, cfg, true);
         g.dispose();
         return painted(img);

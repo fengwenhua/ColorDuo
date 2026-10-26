@@ -209,16 +209,16 @@ internal fun ContentControlRow(
             master) { value -> update { it.setMobileTypeMode(value) } }
         // Only meaningful when the label is drawn somewhere: with the type off there is
         // nothing to step aside.
-        ContentControl.TypeHideOnWifi -> ContentToggle(settings.typeHideOnWifi,
+        ContentControl.TypeHideOnWifi -> ContentToggle(settings.content.typeHideOnWifi(),
             R.string.type_hide_on_wifi_title,
             R.string.type_hide_on_wifi_summary, master) { value ->
                 update { it.setTypeHideOnWifi(value) }
             }
-        ContentControl.Power -> ContentToggle(settings.perfPower, R.string.perf_power_title,
+        ContentControl.Power -> ContentToggle(settings.content.perfPower(), R.string.perf_power_title,
             null, master) { value -> update { it.setPerfPower(value) } }
-        ContentControl.Temperature -> ContentToggle(settings.perfTemp, R.string.perf_temp_title,
+        ContentControl.Temperature -> ContentToggle(settings.content.perfTemp(), R.string.perf_temp_title,
             null, master) { value -> update { it.setPerfTemp(value) } }
-        ContentControl.ChargingTemp -> ContentToggle(settings.perfTempChargingOnly,
+        ContentControl.ChargingTemp -> ContentToggle(settings.content.perfTempChargingOnly(),
             R.string.perf_temp_charging_only_title,
             R.string.perf_temp_charging_only_summary, master) { value ->
                 update { it.setPerfTempChargingOnly(value) }
@@ -241,7 +241,7 @@ private fun SignalPositionControl(
     settings: TrioSettings,
     update: ((SettingsRepository) -> Unit) -> Unit,
 ) {
-    val outside = settings.signalMode == Prefs.SIGNAL_OUT_RING
+    val outside = settings.content.signalMode() == Prefs.SIGNAL_OUT_RING
     ContentChoice(
         selected = if (outside) 1 else 0,
         title = R.string.ring_position_mobile,
@@ -347,7 +347,7 @@ private fun WifiPositionControl(
     val slotIndex = if (placedAt < 0) 0 else slots.indexOf(TrioZones.Zone.entries[placedAt]) + 1
     // Off wins over "placed somewhere": a switch that is off draws no arcs whatever the
     // layout says, so reporting a slot here would name a place that produces nothing.
-    val selected = if (!settings.showWifi) 0 else slotIndex
+    val selected = if (!settings.content.showWifi()) 0 else slotIndex
     ContentChoice(selected, R.string.ring_position_wifi, null,
         listOf(R.string.ring_position_native) + slots.map { zone ->
             when (zone) {
@@ -411,7 +411,7 @@ private fun RingPositionControl(
     val placedAt = zones.indexOfFirst { it.contains(id) }
     val slotIndex = if (placedAt < 0) 0 else slots.indexOf(TrioZones.Zone.entries[placedAt]) + 1
     val outOfRing = part == TrioZones.Part.TYPE
-            && settings.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING
+            && settings.content.mobileTypeMode() == Prefs.MOBILE_TYPE_OUT_RING
     val selected = if (outOfRing) slots.size + 1 else slotIndex
     // The row's title is the SLOT it picks, never the component's own switch name.
     // Reusing the switch title put "显示移动信号点" above "显示移动信号点" - two rows

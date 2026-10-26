@@ -43,10 +43,10 @@ public final class FreeRingTest {
     }
     static TrioSettings base() {
         TrioSettings s = TrioSettings.defaults();
-        s.enabled = s.showWifi = s.showMobile = s.showValue = s.showBolt = true;
-        s.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING;
+        s.enabled = s.setShowWifi(s.setShowMobile(s.setShowValue(s.setShowBolt(true))));
+        s.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING);
         s.trioStyle = Prefs.STYLE_RING;
-        s.typeHideOnWifi = false;
+        s.setTypeHideOnWifi(false);
         // Three empty zones. The cases that want a placement build it explicitly, so a
         // switch alone can be shown to draw nothing.
         s.ringZones = Prefs.decodeLayout(Prefs.EMPTY_LAYOUT);
@@ -194,10 +194,10 @@ public final class FreeRingTest {
         // Placing a piece turns its own switch on, so a fresh install does not draw an
         // empty reserved zone.
         TrioSettings off = base();
-        off.showWifi = off.showValue = off.showMobile = false;
+        off.setShowWifi(off.setShowValue(off.setShowMobile(false)));
         TrioSettings on = TrioZones.withPiece(off, 0, TrioZones.Part.WIFI);
-        ok(on.showWifi, "placing the arcs switches them on");
-        ok(!off.showWifi, "the input is not mutated");
+        ok(on.content.showWifi(), "placing the arcs switches them on");
+        ok(!off.content.showWifi(), "the input is not mutated");
 
         // The current ring has three bands. Signal rows cannot occupy the centre;
         // the aggregate MOBILE piece remains readable for legacy layouts but is retired
@@ -235,7 +235,7 @@ public final class FreeRingTest {
         // With Wi-Fi off the head cannot draw, so the percentage behind it takes the zone -
         // the fallback, not an empty third.
         TrioSettings noWifi = s.copy();
-        noWifi.showWifi = false;
+        noWifi.setShowWifi(false);
         ok(TrioAppearance.of(noWifi).ring(79, false, 3, "5G", 2).parts[0] == Prefs.PART_VALUE,
                 "the fallback takes over when the head has nothing to draw");
         // Order is what decides: reversed, the percentage leads even with Wi-Fi available.
@@ -245,7 +245,7 @@ public final class FreeRingTest {
                 "the recorded order decides, not the piece's kind");
         // Nothing drawable at all leaves the zone empty rather than painting a stale piece.
         TrioSettings none = s.copy();
-        none.showWifi = none.showValue = false;
+        none.setShowWifi(none.setShowValue(false));
         ok(TrioAppearance.of(none).ring(79, false, 3, "5G", 2).parts[0] == Prefs.PART_NONE,
                 "a zone with no drawable candidate is empty");
         // The bolt only exists while charging, so it steps aside on an idle frame. It is
@@ -275,11 +275,11 @@ public final class FreeRingTest {
         s = base();
         s = TrioZones.withPiece(s, 0, TrioZones.Part.WIFI);
         s = TrioZones.withPiece(s, 0, TrioZones.Part.VALUE);   // VALUE leads
-        s.showWifi = false;                                    // so WIFI never draws
+        s.setShowWifi(false);                                    // so WIFI never draws
         a = TrioAppearance.of(s);
         ok(a.hasRingPart(Prefs.PART_WIFI), "a placed piece is still owned when it cannot draw");
         ok(!a.ownsWifi(), "but its own switch still gates the handoff");
-        s.showWifi = true;
+        s.setShowWifi(true);
         ok(TrioAppearance.of(s).ownsWifi(), "switched on, the placed piece claims the native view");
 
         s = base();
@@ -297,14 +297,14 @@ public final class FreeRingTest {
         s = base();
         s = TrioZones.withPiece(s, 0, TrioZones.Part.SIM_1);
         s = TrioZones.withPiece(s, 2, TrioZones.Part.SIM_2);
-        s.showSim1 = s.showSim2 = false;
+        s.setShowSim1(s.setShowSim2(false));
         a = TrioAppearance.of(s);
         ok(!a.drawsSim1() && !a.drawsSim2(), "placed cards draw nothing until their switches are on");
-        s.showSim1 = true;
+        s.setShowSim1(true);
         a = TrioAppearance.of(s);
         ok(a.drawsSim1() && !a.drawsSim2(), "the cards are switched independently");
         ok(a.foldsMobile(), "a drawn card takes the native mobile slot");
-        s.showSim1 = false;
+        s.setShowSim1(false);
         ok(!TrioAppearance.of(s).foldsMobile(), "with both cards off nothing claims the slot");
         ok(TrioAppearance.of(s).hasRingPart(Prefs.PART_SIM_1),
                 "the switch never clears the placement");
@@ -316,7 +316,7 @@ public final class FreeRingTest {
         ok(!TrioAppearance.of(s).drawsSim1(), "an unplaced card draws nothing");
         ok(!TrioAppearance.of(s).foldsMobile(), "and claims no native slot");
         s = TrioZones.withPiece(s, 0, TrioZones.Part.SIM_1);
-        s.showSim1 = true;
+        s.setShowSim1(true);
         ok(TrioAppearance.of(s).drawsSim1(), "placing it is what makes it draw");
         ok(TrioAppearance.of(s).foldsMobile(), "and what claims the native slot");
     }

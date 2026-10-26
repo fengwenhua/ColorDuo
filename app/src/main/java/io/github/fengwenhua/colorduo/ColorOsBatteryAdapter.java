@@ -452,12 +452,12 @@ final class ColorOsBatteryAdapter {
         if (font != null) font.setActive(config.fontFile(), context != null);
         if (network != null) {
             TrioSettings settings = config.get();
-            boolean needsType = settings.mobileTypeMode != Prefs.MOBILE_TYPE_OFF
-                    || ChargeLayout.forScene(settings, ChargeLayout.CHARGING).mobileTypeMode != Prefs.MOBILE_TYPE_OFF
-                    || ChargeLayout.forScene(settings, ChargeLayout.QUICK).mobileTypeMode != Prefs.MOBILE_TYPE_OFF;
+            boolean needsType = settings.content.mobileTypeMode() != Prefs.MOBILE_TYPE_OFF
+                    || ChargeLayout.forScene(settings, ChargeLayout.CHARGING).content.mobileTypeMode() != Prefs.MOBILE_TYPE_OFF
+                    || ChargeLayout.forScene(settings, ChargeLayout.QUICK).content.mobileTypeMode() != Prefs.MOBILE_TYPE_OFF;
             network.setActive(context, context != null && needsType);
         }
-        if (readouts != null) readouts.setActive(context, context != null && (config.get().perfPower || config.get().perfTemp));
+        if (readouts != null) readouts.setActive(context, context != null && (config.get().content.perfPower() || config.get().content.perfTemp()));
         if (clock != null) {
             TrioSettings settings = config.get();
             boolean needsClock = settings.trioStyle == Prefs.STYLE_CAPSULE

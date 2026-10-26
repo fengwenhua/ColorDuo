@@ -34,9 +34,9 @@ public final class CapsuleTest {
     public static void main(String[] args) {
         final TrioSettings cfg = TrioSettings.defaults();
         cfg.trioStyle = Prefs.STYLE_CAPSULE;
-        cfg.showWifi = true;
-        cfg.showMobile = true;
-        cfg.showValue = true;
+        cfg.setShowWifi(true);
+        cfg.setShowMobile(true);
+        cfg.setShowValue(true);
         // The network type is off by default, so the percentage owns the
         // right-hand slot unless a case asks otherwise.
         TrioState.sClockText = "19:41";
@@ -153,10 +153,10 @@ public final class CapsuleTest {
         // mobile switch - that is the whole variable under test.
         final BufferedImage broken = renderAt(cfg, hostW, TrioGeometry.capHostHeightPx(HOST_H), 50, false, 0,
                 new int[] { 4, 4 }, "");
-        cfg.showMobile = false;
+        cfg.setShowMobile(false);
         final BufferedImage closed = renderAt(cfg, hostW, TrioGeometry.capHostHeightPx(HOST_H), 50, false, 0,
                 new int[] { 4, 4 }, "");
-        cfg.showMobile = true;
+        cfg.setShowMobile(true);
         final int closedLit = litColumns(closed, rowY, runFrom, runTo);
         final int brokenLit = litColumns(broken, rowY, runFrom, runTo);
         // The closed outline is a continuous stroke, so every column of the run
@@ -368,9 +368,9 @@ public final class CapsuleTest {
         // "simplification" would most plausibly introduce.
         final TrioSettings clockCfg = TrioSettings.defaults();
         clockCfg.trioStyle = Prefs.STYLE_CAPSULE;
-        clockCfg.showValue = true;
-        clockCfg.showMobile = true;
-        clockCfg.showWifi = false;
+        clockCfg.setShowValue(true);
+        clockCfg.setShowMobile(true);
+        clockCfg.setShowWifi(false);
 
         TrioState.sClockText = "19:41";
         clockCfg.clockSize = 16;
@@ -478,7 +478,7 @@ public final class CapsuleTest {
         ok("a partial update carries the clock's size through",
                 switched.clockSize == explicit.clockSize);
         ok("and its weight", switched.clockWeight == explicit.clockWeight);
-        ok("while still applying the key it did carry", switched.showWifi);
+        ok("while still applying the key it did carry", switched.content.showWifi());
 
         // ---- the right-hand slot is arbitrated, not stacked -------------------
         // A charger takes the slot from the arcs and from the percentage, exactly as

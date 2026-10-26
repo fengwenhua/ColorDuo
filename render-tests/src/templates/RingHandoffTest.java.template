@@ -26,7 +26,7 @@ public final class RingHandoffTest {
     }
     public static void main(String[] args) {
         TrioSettings s = TrioSettings.defaults(); s.enabled = true;
-        s.showSim1 = true;
+        s.setShowSim1(true);
         s.ringZones = Prefs.decodeLayout("1||");
         HandoffConfig.settings = s;
         View wifi = new View(); wifi.slot = "wifi";

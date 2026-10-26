@@ -67,7 +67,7 @@ public final class LayoutRegressionTest {
                 TrioSettings settings = TrioSettings.defaults();
                 settings.enabled = true;
                 settings.trioStyle = style;
-                settings.showWifi = settings.showValue = settings.showMobile = true;
+                settings.setShowWifi(settings.setShowValue(settings.setShowMobile(true)));
                 settings.ringZones = Prefs.decodeLayout("1|3|7|6");
                 BufferedImage first = render(settings, level, false);
                 BufferedImage second = render(settings, level, false);

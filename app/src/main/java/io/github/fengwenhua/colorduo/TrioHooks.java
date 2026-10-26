@@ -1263,7 +1263,7 @@ private static void showIfHidden(Object view) {
                             // telephony is asked directly - and only when a
                             // per-SIM reading is actually wanted: the glyph's
                             // second row, or the out-of-ring stacked reading.
-                            final boolean simsMoved = (TrioConfig.get().dualSim
+                            final boolean simsMoved = (TrioConfig.get().content.dualSim()
                                     || TrioConfig.appearance().drawsAnySimRow())
                                     && TrioState.pollSimsNow();
                             if (beforeWifi != TrioState.sWifiLevel

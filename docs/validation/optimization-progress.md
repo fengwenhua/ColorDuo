@@ -43,3 +43,8 @@ O-02 续补：在 O-06 收尾 CI 40335174693 通过后，补齐按 tag 查询隐
 O-08 续补：首组胶囊五项几何已迁入不可变 CapsuleLayoutSettings，统一偏好/Bundle 默认与限幅。
 70组线值与140帧像素前后相同，新增三组回归；app/render/host 35/63/41、Lint/debug/release通过。
 详见 capsule-settings-group-2026-10-26.md；其余配置组及单声明扩展验收尚未完成。
+
+O-08 第二组：16 项组件/读数标志已迁入不可变 ContentSettings，统一偏好/Bundle 读取。
+保留 11 项样式隔离和 5 项全局标志的预览边界，单 key 更新不会覆盖同组其他值。
+84 组线值与 336 帧像素前后相同，六组回归及三种故障对照通过；详见 content-settings-group-2026-10-26.md。
+环布局、Appearance 和最终单声明验收尚未完成。

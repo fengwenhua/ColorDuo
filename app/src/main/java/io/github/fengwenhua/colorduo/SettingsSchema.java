@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 
-/** Wire registry. Historical preference migration stays in TrioSettings; tests enforce parity. */
+/** Wire registry. Historical migration stays in the model readers; tests enforce parity. */
 final class SettingsSchema {
     static final int VERSION = 1;
     enum Kind { BOOLEAN, INT, STRING }
@@ -22,7 +22,9 @@ final class SettingsSchema {
         Group group() {
             if (field.startsWith("capsule")) return Group.CAPSULE_LAYOUT;
             if (field.equals("ringZones") || field.endsWith("ChargingLayout") || field.equals("chargingLayout")) return Group.RING_LAYOUT;
-            if (styled() || field.startsWith("show") || field.equals("typeHideOnWifi")) return Group.CONTENT;
+            if (styled() || field.startsWith("show") || field.equals("typeHideOnWifi")
+                    || field.equals("chargingShowsValue") || field.equals("perfPower")
+                    || field.equals("perfTemp") || field.equals("perfTempChargingOnly")) return Group.CONTENT;
             if (kind == Kind.INT || field.equals("fontPath") || field.equals("roleColors")) return Group.APPEARANCE;
             return Group.GENERAL;
         }
@@ -44,24 +46,24 @@ final class SettingsSchema {
         entry(Prefs.KEY_NAV_LABELS, "navLabels", Kind.INT, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> Prefs.normalizeNavLabels(s.navLabels)),
         entry(Prefs.KEY_TRIO_STYLE, "trioStyle", Kind.INT, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> Prefs.normalizeTrioStyle(s.trioStyle)),
         entry(Prefs.KEY_ENABLED, "enabled", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.enabled),
-        entry(Prefs.KEY_SHOW_WIFI, "showWifi", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.showWifi),
-        entry(Prefs.KEY_SHOW_MOBILE, "showMobile", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.showMobile),
-        entry(Prefs.KEY_SHOW_VALUE, "showValue", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.showValue),
-        entry(Prefs.KEY_SHOW_BOLT, "showBolt", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.showBolt),
-        entry(Prefs.KEY_MOBILE_TYPE_MODE, "mobileTypeMode", Kind.INT, Prefs.MIN_MOBILE_TYPE_MODE, style -> Prefs.MAX_MOBILE_TYPE_MODE, s -> s.mobileTypeMode),
-        entry(Prefs.KEY_VALUE_CENTRED, "valueCentred", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.valueCentred),
+        entry(Prefs.KEY_SHOW_WIFI, "showWifi", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.showWifi()),
+        entry(Prefs.KEY_SHOW_MOBILE, "showMobile", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.showMobile()),
+        entry(Prefs.KEY_SHOW_VALUE, "showValue", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.showValue()),
+        entry(Prefs.KEY_SHOW_BOLT, "showBolt", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.showBolt()),
+        entry(Prefs.KEY_MOBILE_TYPE_MODE, "mobileTypeMode", Kind.INT, Prefs.MIN_MOBILE_TYPE_MODE, style -> Prefs.MAX_MOBILE_TYPE_MODE, s -> s.content.mobileTypeMode()),
+        entry(Prefs.KEY_VALUE_CENTRED, "valueCentred", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.valueCentred()),
         entry(Prefs.KEY_RING_LAYOUT, "ringZones", Kind.STRING, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> Prefs.encodeLayout(s.ringZones)),
         entry(Prefs.KEY_CHARGING_LAYOUT, "chargingLayout", Kind.STRING, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.chargingLayout),
         entry(Prefs.KEY_QUICK_CHARGING_LAYOUT, "quickChargingLayout", Kind.STRING, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.quickChargingLayout),
-        entry(Prefs.KEY_DUAL_SIM, "dualSim", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.dualSim),
-        entry(Prefs.KEY_SIGNAL_MODE, "signalMode", Kind.INT, Prefs.MIN_SIGNAL_MODE, style -> Prefs.MAX_SIGNAL_MODE, s -> Prefs.clamp(s.signalMode, Prefs.MIN_SIGNAL_MODE, Prefs.MAX_SIGNAL_MODE)),
-        entry(Prefs.KEY_STACKED_SIGNAL, "stackedSignal", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.stackedSignal),
-        entry(Prefs.KEY_SHOW_SIM_1, "showSim1", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.showSim1),
-        entry(Prefs.KEY_SHOW_SIM_2, "showSim2", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.showSim2),
+        entry(Prefs.KEY_DUAL_SIM, "dualSim", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.dualSim()),
+        entry(Prefs.KEY_SIGNAL_MODE, "signalMode", Kind.INT, Prefs.MIN_SIGNAL_MODE, style -> Prefs.MAX_SIGNAL_MODE, s -> Prefs.clamp(s.content.signalMode(), Prefs.MIN_SIGNAL_MODE, Prefs.MAX_SIGNAL_MODE)),
+        entry(Prefs.KEY_STACKED_SIGNAL, "stackedSignal", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.stackedSignal()),
+        entry(Prefs.KEY_SHOW_SIM_1, "showSim1", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.showSim1()),
+        entry(Prefs.KEY_SHOW_SIM_2, "showSim2", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.showSim2()),
         entry(Prefs.KEY_DATA_SIM_ONLY, "dataSimOnly", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.dataSimOnly),
-        entry(Prefs.KEY_PERF_POWER, "perfPower", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.perfPower),
-        entry(Prefs.KEY_PERF_TEMP, "perfTemp", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.perfTemp),
-        entry(Prefs.KEY_PERF_TEMP_CHARGING_ONLY, "perfTempChargingOnly", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.perfTempChargingOnly),
+        entry(Prefs.KEY_PERF_POWER, "perfPower", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.perfPower()),
+        entry(Prefs.KEY_PERF_TEMP, "perfTemp", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.perfTemp()),
+        entry(Prefs.KEY_PERF_TEMP_CHARGING_ONLY, "perfTempChargingOnly", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.perfTempChargingOnly()),
         entry(Prefs.KEY_PERF_SCALE, "perfScale", Kind.INT, Prefs.MIN_PERF_SCALE, style -> Prefs.MAX_PERF_SCALE, s -> s.perfScale),
         entry(Prefs.KEY_PERF_WEIGHT, "perfWeight", Kind.INT, Prefs.MIN_PERF_WEIGHT, style -> Prefs.MAX_PERF_WEIGHT, s -> s.perfWeight),
         entry(Prefs.KEY_GLYPH_SCALE, "glyphScale", Kind.INT, Prefs.MIN_GLYPH_SCALE, style -> Prefs.MAX_GLYPH_SCALE, s -> s.glyphScale),
@@ -93,8 +95,8 @@ final class SettingsSchema {
         entry(Prefs.KEY_TYPE_SUFFIX_SCALE, "typeSuffixScale", Kind.INT, Prefs.MIN_TYPE_SUFFIX_SCALE, style -> Prefs.MAX_TYPE_SUFFIX_SCALE, s -> s.typeSuffixScale),
         entry(Prefs.KEY_BOLT_SCALE, "boltScale", Kind.INT, Prefs.MIN_BOLT_SCALE, style -> Prefs.MAX_BOLT_SCALE, s -> s.boltScale),
         entry(Prefs.KEY_WIFI_SCALE, "wifiScale", Kind.INT, Prefs.MIN_WIFI_SCALE, style -> Prefs.MAX_WIFI_SCALE, s -> s.wifiScale),
-        entry(Prefs.KEY_TYPE_HIDE_ON_WIFI, "typeHideOnWifi", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.typeHideOnWifi),
-        entry(Prefs.KEY_CHARGING_SHOWS_VALUE, "chargingShowsValue", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.chargingShowsValue),
+        entry(Prefs.KEY_TYPE_HIDE_ON_WIFI, "typeHideOnWifi", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.typeHideOnWifi()),
+        entry(Prefs.KEY_CHARGING_SHOWS_VALUE, "chargingShowsValue", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.chargingShowsValue()),
         entry(Prefs.KEY_FONT_PATH, "fontPath", Kind.STRING, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.fontPath),
         entry(Prefs.KEY_DOT_SCALE, "dotScale", Kind.INT, Prefs.MIN_DOT_SCALE, style -> Prefs.MAX_DOT_SCALE, s -> s.dotScale),
         entry(Prefs.KEY_OUT_ORDER, "outOrder", Kind.STRING, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> Prefs.encodeOutOrder(s.outOrder)),

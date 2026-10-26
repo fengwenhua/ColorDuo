@@ -20,11 +20,11 @@ public final class ChargeLayout {
 
     /** Empty means inherit the existing arrangement; an explicitly empty arrangement is encoded. */
     public static String encode(TrioSettings s) {
-        int flags = (s.showWifi ? 1 : 0) | (s.showMobile ? 2 : 0) | (s.showValue ? 4 : 0)
-                | (s.showBolt ? 8 : 0) | (s.showSim1 ? 16 : 0) | (s.showSim2 ? 32 : 0)
-                | (s.dualSim ? 64 : 0) | (s.valueCentred ? 128 : 0)
-                | (s.stackedSignal ? 256 : 0) | (s.chargingShowsValue ? 512 : 0);
-        return "1;" + flags + ";" + s.mobileTypeMode + ";" + s.signalMode + ";"
+        int flags = (s.content.showWifi() ? 1 : 0) | (s.content.showMobile() ? 2 : 0) | (s.content.showValue() ? 4 : 0)
+                | (s.content.showBolt() ? 8 : 0) | (s.content.showSim1() ? 16 : 0) | (s.content.showSim2() ? 32 : 0)
+                | (s.content.dualSim() ? 64 : 0) | (s.content.valueCentred() ? 128 : 0)
+                | (s.content.stackedSignal() ? 256 : 0) | (s.content.chargingShowsValue() ? 512 : 0);
+        return "1;" + flags + ";" + s.content.mobileTypeMode() + ";" + s.content.signalMode() + ";"
                 + Prefs.encodeLayout(s.ringZones);
     }
 
@@ -44,12 +44,12 @@ public final class ChargeLayout {
                     || type > Prefs.MOBILE_TYPE_OUT_RING || signal < Prefs.MIN_SIGNAL_MODE
                     || signal > Prefs.MAX_SIGNAL_MODE) return null;
             TrioSettings s = base == null ? TrioSettings.defaults() : base.copy();
-            s.showWifi = (flags & 1) != 0; s.showMobile = (flags & 2) != 0;
-            s.showValue = (flags & 4) != 0; s.showBolt = (flags & 8) != 0;
-            s.showSim1 = (flags & 16) != 0; s.showSim2 = (flags & 32) != 0;
-            s.dualSim = (flags & 64) != 0; s.valueCentred = (flags & 128) != 0;
-            s.stackedSignal = (flags & 256) != 0; s.chargingShowsValue = (flags & 512) != 0;
-            s.mobileTypeMode = type; s.signalMode = signal;
+            ContentSettings c = s.content;
+            s.content = new ContentSettings(
+                    (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0,
+                    type, (flags & 128) != 0, (flags & 64) != 0, signal, (flags & 256) != 0,
+                    (flags & 16) != 0, (flags & 32) != 0, c.typeHideOnWifi(), (flags & 512) != 0,
+                    c.perfPower(), c.perfTemp(), c.perfTempChargingOnly());
             s.ringZones = Prefs.decodeLayout(fields[4]);
             return s;
         } catch (NumberFormatException invalid) { return null; }
