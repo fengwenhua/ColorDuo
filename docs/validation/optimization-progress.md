@@ -29,3 +29,6 @@
 | O-12 | 已实现并云端复验 | Wrapper 9.8.0 固定官方发行包/JAR 摘要，CI/发布统一 ./gradlew。448 组件/714 artifact 启用 strict（含 Linux/Windows AAPT2）；篡改插件摘要会拒绝。首次 Linux CI 缺失描述文件，经干净缓存构建补齐 7 份并独立核对 Maven Central 摘要，既有707份不变。Linux 正式发布与普通 CI 最终均成功；27+12 JUnit、Lint、debug/release、12 项 Python 测试通过，正常 release 无 Observer。正式日志降频，文档分离归档，清理5个无引用字符串、修复注释/LF，补 v33 monochrome 与备份规则。见 TOOLCHAIN.md。 |
 
 状态仅在对应代码与验证完成后更新。未实测的设备/场景不计为通过。
+
+维护者已要求继续收尾：见 [优化续作清单](optimization-follow-up-2026-10-26.md)。
+O-06 已新增整体缩放的 17 项像素断言及三种故障对照；历史测试全量迁移、配置分组、Hooks 深入拆分等仍按该清单逐项推进。

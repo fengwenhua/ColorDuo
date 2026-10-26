@@ -32,6 +32,10 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 Schema 逐字段存储/传输/复制及更新清单校验纳入 render-tests。当前共 27+12 个 JUnit 测试方法，
 每个方法内部可包含多项断言，不能与 Android 探针计数相加冒充相同粒度。
 
+后续 `HostDecision` 暂停充电回归增加 1 个 app 方法；`GlyphScaleTest` 将旧脚本的 17 项真实像素断言
+迁为 1 个 Gradle/JUnit 方法，目前为 28+13 个方法。整体缩放分别用忽略缩放、取消限幅和重复缩放故障对照验证可检出。
+历史脚本迁移状态及下一步边界见 [优化续作清单](validation/optimization-follow-up-2026-10-26.md)。
+
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。
 
