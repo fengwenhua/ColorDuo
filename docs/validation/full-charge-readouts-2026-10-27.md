@@ -31,3 +31,19 @@ HyperOS 路径、设置存储、组件排序和宿主接管逻辑未修改。
 app/render/host 为 45/69/41，共 155 个 JUnit 方法/实例；Lint、release/debug 构建及 22 项 Python 测试通过。
 十个读数测试另行在桌面 JVM 运行，随后分别把充电判断退回“只看插电”、移除成组完整性限制，
 两种故障均被对应的新测试拒绝。Android 调试探针仅修正旧描述文字，本轮未将其计为真机执行。
+
+## 1.1.7 同签名真机验收
+
+修复提交 9b89378，普通 CI 40363475806 通过，签名候选运行 40363475170 通过。
+APK SHA-256：`d7441541b5ac1c4802ca0312ba1a1debf873580efa534cc16c1e69c2c45e8cd2`。
+核验生产证书、v2/v3、清单签名、版本与源码后覆盖安装，设置保留。
+
+手机仍为 USB powered=true、status=5、level=100；原生状态 charging=false / plugged=true / full=true。
+模块变为 readouts active=true / charging=false / watts=NaN / temperature=31。
+圆环宿主 85×52，outside=0，pending=false / failed=false，保持 DRAWN；没有为已隐藏读数留下空位。
+仅安装时明确重载一次系统界面，后续维护者切换并确认圆环、胶囊均正常，已授权正式发布。
+本轮物理验收针对满电状态；恢复实际充电、暂停和缺失值路径由上述单元回归覆盖。
+
+正式发布运行：[40365549737](https://github.com/fengwenhua/ColorDuo/actions/runs/40365549737)。
+正式 APK 与手机上验收的候选 APK 逐字节一致；发布使用正式运行的 APK、摘要、清单和清单签名。
+源码仓与模块仓首页同步至 1.1.7，保留新签名版本覆盖升级、低于 1.1.0（不包含 1.1.0）需卸载重装的提醒。
