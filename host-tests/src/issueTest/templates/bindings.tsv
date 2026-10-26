@@ -1,0 +1,8 @@
+# marker	source	group	unique production pattern
+refresh	state	0	(?s)void refresh\(\) \{.*?\n    \}
+poll	state	0	(?s)private static void sampleSimsIfDue\(\) \{.*?\n    \}
+foreground	state	0	(?s)int foreground\(\) \{.*?\n    \}
+meter	hooks	0	(?s)private static int hookMeterTint\(XposedModule module, ClassLoader cl\) \{.*?\n    \}
+iconTint	hooks	0	(?s)private static int hookIconTint\(XposedModule module, ClassLoader cl\) \{.*?\n    \}
+rowInk	hooks	0	(?s)static int rowInk\(View row\) \{.*?\n    \}
+clockVisibility	hooks	0	(?s)static void applyClockVisibility\(\) \{.*?\n    \}

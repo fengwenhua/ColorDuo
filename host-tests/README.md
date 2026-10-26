@@ -56,3 +56,25 @@ OS4 的 ViewGroup/变换模型同样隔离在 stripTest：
 源算法“一轮牺牲一个、再给幸存项比例”的历史行为保持不变；ColorOS 的额外重算逻辑也未改。
 `os4-layout.ps1 -SourceDirectory` 仍可使用，目录需包含 TrioHooks、Prefs、OutRingLayout、Refl 四个文件。
 此参数与 Drawable 的替代源码参数独立，报告位于 build/test-results/stripTest；不代表 HyperOS 4 固件实测。
+
+历史 issue 工装使用独立 issueTest 源集及 JVM：
+
+```sh
+./gradlew :host-tests:issueTest
+./gradlew :host-tests:issueTest --tests io.github.fengwenhua.colorduo.IssueRegressionTest.signalRegression --tests io.github.fengwenhua.colorduo.IssueSourceContractTest
+./gradlew :host-tests:issueTest -PissueTestProductionSources=/path/to/sources
+```
+
+普通 host-tests:test 自动调用。12 组共 663 项运行时断言，覆盖信号轮询、按行着色、时钟失败重试、
+优先级编辑、Wi-Fi、清空、组件隔离、胶囊尺寸和配置位移；另 8 个 JUnit 方法保留 UI/绘制源集成约束。
+旧脚本的 -Suite 筛选映射到具体 JUnit 方法，同时仍运行源契约；-SourceDirectory 目录只需包含
+TrioState、TrioHooks、TrioZones、TrioTint、OutRingLayout 五个原源文件，其余配置类和 UI 绑定保持项目来源。
+该最小替代目录已实跑，7 个生产方法唯一匹配失败会停止生成；不会悄悄编译过期方法副本。
+报告在 build/test-results/issueTest，与其他三套替身隔离。
+
+旧 nudges 的“所有 public 标量都改变相等性”不适用于 editingChargeScene 这个编辑临时游标：
+按生产类明确契约排除它，并新增相等/hash 不变、copy 保留、Bundle 不携带三项检查。
+原胶囊命中分界存在表达式减自身的无效断言，已换成真实 LEFT/CENTRE 边界与轨道中点对照。
+源码契约跟随既有 UI 提取拆到 DrawingScreen、DrawingPreview、DrawingZones，仍检查当前回调、优先级写入与反馈。
+五种临时故障分别验证限频、着色防御复制、时钟失败缓存、胶囊命中边界与高亮顺序可被检出。
+这些是桌面隔离测试，不计为真机服务、Compose 手势或 HyperOS 固件验收。

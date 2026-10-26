@@ -1,0 +1,22 @@
+/* Copyright (C) 2026 yixing233 and HyperDuo contributors
+ * SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+import android.view.View;
+import android.os.SystemClock;
+final class TrioState {
+ final View host; TrioState(View v){host=v;}
+ int level=79,wifiLevel=-1,mobileLevel=-1,sims; int[] slotLevels={-1,-1};
+ boolean charging,quickCharging,low,powerSave,performanceMode,useTint,wifiPresent,islandHideBattery;
+ int tintColor,lightColor=0xFFFFFFFF,darkColor=0xFF000000; float darkIntensity; String mobileType="";
+ static Object fLevel,fCharging,fQuick,fLow,fPowerSave,fPerformance,fUseTint,fTint,fLight,fDark,fIntensity;
+ static int sWifiLevel=-1,sMobileLevel=-1,sDataSlot=0; static boolean sWifiPresent,sIslandHideBattery;
+ static String sMobileType=""; static int[] sSlotLevels={-1,-1}; static int nextLevel=2,polls;
+ static long sSimsDueAt; static final long SIMS_INTERVAL_MS=2000; static final int SIM_SLOTS=2,DEFAULT_FOREGROUND=0xFF000000;
+ static Object sContext;
+ static void ensureFields(Class<?> c){} static void resolvePending(Object r){} static Object resourcesOf(View v){return null;}
+ static void sampleSims(Object c){polls++;sSlotLevels=new int[]{nextLevel,-1};}
+ void noteTint(int ink){} boolean nightMode(){return false;}
+ @refresh@
+ @poll@
+ @foreground@
+}

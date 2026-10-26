@@ -181,3 +181,58 @@ val stripTest = tasks.register<Test>("stripTest") {
     maxHeapSize = "128m"
 }
 tasks.named("test") { dependsOn(stripTest) }
+
+// Historical issue regressions use telephony/tint/clock View contracts of their own.
+val issue = sourceSets.create("issueTest")
+configurations.named(issue.implementationConfigurationName) { extendsFrom(configurations.testImplementation.get()) }
+configurations.named(issue.runtimeOnlyConfigurationName) { extendsFrom(configurations.testRuntimeOnly.get()) }
+val issueTemplates = layout.projectDirectory.dir("src/issueTest/templates")
+val issueGenerated = layout.buildDirectory.dir("generated/issue-fixtures")
+val issueSources = rootProject.file(providers.gradleProperty("issueTestProductionSources").orNull
+    ?: "app/src/main/java/io/github/fengwenhua/colorduo")
+val generateIssueFixtures = tasks.register("generateIssueFixtures") {
+    val files = mapOf("hooks" to "TrioHooks.java", "state" to "TrioState.java")
+    inputs.files(files.values.map { issueSources.resolve(it) })
+    inputs.dir(issueTemplates)
+    outputs.dir(issueGenerated)
+    doLast {
+        val values = issueTemplates.file("bindings.tsv").asFile.readLines().filter { it.isNotBlank() && !it.startsWith("#") }
+            .associate { line ->
+                val fields = line.split('\t', limit = 4)
+                require(fields.size == 4) { "Malformed issue fixture binding" }
+                val (name, alias, group, pattern) = fields
+                val matches = Regex(pattern).findAll(issueSources.resolve(files.getValue(alias)).readText()).toList()
+                require(matches.size == 1) { "Issue source binding must be unique: $name" }
+                name to matches.single().groupValues[group.toInt()]
+            }
+        issueTemplates.asFile.walkTopDown().filter { it.isFile && it.name.endsWith(".java.template") }.forEach { template ->
+            var text = template.readText()
+            values.forEach { (name, value) -> text = text.replace("@$name@", value) }
+            require(!Regex("@[A-Za-z][A-Za-z0-9]*@").containsMatchIn(text)) { "Unresolved issue marker in ${template.name}" }
+            val target = issueGenerated.get().asFile.resolve(template.relativeTo(issueTemplates.asFile).path.removeSuffix(".template"))
+            target.parentFile.mkdirs(); target.writeText(text)
+        }
+    }
+}
+issue.java.srcDir(issueGenerated)
+tasks.named<JavaCompile>(issue.compileJavaTaskName) {
+    dependsOn(generateIssueFixtures)
+    options.encoding = "UTF-8"
+    source(issueSources.resolve("TrioZones.java"), issueSources.resolve("TrioTint.java"), issueSources.resolve("OutRingLayout.java"))
+    source(rootProject.file("tests/shims/android/content/SharedPreferences.java"), rootProject.file("tests/shims/android/os/Bundle.java"))
+    source(fileTree(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo")) {
+        include("Prefs.java", "ChargeLayout.java", "SettingsSchema.java", "TrioSettings.java", "TrioAppearance.java", "TrioGeometry.java")
+    })
+}
+val issueTest = tasks.register<Test>("issueTest") {
+    description = "Run isolated signal, tint, clock and historical issue regressions"
+    group = "verification"
+    testClassesDirs = issue.output.classesDirs
+    classpath = issue.runtimeClasspath
+    dependsOn(tasks.named(issue.classesTaskName))
+    maxHeapSize = "128m"
+    testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    systemProperty("colorduo.projectRoot", rootProject.projectDir.absolutePath)
+    systemProperty("colorduo.issueSources", issueSources.absolutePath)
+}
+tasks.named("test") { dependsOn(issueTest) }

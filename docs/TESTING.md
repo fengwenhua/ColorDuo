@@ -26,7 +26,7 @@ python3 scripts/verify-device.py --serial DEVICE_SERIAL --skip-probes --output .
 可传 `--adb` 指定绝对路径。脚本拒绝降级/卸载，不清空 logcat，不输出原始 SystemUI dump；
 只保存模块自有状态与断言计数，报告权限 0600 且不覆盖已存在报告。新签名首次迁移不能使用覆盖安装参数。
 
-`tests/*.ps1` 中九个入口已转发到 Gradle，其余仍保留为历史回归工装；不把全部历史工装算成已经迁移。
+`tests/*.ps1` 中十个入口已转发到 Gradle，其余仍保留为历史回归工装；不把全部历史工装算成已经迁移。
 历史 `RingSlotsTest` 的过期三分区、聚合信号及中部信号行预期已在新 `FreeRingTest` 中按当前规则迁移；
 原脚本仍保留，不能据此宣称原脚本本身已通过。
 状态机、编辑队列、窗口策略、版本比较与兼容性画像已纳入 app 的 Gradle 测试；
@@ -47,7 +47,7 @@ macOS 没有 pwsh，本轮通过等价 Java 编译/执行核对工装，未声�
 另一个方法验证字段写入失败的直绘回退。直接编译生产 GlyphDrawable/Refl，生成当前实际 Hook 方法体的测试夹具；
 标记/边界改变即失败，不自动换用其他源码位置。普通 CI 和发版 CI 均已加入 `:host-tests:test`。
 host-tests 另迁入 18 组 Wi-Fi 组合/3 次转换和 44 项电池读数断言，增加温度充电过滤和原集成约束检查。
-九个旧 PS 入口已统一转发，Drawable 与 OS4 strip 的替代源码目录参数经过 Gradle 实跑验证。
+十个旧 PS 入口已统一转发，Drawable 与 OS4 strip 的替代源码目录参数经过 Gradle 实跑验证。
 `host-tests:readoutTest` 还保留 76 项读数布局断言与 4 组集成约束，使用独立替身/报告；host-tests:test 自动依赖它。
 `CapsuleTest` 保留 78 项胶囊轮廓/电量/字体断言；`CapsuleSourceContractTest` 的 4 个方法保留测量、拟合、样式入口约束，
 并检查动态长度及上下组件的额外宿主高度。字号/字重独立性按真实文字绘制的独立像素层判断，避免旧固定分界误判。
@@ -56,7 +56,7 @@ host-tests 另迁入 18 组 Wi-Fi 组合/3 次转换和 44 项电池读数断言
 `host-tests:stripTest` 使用独立 ViewGroup 替身保留 2776 项 OS4 布局/预留检查，另补 144 项排序与优先级断言，
 同样由普通 host-tests:test 自动调用。
 `RingHitBoundaryTest` 两项检查覆盖 18 个极值描边/布局/宿主比例帧的逐像素命中和 ink 外点击拒绝。
-目前统计为 app 35、render 59、host 21（普通14+隔离读数5+环外布局2）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
+目前统计为 app 35、render 59、host 41（普通14+隔离读数5+环外布局2+历史 issue 20）个 JUnit 方法/实例。详见 [host-tests](../host-tests/README.md)。
 
 附加 `--compatibility-report` 可验证 app 到 SystemUI 的真实报告通道；
 它需要 debug instrumentation，不能与 `--skip-probes` 一同使用。
@@ -76,3 +76,9 @@ Wrapper 与依赖校验规则见 [TOOLCHAIN.md](TOOLCHAIN.md)。
 
 充电环外读数的待布局/空间受约束事件序列纳入 HostDecisionTest；
 同签名候选包的圆环、胶囊和折叠实测见 [充电读数验收](validation/charging-readout-resize-2026-10-26.md)。
+
+`host-tests:issueTest` 以独立替身运行旧 issue-regressions 的 12 组历史场景（663 项运行时断言）及
+8 组源集成检查，普通 host-tests:test 自动依赖它。7 个方法来自当前 TrioState/TrioHooks 的唯一匹配，
+实际 TrioTint、TrioZones、OutRingLayout 与配置类直接编译；不代表 Android 服务或 HyperOS 固件实测。
+编辑路由 editingChargeScene 按现行文档排除持久相等性，另验证复制保留、线协议不携带；
+UI 源检查跟随 DrawingPreview/DrawingZones 的既有拆分。旧 -Suite 与 -SourceDirectory 已映射并验证底层 Gradle 参数。

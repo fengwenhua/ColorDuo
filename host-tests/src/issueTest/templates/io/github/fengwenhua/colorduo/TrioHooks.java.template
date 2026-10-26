@@ -1,0 +1,53 @@
+/* Copyright (C) 2026 yixing233 and HyperDuo contributors
+ * SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+import android.view.*;
+import java.util.*;
+import java.lang.reflect.Method;
+final class XposedModule {}
+final class XposedInterface {
+ interface Hooker {Object intercept(Chain c) throws Throwable;}
+ interface Chain {Object proceed();Object getThisObject();Object getArg(int i);default List<Object> getArgs(){return Collections.emptyList();}}
+}
+final class TrioHooks {
+ static final int LOG_INFO=1,LOG_WARN=2;
+ static final Map<View,Integer> ROW_INK=new WeakHashMap<>();
+ static final Map<View,TrioTint.Inputs> ROW_TINTS=new WeakHashMap<>();
+ static final Map<String,XposedInterface.Hooker> hooks=new HashMap<>();
+ static XposedInterface.Hooker tintHook;
+ static XposedModule sModule=new XposedModule();
+ static View sStatusClock; static java.lang.reflect.Method sClockSetter; static boolean sClockHidden;
+ static boolean covered,island; static View bar;
+ static void log(int level,String msg){} static void log(XposedModule m,String msg){}
+ static void nudgeHosts(){} static void invalidateHosts(){}
+ static Object statusIconContainer(){return null;} static View statusBarView(){return bar;}
+ static boolean isStatusBarHost(View v){return true;}
+ static boolean barCovered(){return covered;} static boolean islandHideBattery(){return island;}
+ static View batteryContainerOf(View v){return (View)v.getParent();}
+ static View rowOf(View v){return batteryContainerOf(v);}
+ static View hostIn(ViewGroup row){return row.host;}
+ static void applyOutRingInk(ViewGroup row,int ink){row.ink=ink;}
+ static int hook(XposedModule m,Object method,String name,XposedInterface.Hooker h){hooks.put(name,h);if(name.equals("colorduo-meter-tint"))tintHook=h;return 1;}
+ @rowInk@
+ @meter@
+ @iconTint@
+ @clockVisibility@
+ static void tint(View meter,float intensity,boolean useTint,int tint)throws Throwable {
+  tint(meter,new ArrayList<>(),intensity,useTint,tint);
+ }
+ static void tint(View meter,ArrayList<android.graphics.Rect> areas,float intensity,boolean useTint,int tint)throws Throwable {
+  if(tintHook==null)hookMeterTint(new XposedModule(),TrioHooks.class.getClassLoader());
+  Object[] args={areas,intensity,tint,0xFFFFFFFF,0xFF000000,useTint};
+  tintHook.intercept(new XposedInterface.Chain(){
+   public Object proceed(){return null;} public Object getThisObject(){return meter;} public Object getArg(int i){return args[i];}
+  });
+ }
+ static void iconTint(View icon,ArrayList<android.graphics.Rect> areas,int colour)throws Throwable {
+  hookIconTint(new XposedModule(),TrioHooks.class.getClassLoader());
+  List<Object> args=Arrays.asList(areas,0.5f,colour);
+  hooks.get("colorduo-tint-dark").intercept(new XposedInterface.Chain(){
+   public Object proceed(){return null;}public Object getThisObject(){return icon;}
+   public Object getArg(int i){return args.get(i);}public List<Object> getArgs(){return args;}
+  });
+ }
+}

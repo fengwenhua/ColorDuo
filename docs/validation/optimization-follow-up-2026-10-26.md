@@ -40,7 +40,7 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | wifi-presence / battery-presence | host-tests：18 组 Wi-Fi 组合+3 次转换、44 项电池断言及温度过滤 | 当前实际方法体生成；不能代替真实 Android 服务/广播 |
 | perf-layout | 独立 readoutTest：76 项原断言、4 组集成约束，旧入口转发 | Paint/View 替身与主宿主测试隔离；不代表 Android 字体/OEM 测量 |
 | os4-layout | 独立 stripTest：2776 项布局/恢复及 144 项全排序断言 | 实际 14 个 Hook 方法+生产 OutRingLayout/Refl；不代表 HyperOS 固件实机 |
-| issue-regressions | 待迁移 | 多套 Android 替身有冲突，需要隔离而非修改生产代码迁就替身 |
+| issue-regressions | 独立 issueTest：12 组/663 项运行时断言 + 8 组源契约 | 十个 PS 入口统一；其余两个旧 launcher 待收拢，不代表 Android 服务/Compose 手势实测 |
 
 GlyphScaleTest 的验证：`:render-tests:test --tests io.github.fengwenhua.colorduo.GlyphScaleTest` 成功，
 JUnit 输出 17 项断言。仅在 `.local` 临时源码中注入三种故障，忽略缩放、取消限幅、重复缩放均触发像素/边界断言失败；
@@ -235,3 +235,20 @@ O-06 当前绘制区域迁移步骤通过 CI 后，按用户要求优先处理�
 本地门禁为 app/render/host 35/59/21，1.1.5 同签名候选 Actions build/sign 成功，未公开发布。
 Find N5 圆环拔插、胶囊拔插和折叠已由用户确认，日志与截图验证通过。
 详情见 [充电读数验收](charging-readout-resize-2026-10-26.md)。
+
+### 历史 issue 回归迁移
+
+新增 host-tests:issueTest，普通 host-tests:test 自动依赖；信号/着色/时钟的 Android 替身与另三套隔离。
+原 12 个 suite 先独立 Java 编译运行：11 组共 531 项通过，nudges 在编辑临时字段 editingChargeScene 的反射相等性断言失败。
+按生产类明确的“不持久化、不参与相等性”契约排除此游标，并增加相等/hash、复制、Bundle 三项路由元数据检查。
+修正后 nudges 为 132 项，全部运行时合计 663；改造后的 Java main 与 JUnit 每组计数一致。
+
+7 个真实 TrioState/TrioHooks 方法按唯一标记生成，TrioTint/TrioZones/OutRingLayout 和配置类直接编译。
+JUnit 每例清理夹具静态状态，保持旧每组独立 JVM 的初始条件，不清理被测回调内部的状态变化。
+原源契约分成 8 个 JUnit 方法；其中预览状态、长按和反馈检查跟随既有 DrawingPreview/DrawingZones 文件提取，
+仍绑定真实绘制输入、当前 lambda、布局写入和反馈。原分界表达式减自身的断言改成真实左右命中边界，未改生产算法。
+
+临时副本取消限频、别名持有 Rect、错误缓存失败时钟隐藏、移动胶囊命中边界、颠倒高亮两遍顺序，五类故障均被拒绝。
+五文件最小替代源码目录、Suite 对应的底层 Gradle 方法筛选实跑；issue-regressions.ps1 成为第十个统一入口，保留参数与 CRLF。
+未执行 PowerShell 引擎，未操作手机或发布新版本。当前 app/render/host 为 35/59/41，共 135 个 JUnit 方法/实例。
+ring-slots 与 ring-handoff 的当前 Gradle 覆盖已存在，两个旧启动器仍待最后统一；O-06 不据此宣告全部收尾。
