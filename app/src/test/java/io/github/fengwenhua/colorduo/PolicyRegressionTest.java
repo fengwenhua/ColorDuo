@@ -11,6 +11,41 @@ public final class PolicyRegressionTest {
     @Test public void warningPreservation() { ColorOsNetworkPolicyTest.main(new String[0]); }
     @Test public void exactTypeLabels() { ColorOsTypeLabelsTest.main(new String[0]); }
 
+    @Test public void registered5gDisappearsWhenDataIsOffAndReturnsWhenDataIsEnabled() {
+        assertEquals("5G", ColorOsNetworkPolicy.typeLabel("5G", true));
+        assertEquals("", ColorOsNetworkPolicy.typeLabel("5G", false));
+        assertEquals("", ColorOsNetworkPolicy.typeLabel("LTE", false));
+        assertEquals("5G", ColorOsNetworkPolicy.typeLabel("5G", true));
+        assertEquals("", ColorOsNetworkPolicy.typeLabel("", true));
+        assertEquals("5G", ColorOsNetworkPolicy.typeLabel("5G", null));
+    }
+
+    @Test public void defaultAndPerSubscriptionDataSwitchesTriggerRefreshButOtherSettingsDoNot() {
+        for (String key : new String[] {"mobile_data", "mobile_data1", "mobile_data12", "multi_sim_data_call",
+                "airplane_mode_on", "global", null})
+            assertTrue(String.valueOf(key), ColorOsNetworkPolicy.dataSettingChanged(key));
+        for (String key : new String[] {"wifi_on", "screen_brightness", "bluetooth_on", ""})
+            assertFalse(key, ColorOsNetworkPolicy.dataSettingChanged(key));
+    }
+
+    @Test public void suppressingRegisteredTypeSurvivesPlanCopiesAndNeedsNoSignalOccupant() {
+        var source = new ColorOsNetworkAdapter.Plan(-1, -1, null, null, null, 0, "", null, true, true);
+        assertTrue(source.withSignals(false, false).suppressType);
+        assertTrue(source.withTypeOwnership(false).suppressType);
+        var withoutSuppression = new ColorOsNetworkAdapter.Plan(-1, -1, null, null, null, 0, "", null, true, false);
+        assertFalse(source.same(withoutSuppression));
+        TrioSettings settings = TrioSettings.defaults();
+        settings.mobileTypeMode = Prefs.MOBILE_TYPE_IN_RING;
+        settings.showMobile = settings.showWifi = false;
+        settings.ringZones = Prefs.decodeLayout("5|||");
+        for (int style : new int[] {Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
+            settings.trioStyle = style;
+            TrioSettings paint = ColorOsRingPreset.userLayout(settings, false, source);
+            assertEquals(Prefs.MOBILE_TYPE_OFF, paint.mobileTypeMode);
+            assertTrue(ColorOsRingPreset.represented(paint, 79, false, source).hideType);
+        }
+    }
+
     @Test public void disablingMobileDataOnWifiKeepsTheSignalUntilTheOplusWarningChanges() {
         // Captured ROM derivation: OPlus copies the AOSP Cellular model but derives
         // inetCondition from defaultConnections. Disabling data changes the inherited

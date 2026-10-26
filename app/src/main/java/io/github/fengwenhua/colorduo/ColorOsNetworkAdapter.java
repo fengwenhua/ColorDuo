@@ -27,6 +27,8 @@ final class ColorOsNetworkAdapter {
     private final Runnable changed;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ObservationLedger ledger = new ObservationLedger(64, 500);
+    private final ColorOsDataEnabledSource dataEnabled = new ColorOsDataEnabledSource(
+            this::requestRefresh, message -> log("data/source", message));
     private final Map<View, Boolean> wifiRows = new WeakHashMap<>();
     private final Map<ImageView, Mobile> mobileRows = new WeakHashMap<>();
     private final Map<ImageView, TypeRow> typeRows = new WeakHashMap<>();
@@ -51,7 +53,7 @@ final class ColorOsNetworkAdapter {
         final WeakReference<ImageView> signal;
         final String typeLabel;
         final WeakReference<ImageView> typeImage;
-        final boolean hideType;
+        final boolean hideType, suppressType;
         Plan(int wifi, int mobile, View root, View container, ImageView signal) {
             this(wifi, mobile, root, container, signal, 0);
         }
@@ -60,6 +62,10 @@ final class ColorOsNetworkAdapter {
         }
         Plan(int wifi, int mobile, View root, View container, ImageView signal, int mobileSlot,
              String typeLabel, ImageView typeImage, boolean hideType) {
+            this(wifi, mobile, root, container, signal, mobileSlot, typeLabel, typeImage, hideType, false);
+        }
+        Plan(int wifi, int mobile, View root, View container, ImageView signal, int mobileSlot,
+             String typeLabel, ImageView typeImage, boolean hideType, boolean suppressType) {
             this.wifi = wifi; this.mobile = mobile;
             this.mobileSlot = mobileSlot;
             wifiRoot = new WeakReference<>(root);
@@ -68,6 +74,7 @@ final class ColorOsNetworkAdapter {
             this.typeLabel = typeLabel;
             this.typeImage = new WeakReference<>(typeImage);
             this.hideType = hideType;
+            this.suppressType = suppressType;
         }
         boolean same(Plan other) {
             return other != null && wifi == other.wifi && mobile == other.mobile && mobileSlot == other.mobileSlot
@@ -76,7 +83,7 @@ final class ColorOsNetworkAdapter {
         }
         boolean sameType(Plan other) {
             return other != null && typeLabel.equals(other.typeLabel) && typeImage.get() == other.typeImage.get()
-                    && hideType == other.hideType;
+                    && hideType == other.hideType && suppressType == other.suppressType;
         }
         boolean sameOwners(Plan other) {
             return other != null && wifiRoot.get() == other.wifiRoot.get() && container.get() == other.container.get()
@@ -90,17 +97,17 @@ final class ColorOsNetworkAdapter {
             return new Plan(keepWifi ? wifi : -1, keepSignal ? mobile : -1,
                     keepWifi ? wifiRoot.get() : null, keepWifi ? container.get() : null,
                     keepSignal ? signal.get() : null, mobileSlot, typeLabel,
-                    keepType ? typeImage.get() : null, keepType);
+                    keepType ? typeImage.get() : null, keepType, keepType && suppressType);
         }
         Plan withSignals(boolean wifiInk, boolean mobileInk) {
             return new Plan(wifiInk ? wifi : -1, mobileInk ? mobile : -1,
                     wifiInk ? wifiRoot.get() : null, wifiInk ? container.get() : null,
                     mobileInk ? signal.get() : null, mobileInk ? mobileSlot : 0,
-                    typeLabel, typeImage.get(), hideType);
+                    typeLabel, typeImage.get(), hideType, suppressType);
         }
         Plan withTypeOwnership(boolean owned) {
             return new Plan(wifi, mobile, wifiRoot.get(), container.get(), signal.get(), mobileSlot,
-                    typeLabel, typeImage.get(), owned);
+                    typeLabel, typeImage.get(), owned, suppressType);
         }
     }
 
@@ -370,18 +377,19 @@ final class ColorOsNetworkAdapter {
             String label = "";
             ImageView typeImage = null;
             boolean hideType = false;
+            boolean suppressType = Boolean.FALSE.equals(dataEnabled.get());
             if (typeCapable && mobileCount == 1 && mobileRoot != null) {
                 View view = child(mobileRoot, ColorOsSymbols.ID_MOBILE_TYPE);
                 TypeRow row = view instanceof ImageView ? typeRows.get(view) : null;
                 if (row != null && row.nativeVisibility == View.VISIBLE && !row.label.isEmpty()) {
-                    label = row.label;
+                    label = ColorOsNetworkPolicy.typeLabel(row.label, dataEnabled.get());
                     typeImage = (ImageView) view;
                     // OUT_RING uses the native label until the custom outside strip is available.
-                    hideType = settings.mobileTypeMode != Prefs.MOBILE_TYPE_OUT_RING;
+                    hideType = suppressType || settings.mobileTypeMode != Prefs.MOBILE_TYPE_OUT_RING;
                 }
             }
             return new Plan(wifi == null ? -1 : latestWifi, signal == null ? -1 : mobile, wifi, container, signal,
-                    signal == null ? 0 : mobileSlot, label, typeImage, hideType);
+                    signal == null ? 0 : mobileSlot, label, typeImage, hideType, suppressType && typeImage != null);
         } catch (Throwable failure) { disable(failure); return Plan.EMPTY; }
     }
 
@@ -598,7 +606,12 @@ final class ColorOsNetworkAdapter {
 
     private boolean debugLog;
 
+    void setActive(android.content.Context context, boolean active) {
+        dataEnabled.setActive(context, active && typeCapable);
+    }
+
     void dump(java.io.PrintWriter out) {
+        out.println("    network/data observing=" + dataEnabled.active() + " enabled=" + dataEnabled.get());
         for (String line : ledger.snapshot()) out.println("    network/" + line);
     }
 

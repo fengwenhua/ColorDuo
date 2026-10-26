@@ -48,7 +48,7 @@ final class ColorOsRingPreset {
     static ColorOsNetworkAdapter.Plan represented(TrioSettings paint, int level, boolean charging,
                                                  ColorOsNetworkAdapter.Plan plan, ColorOsOutsideLayout outside) {
         Resolved drawn = resolve(paint, level, charging, plan);
-        boolean type = (plan.hideType && (drawn.mobile || outside.hasSignal() || TrioAppearance.of(paint).ownsType()))
+        boolean type = (plan.hideType && (plan.suppressType || drawn.mobile || outside.hasSignal() || TrioAppearance.of(paint).ownsType()))
                 || outside.hasType() || outside.suppressType;
         return plan.withSignals(drawn.wifi, drawn.mobile || outside.hasSignal()).withTypeOwnership(type);
     }
