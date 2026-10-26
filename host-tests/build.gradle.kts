@@ -133,3 +133,51 @@ val readoutTest = tasks.register<Test>("readoutTest") {
     systemProperty("colorduo.productionSources", rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo").absolutePath)
 }
 tasks.named("test") { dependsOn(readoutTest) }
+
+// OS4 strip reservation and island layout need their own View geometry model.
+val strip = sourceSets.create("stripTest")
+configurations.named(strip.implementationConfigurationName) { extendsFrom(configurations.testImplementation.get()) }
+configurations.named(strip.runtimeOnlyConfigurationName) { extendsFrom(configurations.testRuntimeOnly.get()) }
+val stripTemplates = layout.projectDirectory.dir("src/stripTest/templates")
+val stripGenerated = layout.buildDirectory.dir("generated/strip-fixtures")
+val stripSources = rootProject.file(providers.gradleProperty("stripTestProductionSources").orNull
+    ?: "app/src/main/java/io/github/fengwenhua/colorduo")
+val generateStripFixtures = tasks.register("generateStripFixtures") {
+    val files = mapOf("hooks" to "TrioHooks.java", "prefs" to "Prefs.java")
+    inputs.files(files.values.map { stripSources.resolve(it) })
+    inputs.dir(stripTemplates)
+    outputs.dir(stripGenerated)
+    doLast {
+        val values = stripTemplates.file("bindings.tsv").asFile.readLines().filter { it.isNotBlank() && !it.startsWith("#") }
+            .associate { line ->
+                val fields = line.split('\t', limit = 4)
+                require(fields.size == 4) { "Malformed strip fixture binding" }
+                val (name, alias, group, pattern) = fields
+                val matches = Regex(pattern).findAll(stripSources.resolve(files.getValue(alias)).readText()).toList()
+                require(matches.size == 1) { "Strip source binding must be unique: $name" }
+                name to matches.single().groupValues[group.toInt()]
+            }
+        stripTemplates.asFile.walkTopDown().filter { it.isFile && it.name.endsWith(".java.template") }.forEach { template ->
+            var text = template.readText()
+            values.forEach { (name, value) -> text = text.replace("@$name@", value) }
+            require(!Regex("@[A-Za-z][A-Za-z0-9]*@").containsMatchIn(text)) { "Unresolved strip marker in ${template.name}" }
+            val target = stripGenerated.get().asFile.resolve(template.relativeTo(stripTemplates.asFile).path.removeSuffix(".template"))
+            target.parentFile.mkdirs(); target.writeText(text)
+        }
+    }
+}
+strip.java.srcDir(stripGenerated)
+tasks.named<JavaCompile>(strip.compileJavaTaskName) {
+    dependsOn(generateStripFixtures)
+    options.encoding = "UTF-8"
+    source(stripSources.resolve("OutRingLayout.java"), stripSources.resolve("Refl.java"))
+}
+val stripTest = tasks.register<Test>("stripTest") {
+    description = "Run isolated OS4 outside strip reservation and island layout regressions"
+    group = "verification"
+    testClassesDirs = strip.output.classesDirs
+    classpath = strip.runtimeClasspath
+    dependsOn(tasks.named(strip.classesTaskName))
+    maxHeapSize = "128m"
+}
+tasks.named("test") { dependsOn(stripTest) }

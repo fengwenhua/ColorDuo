@@ -39,7 +39,8 @@ Lint 门禁、HostDecision、配置 Schema 注册表、首轮 UI/纯辅助类提
 | glyph-drawable | 新增 host-tests：5 种形态保留 156 项断言，另加写槽失败回退 | Hook 方法体来自当前源码的隔离生成；不代替 Xposed/OEM/GPU 验证 |
 | wifi-presence / battery-presence | host-tests：18 组 Wi-Fi 组合+3 次转换、44 项电池断言及温度过滤 | 当前实际方法体生成；不能代替真实 Android 服务/广播 |
 | perf-layout | 独立 readoutTest：76 项原断言、4 组集成约束，旧入口转发 | Paint/View 替身与主宿主测试隔离；不代表 Android 字体/OEM 测量 |
-| os4-layout / issue-regressions | 待迁移 | 多套 Android 替身有冲突，需要隔离而非修改生产代码迁就替身 |
+| os4-layout | 独立 stripTest：2776 项布局/恢复及 144 项全排序断言 | 实际 14 个 Hook 方法+生产 OutRingLayout/Refl；不代表 HyperOS 固件实机 |
+| issue-regressions | 待迁移 | 多套 Android 替身有冲突，需要隔离而非修改生产代码迁就替身 |
 
 GlyphScaleTest 的验证：`:render-tests:test --tests io.github.fengwenhua.colorduo.GlyphScaleTest` 成功，
 JUnit 输出 17 项断言。仅在 `.local` 临时源码中注入三种故障，忽略缩放、取消限幅、重复缩放均触发像素/边界断言失败；
@@ -167,3 +168,20 @@ CapsuleZonesTest 保留像素归属/可编辑性、编辑后场景稳定、组�
 在临时副本中将右侧命中区误放到左侧、用电量驱动信号、忽略清空，三种故障均失败。
 全部 app/render/host、Lint/release 通过，计数为 28/37/19。旧 capsule-zones.ps1 转发统一 Gradle 入口，
 没有运行 PowerShell 引擎，没有更改生产绘制或编辑代码，没有操作手机。
+
+### HyperOS 4 环外布局工装迁移
+
+新增 stripTest 源集和隔离 JVM，普通 host-tests:test 自动依赖；保留原 ViewGroup、弱引用预留、
+post 队列及可见性/几何模型。21 项绑定读取当前 14 个 Hook 方法和实际 Prefs 常量/优先级/索引函数，
+实际 OutRingLayout/Refl 直接编译，不把固定替身 ID 冒充生产配置。
+
+原 Java 工装在当前代码中执行失败，因为 bounded 把 alpha=0 的已牺牲组件也与邻居检查重叠。
+新夹具只排除这种不可见对，其余按实际视觉坐标、等比缩放、岛边界、padding 恢复及 coalesced post 检查；
+调整后独立 Java 输出 2776 项，Gradle 输出一致。保留当前“一轮牺牲一个、再比例缩放”的 solver 行为，
+未改为另一种挤压策略，也没有删除 ColorOS 为此保留的多轮重算。
+另补六种排列 × 两个方向，共 144 项实际 View 映射/牺牲优先级/位置及恢复检查。
+
+仅在临时源文件中忽略岛边界、取消预留 post 去重、反转牺牲优先级，均触发断言失败。
+最小四文件替代源码目录实跑成功，旧 -SourceDirectory 映射到独立 stripTestProductionSources，
+不干扰 Drawable 的三文件替代源测试。os4-layout.ps1 成为第八个统一启动器，未运行 PowerShell 引擎。
+完整门禁 app/render/host 28/37/21、Lint/release 均通过；没有操作手机，没有把桌面模型计为 HyperOS 4 实机验收。

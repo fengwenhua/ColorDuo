@@ -1,0 +1,22 @@
+# name	source alias	capture group	production regex
+method0	hooks	0	(?s)private\ static\ void\ layoutOutRingStrip\(ViewGroup\ container,\ View\ anchor\) \{.*?\n    \}
+method1	hooks	0	(?s)private\ static\ OutRingLayout\.Plan\ outRingPlan\(ViewGroup\ container,\ View\ icons\) \{.*?\n    \}
+method2	hooks	0	(?s)private\ static\ void\ requestOutRingReserve\(final\ ViewGroup\ container\) \{.*?\n    \}
+method3	hooks	0	(?s)private\ static\ int\ outRingSlotWidth\(View\ view\) \{.*?\n    \}
+method4	hooks	0	(?s)private\ static\ int\ islandBoundaryPx\(View\ iconContainer\) \{.*?\n    \}
+method5	hooks	0	(?s)private\ static\ View\ iconContainerIn\(View\ batteryContainer\) \{.*?\n    \}
+method6	hooks	0	(?s)private\ static\ void\ reserveOutTypeSpace\(ViewGroup\ batteryContainer,\ int\ reserve\) \{.*?\n    \}
+method7	hooks	0	(?s)private\ static\ void\ releaseOutTypeSpace\(View\ batteryContainer\) \{.*?\n    \}
+method8	hooks	0	(?s)private\ static\ void\ reserveOutRingStrip\(ViewGroup\ container\) \{.*?\n    \}
+method9	hooks	0	(?s)private\ static\ View\[\]\ outRingViews\(ViewGroup\ container\) \{.*?\n    \}
+method10	hooks	0	(?s)private\ static\ int\[\]\ slotOrder\(TrioAppearance\ a\) \{.*?\n    \}
+method11	hooks	0	(?s)private\ static\ View\ slotView\(int\ slot,\ View\ signal,\ View\ perf,\ View\ type\) \{.*?\n    \}
+method12	hooks	0	(?s)private\ static\ int\[\]\ outRingDropOrder\(TrioAppearance\ a\) \{.*?\n    \}
+method13	hooks	0	(?s)private\ static\ int\ outGapFor\(int\ slot,\ ViewGroup\ container,\ int\ labelInward\) \{.*?\n    \}
+signal	prefs	0	public static final int OUT_SLOT_SIGNAL = \d+;
+count	prefs	0	public static final int OUT_SLOT_COUNT = \d+;
+readouts	prefs	0	public static final int OUT_SLOT_READOUTS = \d+;
+type	prefs	0	public static final int OUT_SLOT_TYPE = \d+;
+priority	prefs	0	(?s)public static final int\[\] OUT_PRIORITY = \{.*?\};
+defaultOrder	prefs	0	(?s)public static final int\[\] OUT_DEFAULT_ORDER = \{.*?\};
+orderIndex	prefs	0	(?s)public static int outOrderIndex\(int\[\] order, int slot\) \{.*?\n    \}

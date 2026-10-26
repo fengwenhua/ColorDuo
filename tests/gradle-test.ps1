@@ -5,7 +5,7 @@
 param(
     [Parameter(Mandatory = $true)][ValidateSet('render-tests', 'host-tests')][string]$TestProject,
     [Parameter(Mandatory = $true)][string[]]$TestClass,
-    [ValidateSet('test', 'readoutTest')][string]$TestTask = 'test',
+    [ValidateSet('test', 'readoutTest', 'stripTest')][string]$TestTask = 'test',
     [string]$SourceDirectory
 )
 $ErrorActionPreference = 'Stop'
@@ -15,8 +15,10 @@ if ($env:OS -eq 'Windows_NT') { $GradleTestLauncher += '.bat' }
 $GradleTestArgs = @('--no-daemon', ":${TestProject}:${TestTask}")
 foreach ($GradleTestClass in $TestClass) { $GradleTestArgs += @('--tests', $GradleTestClass) }
 if ($SourceDirectory) {
-    if ($TestProject -ne 'host-tests') { throw 'Alternate source directories apply to Drawable host tests only.' }
-    $GradleTestArgs += "-PhostTestProductionSources=$((Resolve-Path $SourceDirectory).Path)"
+    if ($TestProject -ne 'host-tests' -or $TestTask -eq 'readoutTest') { throw 'Alternate sources apply to Drawable or OS4 strip host tests only.' }
+    $GradleTestSourceProperty = 'hostTestProductionSources'
+    if ($TestTask -eq 'stripTest') { $GradleTestSourceProperty = 'stripTestProductionSources' }
+    $GradleTestArgs += "-P${GradleTestSourceProperty}=$((Resolve-Path $SourceDirectory).Path)"
 }
 Push-Location $GradleTestRoot
 try {

@@ -1,0 +1,12 @@
+/* Copyright (C) 2026 yixing233 and HyperDuo contributors
+ * SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+final class Prefs {
+ @signal@
+ @count@
+ @readouts@
+ @type@
+ @priority@
+ @defaultOrder@
+ @orderIndex@
+}

@@ -1,0 +1,41 @@
+/* Copyright (C) 2026 yixing233 and HyperDuo contributors
+ * SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+import android.view.*;
+import java.lang.reflect.*;
+import java.util.*;
+final class TrioHooks {
+ static final int LOG_INFO=1;
+ static final Map<View,int[]> OUT_PAD_SAVED=new WeakHashMap<>();
+ static final Map<View,Boolean> OUT_RESERVE_PENDING=new WeakHashMap<>();
+ static final Field sStatusIconField=Refl.field(ViewGroup.class,"mStatusIcon");
+ static class OutSignalView extends View {}
+ static class OutTypeLabel extends View {}
+ static class PerfLabel extends View {int stable;String getText(){return "1.4W";}}
+ static class Row extends ViewGroup {OutSignalView signal;PerfLabel perf;OutTypeLabel type;View meter=new View();}
+ static OutSignalView findOutSignal(ViewGroup row){return ((Row)row).signal;}
+ static PerfLabel findPerfLabel(ViewGroup row){return ((Row)row).perf;}
+ static OutTypeLabel findOutTypeLabel(ViewGroup row){return ((Row)row).type;}
+ static View hostIn(ViewGroup row){return ((Row)row).meter;}
+ static View meterIn(View host,ViewGroup row){return ((Row)row).meter;}
+ static int[] outLabelMargins(View row){return new int[]{7,5};}
+ static int outSignalMargin(View row){return 3;}
+ static int perfWidth(PerfLabel perf,String text){return perf.stable;}
+ static void log(int level,String text){}static boolean debugLog(){return false;}
+ @method0@
+@method1@
+@method2@
+@method3@
+@method4@
+@method5@
+@method6@
+@method7@
+@method8@
+@method9@
+@method10@
+@method11@
+@method12@
+@method13@
+ static void reserve(Row row){reserveOutRingStrip(row);}
+ static void layout(Row row){layoutOutRingStrip(row,row.meter);}
+}

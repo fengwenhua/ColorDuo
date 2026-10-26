@@ -1,0 +1,23 @@
+/* Copyright (C) 2026 yixing233 and HyperDuo contributors
+ * SPDX-License-Identifier: GPL-3.0-only */
+package android.view;
+public class View {
+ public static final int VISIBLE=0,GONE=8,LAYOUT_DIRECTION_RTL=1;
+ public int l,t,r,b,mw,mh,visibility=VISIBLE,dir,pl,pt,pr,pb,paddingWrites;
+ public float alpha=1,sx=1,sy=1,px,py,tx;
+ public final java.util.Queue<Runnable> posted=new java.util.ArrayDeque<>();
+ public boolean post(Runnable runnable){posted.add(runnable);return true;}
+ public int getVisibility(){return visibility;}public int getLayoutDirection(){return dir;}
+ public int getMeasuredWidth(){return mw;}public int getMeasuredHeight(){return mh;}
+ public int getWidth(){return r-l;}public int getHeight(){return b-t;}
+ public int getLeft(){return l;}public int getRight(){return r;}public int getTop(){return t;}
+ public int getPaddingLeft(){return pl;}public int getPaddingRight(){return pr;}
+ public int getPaddingTop(){return pt;}public int getPaddingBottom(){return pb;}
+ public void setPadding(int a,int c,int d,int e){pl=a;pt=c;pr=d;pb=e;paddingWrites++;}
+ public void layout(int a,int c,int d,int e){l=a;t=c;r=d;b=e;}
+ public void setAlpha(float v){alpha=v;}public void setScaleX(float v){sx=v;}
+ public void setScaleY(float v){sy=v;}public void setPivotX(float v){px=v;}
+ public void setPivotY(float v){py=v;}public void setTranslationX(float v){tx=v;}
+ public float visualLeft(){return l+tx+px*(1-sx);}
+ public float visualRight(){return visualLeft()+getWidth()*sx;}
+}

@@ -41,4 +41,18 @@ Wi-Fi 与电池读数夹具同样从当前生产源码读取 resolve/publish/功
 普通 `:host-tests:test` 依赖此任务，CI 不需要额外命令。原 perf-layout 的 76 项尺寸/行距/预留宽度断言和
 4 组集成约束已迁入；42 个当前方法/常量绑定从生产源码读取，要求唯一匹配，不使用历史拷贝。
 FontMetrics 的 ascent 按 Android 负值约定，Typeface 使用共享桌面实现；这套替身与 Drawable fixture 隔离。
-两个测试报告目录分别是 build/test-results/test 与 build/test-results/readoutTest。
+读数报告目录是 build/test-results/readoutTest，普通宿主报告是 build/test-results/test。
+
+OS4 的 ViewGroup/变换模型同样隔离在 stripTest：
+
+```sh
+./gradlew :host-tests:stripTest
+./gradlew :host-tests:stripTest -PstripTestProductionSources=/path/to/sources
+```
+
+普通 `:host-tests:test` 自动依赖它。14 个实际 Hook 方法与 7 个 Prefs 声明/方法共 21 项唯一绑定，
+直接编译实际 OutRingLayout/Refl；没有复制另一套布局决策。
+2776 项岛边界/RTL/预留恢复断言和 144 项全排序检查通过。旧脚本把隐藏 View 纳入重叠检查的误判已修正，
+源算法“一轮牺牲一个、再给幸存项比例”的历史行为保持不变；ColorOS 的额外重算逻辑也未改。
+`os4-layout.ps1 -SourceDirectory` 仍可使用，目录需包含 TrioHooks、Prefs、OutRingLayout、Refl 四个文件。
+此参数与 Drawable 的替代源码参数独立，报告位于 build/test-results/stripTest；不代表 HyperOS 4 固件实测。

@@ -1,0 +1,125 @@
+/* Copyright (C) 2026 yixing233 and HyperDuo contributors
+ * SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+import android.view.*;
+public class Os4LayoutTest {
+ @org.junit.Test public void reservationLayoutAndIslandTransitions() {checks=0;main(new String[0]);}
+ @org.junit.Test public void everyArrangementKeepsViewOrderAndIndependentSacrificePriority() throws Exception {
+  checks=0;
+  int signal=Prefs.OUT_SLOT_SIGNAL, perf=Prefs.OUT_SLOT_READOUTS, type=Prefs.OUT_SLOT_TYPE;
+  int[][] orders={{signal,perf,type},{signal,type,perf},{perf,signal,type},
+                 {perf,type,signal},{type,signal,perf},{type,perf,signal}};
+  java.lang.reflect.Method viewMethod=Refl.method(TrioHooks.class,"outRingViews",ViewGroup.class);
+  java.lang.reflect.Method dropMethod=Refl.method(TrioHooks.class,"outRingDropOrder",TrioAppearance.class);
+  for(int[] order:orders)for(int rtl=0;rtl<2;rtl++) {
+   TrioHooks.Row r=row();
+   for(View view:views(r))view.visibility=View.GONE;
+   TrioHooks.reserve(r);
+   Icons icons=(Icons)r.mStatusIcon;
+   icons.setPadding(rtl==0?2:4,0,rtl==0?4:2,0);
+   r.dir=rtl;icons.dir=rtl;
+   for(View view:views(r))view.visibility=View.VISIBLE;
+   TrioConfig.current=new TrioAppearance(order);
+   TrioHooks.reserve(r);TrioHooks.layout(r);
+   View[] ordered=(View[])viewMethod.invoke(null,r);
+   for(int i=0;i<order.length;i++) {
+    View expected=order[i]==signal?r.signal:order[i]==perf?r.perf:r.type;
+    ok("actual slot view follows arrangement",ordered[i]==expected);
+   }
+   int[] drop=(int[])dropMethod.invoke(null,TrioConfig.current);
+   ok("type drops first regardless of position",drop[0]==Prefs.outOrderIndex(order,type));
+   ok("readouts drop before signal",drop[1]==Prefs.outOrderIndex(order,perf));
+   ok("signal keeps highest priority",drop[2]==Prefs.outOrderIndex(order,signal));
+   View previous=null;
+   for(View view:ordered) {
+    if(previous!=null)ok("arranged visible neighbours do not overlap",rtl==0
+       ?view.visualRight()<=previous.visualLeft()+.002f
+       :view.visualLeft()>=previous.visualRight()-.002f);
+    previous=view;
+   }
+   icons._islandMonitor.width=100;TrioHooks.layout(r);
+   ok("island sacrifices type without mutating visibility",r.type.alpha==0 && r.type.visibility==View.VISIBLE);
+   icons._islandMonitor.blocked=true;TrioHooks.layout(r);
+   for(View view:views(r))ok("uncovering restores all arranged slots",view.alpha==1 && view.sx==1);
+  }
+  System.out.println("PASS: OS4 arrangements / "+checks+" assertions");
+ }
+ static int checks;
+ static void ok(String label,boolean b){if(!b)throw new AssertionError(label);checks++;}
+ static void near(String label,float a,float b){ok(label+" got="+a+" want="+b,Math.abs(a-b)<0.002f);}
+ public static class Monitor {int width;boolean blocked;public int getIslandWidth(){return width;}public boolean getBlocked(){return blocked;}}
+ public static class Icons extends View {public Monitor _islandMonitor=new Monitor();}
+ static TrioHooks.Row row(){
+  TrioConfig.current=new TrioAppearance(Prefs.OUT_DEFAULT_ORDER);
+  TrioHooks.Row row=new TrioHooks.Row();row.layout(0,0,230,40);
+  Icons icons=new Icons();icons.layout(0,0,200,40);icons.setPadding(2,0,4,0);row.mStatusIcon=icons;
+  row.meter.layout(200,0,230,40);
+  row.signal=new TrioHooks.OutSignalView();row.signal.mw=20;row.signal.mh=20;
+  row.perf=new TrioHooks.PerfLabel();row.perf.mw=30;row.perf.mh=20;row.perf.stable=40;
+  row.type=new TrioHooks.OutTypeLabel();row.type.mw=30;row.type.mh=20;
+  TrioHooks.reserve(row);TrioHooks.layout(row);return row;
+ }
+ static View[] views(TrioHooks.Row r){return new View[]{r.signal,r.perf,r.type};}
+ static void bounded(TrioHooks.Row r,float floor){
+  Icons icons=(Icons)r.mStatusIcon;
+  for(View v:views(r))if(v.alpha>0){
+   ok("inside row",v.visualLeft()>=-0.002f && v.visualRight()<=icons.getWidth()+0.002f);
+   if(r.dir==0)ok("outside island",v.visualLeft()>=floor-0.002f);
+   else ok("mirrored outside island",v.visualRight()<=icons.getWidth()-floor+0.002f);
+   near("uniform scale",v.sx,v.sy);
+  }
+  View[] v=views(r);
+  for(int i=1;i<v.length;i++){
+   if(v[i].alpha<=0 || v[i-1].alpha<=0)continue;
+   if(r.dir==0)ok("no pair overlap",v[i].visualRight()<=v[i-1].visualLeft()+0.002f);
+   else ok("no RTL pair overlap",v[i].visualLeft()>=v[i-1].visualRight()-0.002f);
+  }
+ }
+ public static void main(String[] args){
+  TrioHooks.Row r=row();Icons icons=(Icons)r.mStatusIcon;
+  near("signal",r.signal.visualLeft(),173);near("perf in stable slot",r.perf.visualRight(),168);
+  near("type",r.type.visualLeft(),93);near("reserve uses same slots",icons.pr,114);
+  float x=r.type.visualLeft();r.perf.mw=20;TrioHooks.layout(r);
+  near("live performance digits never move type",r.type.visualLeft(),x);
+  icons._islandMonitor.width=60;TrioHooks.layout(r);
+  near("island boundary is not a translation",r.type.visualLeft(),x);
+  icons._islandMonitor.width=100;TrioHooks.layout(r);bounded(r,100);
+  ok("overflow scales whole strip",r.signal.sx<1 && r.signal.sx==r.perf.sx);
+  icons._islandMonitor.width=250;TrioHooks.layout(r);
+  for(View v:views(r))ok("fully covered strip hides without changing visibility",v.alpha==0 && v.visibility==View.VISIBLE);
+  icons._islandMonitor.blocked=true;TrioHooks.layout(r);
+  for(View v:views(r))ok("blocked monitor restores strip",v.alpha==1 && v.sx==1);
+  icons._islandMonitor.blocked=false;icons._islandMonitor.width=0;TrioHooks.layout(r);
+  int writes=icons.paddingWrites;TrioHooks.reserve(r);
+  near("repeated reservation does not accumulate",icons.pr,114);ok("stable reserve does not request layout",icons.paddingWrites==writes);
+  for(View v:views(r))v.visibility=View.GONE;TrioHooks.reserve(r);
+  near("last member removal restores padding",icons.pr,4);
+  r=row();icons=(Icons)r.mStatusIcon;icons.layout(0,0,70,40);TrioHooks.layout(r);bounded(r,2);
+  ok("former clamp overlap case shrinks",r.signal.sx<1);
+  r=row();r.mStatusIcon=null;TrioHooks.layout(r);for(View v:views(r))ok("no row means no unreserved painting",v.alpha==0);
+  r=row();icons=(Icons)r.mStatusIcon;
+  r.signal.mh=100;TrioHooks.layout(r);bounded(r,2);near("height fits whole strip",r.signal.sy,0.4f);
+  ok("layout schedules matching scaled reservation",r.posted.size()==1);
+  TrioHooks.layout(r);ok("layout coalesces pending reservation",r.posted.size()==1);
+  r.posted.remove().run();near("scaled strip reserves its actual width",icons.pr,48);
+  ok("reservation settles without an endless post loop",r.posted.isEmpty());
+  ok("100px native icon still fits after scaling",200-icons.pr-100>=icons.pl);
+  icons._islandMonitor.width=250;TrioHooks.layout(r);r.posted.remove().run();
+  near("fully covered strip returns padding",icons.pr,4);
+  icons._islandMonitor.width=0;TrioHooks.layout(r);
+  ok("uncovering requests reservation after padding was returned",r.posted.size()==1);
+  r.posted.remove().run();near("uncovered strip gets its reservation back",icons.pr,48);
+  // Exercise the real adapter, including padding, mirroring, island lookup and
+  // fractional view transforms across many constrained frames.
+  for(int rtl=0;rtl<2;rtl++)for(int width=20;width<=240;width+=11)for(int boundary=0;boundary<width;boundary+=17){
+   r=row();icons=(Icons)r.mStatusIcon;r.dir=rtl;icons.dir=rtl;
+   // Restore then switch direction so saved base padding remains unmodified.
+   for(View v:views(r))v.visibility=View.GONE;TrioHooks.reserve(r);
+   icons.setPadding(rtl==0?2:4,0,rtl==0?4:2,0);
+   for(View v:views(r))v.visibility=View.VISIBLE;
+   icons.layout(0,0,width,40);icons._islandMonitor.width=boundary;
+   TrioHooks.reserve(r);TrioHooks.layout(r);bounded(r,Math.max(2,boundary));
+  }
+  System.out.println("PASS: OS4 strip / "+checks+" assertions (production layout and reserve methods, simulated Views)");
+ }
+}
