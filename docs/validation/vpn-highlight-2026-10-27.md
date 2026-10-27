@@ -61,3 +61,14 @@
 - 已同签名覆盖安装，维护者确认切换圆环／胶囊、开关 VPN、展开下拉面板均未再看到重复 VPN 标签。截图确认 Wi-Fi 为蓝色、四个信号点保持状态栏原色。
 - dump 确认 VPN active=true、VPN chip hidden=1；fade-out 的 Kotlin 回调类型从 SystemUI loader 查找时报 ClassNotFoundException，故 1.1.11 改从原生 Binder 的声明方法解析，补齐旧隐私列表作废路径。
 - 1.1.11 需核对错误清零、原生标签恢复及最终安装配置保留；HyperOS 仅保留兼容实现，未作真机验证。
+
+## 最终验收（1.1.11 同签名测试包）
+
+- 源码 `02f1c4d`，tag `v1.1.11`，版本 `1.1.11 / 10111`。
+- [main CI 40461396738](https://github.com/fengwenhua/ColorDuo/actions/runs/40461396738)、[tag CI 40461397453](https://github.com/fengwenhua/ColorDuo/actions/runs/40461397453) 与[候选签名 40461568021](https://github.com/fengwenhua/ColorDuo/actions/runs/40461568021) 均成功；publish 关闭。
+- APK SHA-256：`e65371974a7a5e7e559842ac4541c0798976a1d7d96e779dd9a207382d1980df`；生产证书、v2/v3、manifest 签名与版本核验通过；回拉已安装 APK 的 SHA 与候选一致。
+- 覆盖安装紧邻前后读取的配置 XML 完全相同，保留维护者新选择的颜色及布局。
+- Find N5 展开下拉面板后的最终日志：`vpn listening=true active=true error=None`、`vpnChip rows=1 hidden=1 error=None`、`vpnIcon containers=2 error=None`。截图确认无 VPN 标签及空背景，Wi-Fi 使用维护者的粉色 `0xffff4da6`，信号点保留原色。
+- 维护者已确认圆环／胶囊、VPN 开关、下拉面板均正常；另确认关闭三合一时原生 VPN 恢复，重新开启后消失，自选颜色仅影响 Wi-Fi／网络类型。
+- 此轮功能验收完成。相机／麦克风同时使用及受管设备未作真机实测，代码保留原生图标列表与非 VPN 安全模式；HyperOS 无本轮真机证据。
+- 当前公开稳定版仍为 1.1.7；1.1.8、1.1.10、1.1.11 为同签名候选，1.1.9 候选已取消，均未创建公开 Release。
