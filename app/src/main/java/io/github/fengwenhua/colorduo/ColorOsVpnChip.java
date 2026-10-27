@@ -59,8 +59,17 @@ final class ColorOsVpnChip {
                         if (!meters.isEmpty()) schedule();
                         return result;
                     });
-            Method fadeOut=binder.getDeclaredMethod("fadeOutOldIcons",ViewGroup.class,
-                    Class.forName("kotlin.jvm.functions.Function0",false,loader));
+            // The QS plugin owns its Kotlin callback class in a separate class loader.
+            // Resolve the observed method from its declaring class, not SystemUI's loader.
+            Method fadeOut=null;
+            for(Method method:binder.getDeclaredMethods()) {
+                if(method.getName().equals("fadeOutOldIcons") && method.getParameterCount()==2
+                        && method.getParameterTypes()[0]==ViewGroup.class) {
+                    if(fadeOut!=null)throw new NoSuchMethodException("Ambiguous privacy fade-out");
+                    fadeOut=method;
+                }
+            }
+            if(fadeOut==null)throw new NoSuchMethodException("Privacy fade-out unavailable");
             module.hook(fadeOut).setId("colorduo-coloros-vpn-chip-expire")
                     .setExceptionMode(XposedInterface.ExceptionMode.PASSTHROUGH).intercept(chain -> {
                         // The native model is changing; never replay stale microphone/camera items.

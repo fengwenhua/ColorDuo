@@ -54,3 +54,10 @@
 - 新 hook 仅在同一 QS 区域已经绘制高亮且 `isVpnMode()` 为 true 时关闭末尾 VPN 图像；隐私图标列表原样传给系统，非 VPN 安全模式保留。
 - 没有其他隐私图标时一并收起空背景；交还时读取当前安全可见状态再重绘，原生 fade-out 开始时丢弃旧列表，避免重放已结束的相机／麦克风提示。
 - 不修改 SecurityController、VPN 网络状态、showSecurity 配置或系统通知。
+
+## 真机反馈与刷新兼容收尾
+
+- [1.1.10 候选构建 40460010588](https://github.com/fengwenhua/ColorDuo/actions/runs/40460010588) build/sign 成功，未公开发布；SHA-256 `06e5b3e626eb24466068ef547eaa7c52e81d1693de814b025b2e5d73ca74f7fe`。
+- 已同签名覆盖安装，维护者确认切换圆环／胶囊、开关 VPN、展开下拉面板均未再看到重复 VPN 标签。截图确认 Wi-Fi 为蓝色、四个信号点保持状态栏原色。
+- dump 确认 VPN active=true、VPN chip hidden=1；fade-out 的 Kotlin 回调类型从 SystemUI loader 查找时报 ClassNotFoundException，故 1.1.11 改从原生 Binder 的声明方法解析，补齐旧隐私列表作废路径。
+- 1.1.11 需核对错误清零、原生标签恢复及最终安装配置保留；HyperOS 仅保留兼容实现，未作真机验证。
