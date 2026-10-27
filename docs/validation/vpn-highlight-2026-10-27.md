@@ -46,3 +46,11 @@
 - 多个 host 共用一个容器时最后一个交还才恢复；模块启用前已经隐藏的槽位不被误恢复；重复帧不重复触发布局。
 - 本地 JUnit 166 项（app 52／render 73／host 41）、Python 22 项通过；Lint 0 errors，release 构建通过。
 - 1.1.9 真机接管、下拉与恢复验收待安装后补记。
+
+## 下拉独立标签来源（1.1.10）
+
+- 安装前的截图与 hierarchy 确认：上方标签属于 `privacy_chip`，与 `statusIcons` 的 VPN 槽位独立。1.1.9 仅完成普通槽位接管，候选签名工作流已取消，未安装该包。
+- JADX 确认 `OplusQSPrivacyContainerViewBinder.fadeInNewIcons` 先绘制隐私图标列表，再按 QSSecurity 添加 VPN／其他安全模式图像。
+- 新 hook 仅在同一 QS 区域已经绘制高亮且 `isVpnMode()` 为 true 时关闭末尾 VPN 图像；隐私图标列表原样传给系统，非 VPN 安全模式保留。
+- 没有其他隐私图标时一并收起空背景；交还时读取当前安全可见状态再重绘，原生 fade-out 开始时丢弃旧列表，避免重放已结束的相机／麦克风提示。
+- 不修改 SecurityController、VPN 网络状态、showSecurity 配置或系统通知。
