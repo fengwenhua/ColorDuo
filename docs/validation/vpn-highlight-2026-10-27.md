@@ -19,6 +19,17 @@
 - Lint：0 errors、26 warnings、1 hint；debug/release 构建通过。
 - 真机验收在完成后补记；以上自动检查不代表已完成真机验证。
 
+## 同签名候选包
+
+- 功能源码：`67a060927997f4d4c4855a4c41870a93ea01af3b`，tag `v1.1.8`，版本 `1.1.8 / 10108`。
+- main 与 tag 的构建 CI 均成功：[40451254802](https://github.com/fengwenhua/ColorDuo/actions/runs/40451254802)、[40451255147](https://github.com/fengwenhua/ColorDuo/actions/runs/40451255147)。
+- [签名候选构建 40451329959](https://github.com/fengwenhua/ColorDuo/actions/runs/40451329959) 的 build/sign 成功，publish 跳过；未创建公开 Release。
+- APK、SHA 文件、manifest 与 manifest 签名经核验，包名／版本／生产证书及 v2/v3 签名均正确；无 debuggable 标记。
+- APK SHA-256：`90c380eff9387415d004cd43b9f3c1d9b5fe25e598e2920d16dc9e6bd66d2aca`。
+- 已覆盖安装到 Find N5，安装前后配置 XML 完全相同；从手机回拉的 APK 与候选包逐字节哈希一致。
+- SystemUI 重载成功，模块 dump：`vpn listening=true active=false error=None`，与原生 VPN 未开启状态一致；未发现相关异常。
+- 真机 VPN 开启／断开、自选颜色及样式切换仍待完成，不能据此声称功能已全面验收。
+
 ## 真机待验收
 
 - Find N5：VPN 已连接时加载模块即高亮，不下拉状态栏；开关 VPN 能立即切色与恢复。
