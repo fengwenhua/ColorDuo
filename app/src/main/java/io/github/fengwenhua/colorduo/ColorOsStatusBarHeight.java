@@ -5,6 +5,7 @@ import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
+import java.util.function.IntSupplier;
 import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModule;
 
@@ -38,15 +40,25 @@ final class ColorOsStatusBarHeight {
     private static final class Row {
         WeakReference<Object> extension=new WeakReference<>(null);
         final StatusBarContentScale left,right;
-        Row(View view,Runnable changed) {
-            View start=find(view,"status_bar_start_side_content"),end=find(view,"status_bar_end_side_content");
+        Row(View view,Runnable changed,IntSupplier currentPercent) {
+            // The inner EndSideContentLayout sits in a WRAP_CONTENT fake container.
+            // Scale the fake container against its stable outer allocation instead.
+            View start=find(view,"status_bar_start_side_content"),end=find(view,"status_bar_end_side_container_for_fake");
             if(start==null || end==null)throw new IllegalStateException("Status bar sides unavailable");
             left=new StatusBarContentScale(start,true);right=new StatusBarContentScale(end,false);
             ((View)start.getParent()).addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->changed.run());
             ((View)end.getParent()).addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->changed.run());
+            ViewTreeObserver.OnPreDrawListener beforeDraw=()->!apply(currentPercent.getAsInt());
+            view.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override public void onViewAttachedToWindow(View v) { v.getViewTreeObserver().addOnPreDrawListener(beforeDraw); }
+                @Override public void onViewDetachedFromWindow(View v) {
+                    if(v.getViewTreeObserver().isAlive())v.getViewTreeObserver().removeOnPreDrawListener(beforeDraw);
+                }
+            });
+            if(view.isAttachedToWindow())view.getViewTreeObserver().addOnPreDrawListener(beforeDraw);
         }
         void restore() { left.restore();right.restore(); }
-        void apply(int percent) { left.apply(percent);right.apply(percent); }
+        boolean apply(int percent) { boolean changed=left.apply(percent);return right.apply(percent)||changed; }
     }
 
     ColorOsStatusBarHeight(XposedModule module,ClassLoader loader,Supplier<TrioSettings> settings) {
@@ -113,7 +125,7 @@ final class ColorOsStatusBarHeight {
                     .setExceptionMode(XposedInterface.ExceptionMode.PASSTHROUGH).intercept(chain->{
                         try {
                             Object owner=chain.getThisObject();View view=(View)extensionView.get(owner);
-                            if(view!=null) { Row row=track(view);row.extension=new WeakReference<>(owner);row.restore(); }
+                            if(view!=null) { Row row=track(view);row.extension=new WeakReference<>(owner); }
                         }catch(ReflectiveOperationException | RuntimeException failure) { fail(failure); }
                         Object result=chain.proceed();schedule();return result;
                     });
@@ -123,7 +135,7 @@ final class ColorOsStatusBarHeight {
 
     private Row track(View view) {
         Row row=views.get(view);
-        if(row==null) { row=new Row(view,this::schedule);views.put(view,row); }
+        if(row==null) { row=new Row(view,this::schedule,()->ready?percent:Prefs.DEF_STATUS_BAR_HEIGHT);views.put(view,row); }
         return row;
     }
 
@@ -135,7 +147,9 @@ final class ColorOsStatusBarHeight {
         for(View view:new ArrayList<>(views.keySet())) {
             if(!view.isAttachedToWindow())continue;
             try {
-                Row row=views.get(view);row.restore();updateHeight.invoke(view);
+                Row row=views.get(view);
+                if(next==Prefs.DEF_STATUS_BAR_HEIGHT)row.restore();
+                updateHeight.invoke(view);
                 Object extension=row.extension.get();
                 if(extension!=null)updatePadding.invoke(extension);
                 updateWindow.invoke(view);view.requestApplyInsets();
