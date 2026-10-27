@@ -720,6 +720,7 @@ final class TrioRenderer {
         final float stroke = a.ringStroke * TrioGeometry.CAP_STROKE_RATIO;
         final TrioAppearance.Capsule cap =
                 a.capsule(level, charging, wifiLevel, mobileType, sims, wifiConnected);
+        final float bodyScale = capsuleBodyScale(stroke, cap, level, mobileType, a);
 
         // The track first, in full, then the charged part over it. `level < 0` is
         // "no reading yet" and fills nothing: painting a whole outline would claim
@@ -758,17 +759,73 @@ final class TrioRenderer {
         // The interior's two cells divide its width by what they actually draw, so a size the
         // user asks for is not capped by width reserved for a string that is not on screen.
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.TOP, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileType, fg, a, bodyScale);
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.CENTRE, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileType, fg, a, bodyScale);
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.BOTTOM, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileType, fg, a, bodyScale);
 
         // Drawn AFTER the three cells on purpose: the left column and the interior can
         // both hold a reading now, and painting the column last is what keeps a wide
         // piece (the arcs) from being covered by the interior's own ink.
         drawCapsuleLeft(canvas, stroke, cap, level, quickCharging, wifiLevel, mobileLevel,
-                slotLevels, mobileType, fg, a);
+                slotLevels, mobileType, fg, a, bodyScale);
+    }
+
+    /** Fit both body cells together; fitting each to the whole track allowed them to overlap. */
+    private static float capsuleBodyScale(float stroke, TrioAppearance.Capsule cap, int level,
+                                          String type, TrioAppearance a) {
+        final float left = capsuleBodyWidth(cap.parts[TrioZones.Zone.LEFT.ordinal()],
+                true, stroke, level, type, a);
+        final float right = capsuleBodyWidth(cap.parts[TrioZones.Zone.CENTRE.ordinal()],
+                false, stroke, level, type, a);
+        if (left <= 0f || right <= 0f) return 1f;
+        final float room = TrioGeometry.capReadingEdge(stroke, false) + a.capsuleRightDx
+                - TrioGeometry.capReadingEdge(stroke, true) - a.capsuleLeftDx
+                - TrioGeometry.CAP_TEXT_GAP;
+        return Math.min(1f, Math.max(0f, room) / (left + right));
+    }
+
+    /** Actual inward reach from the cell's outer anchor, using the same font fit as drawing. */
+    private static float capsuleBodyWidth(int part, boolean left, float stroke, int level,
+                                          String type, TrioAppearance a) {
+        if (part == Prefs.PART_WIFI || part == Prefs.PART_BOLT) {
+            final float edge = TrioGeometry.capReadingEdge(stroke, left);
+            final float centre = left ? TrioGeometry.capLeftIconCx(stroke, part)
+                    : TrioGeometry.capRightIconCx(stroke, part);
+            final float width = part == Prefs.PART_WIFI
+                    ? TrioGeometry.W_INK_W * TrioGeometry.capWifiScale(stroke) * a.wifiScaleFactor()
+                    : TrioGeometry.BOLT_INK_W * TrioGeometry.capBoltScale(stroke) * a.boltScaleFactor();
+            return Math.abs(centre - edge) + width * .5f;
+        }
+        final String text;
+        final int setting, weight, suffix;
+        switch (part) {
+            case Prefs.PART_CLOCK:
+                text = TrioState.sClockText; setting = a.clockSize; weight = a.clockWeight;
+                suffix = 100; break;
+            case Prefs.PART_VALUE:
+                text = String.valueOf(level); setting = a.valueSize; weight = a.valueWeight;
+                suffix = 100; break;
+            case Prefs.PART_TYPE:
+                text = type; setting = left ? bodyTypeSize(a) : a.typeSize;
+                weight = a.typeWeight; suffix = a.typeSuffixScale; break;
+            default: return 0f;
+        }
+        if (text == null || text.isEmpty()) return 0f;
+        applyWeight(weight);
+        final float size = capsuleTextSize(text, setting, stroke,
+                TrioGeometry.capReadingTrackWidth(stroke), suffix);
+        return measureType(text, size, suffix);
+    }
+
+    /** Keep the left/right outer anchors fixed while reducing crowded contents uniformly. */
+    private static int fitCapsuleBody(Canvas canvas, float scale, float edge, float cy) {
+        final int save = canvas.save();
+        canvas.translate(edge, cy);
+        canvas.scale(scale, scale);
+        canvas.translate(-edge, -cy);
+        return save;
     }
 
     /**
@@ -783,7 +840,7 @@ final class TrioRenderer {
     private static void drawCapsuleLeft(Canvas c, float stroke, TrioAppearance.Capsule cap,
                                        int level, boolean quickCharging, int wifiLevel,
                                        int mobileLevel, int[] slotLevels, String type,
-                                       int fg, TrioAppearance a) {
+                                       int fg, TrioAppearance a, float bodyScale) {
         // From the layout's LEFT cell, the same place the three bands read theirs:
         // the left column is a cell of the capsule now, not a setting beside it.
         final int part = cap.parts[TrioZones.Zone.LEFT.ordinal()];
@@ -808,6 +865,7 @@ final class TrioRenderer {
         // read as the start of the row, far enough that the icon is not clipped by the
         // stroke. See capLeftIconCx for the figure.
         final float cx = TrioGeometry.capLeftIconCx(stroke, part) + a.capsuleLeftDx;
+        final int save = fitCapsuleBody(c, bodyScale, anchor, cy);
         // What the two interior cells actually draw, so each gets the width its own string
         // needs instead of the clock-and-number ratio. See TrioGeometry.capReadingSlotWidth.
         // Dot rows are not offered in this column: drawCapsuleDots paints the two OPENINGS,
@@ -835,6 +893,7 @@ final class TrioRenderer {
             default:
                 break;
         }
+        c.restoreToCount(save);
     }
     /**
      * Draws whatever {@code band} holds, at that band's own centre.
@@ -849,7 +908,7 @@ final class TrioRenderer {
     private static void drawCapsuleCell(Canvas c, float stroke, TrioZones.Zone band,
                                         TrioAppearance.Capsule cap, int level,
                                         boolean quickCharging, int wifiLevel, String type,
-                                        int fg, TrioAppearance a) {
+                                        int fg, TrioAppearance a, float bodyScale) {
         // A cell that draws nothing. The LEFT cell is deliberately not routed here:
         // it has its own centre and its own dispatcher, because it is the one cell
         // whose x is not the bands' shared centre.
@@ -889,6 +948,8 @@ final class TrioRenderer {
                 cy = TrioGeometry.capInteriorCy(stroke) + a.capsuleRightDy;
                 break;
         }
+        final int save = opening ? c.save() : fitCapsuleBody(c, bodyScale,
+                TrioGeometry.capReadingEdge(stroke, false) + a.capsuleRightDx, cy);
         switch (part) {
             case Prefs.PART_BOLT:
                 drawCapsuleBolt(c, stroke, quickCharging ? TrioGeometry.QUICK_CHARGE : fg, a, cx, cy);
@@ -914,6 +975,7 @@ final class TrioRenderer {
             default:
                 break;
         }
+        c.restoreToCount(save);
     }
 
     /**

@@ -1689,32 +1689,9 @@ final class TrioGeometry {
     }
 
     /**
-     * How wide a capsule reading is allowed to be, from its OWN size.
-     *
-     * <p>The two interior cells are independent components sitting on one track, not a width
-     * divided between them. Each is as wide as the reading it draws, capped by the track it
-     * has to stay on:
-     *
-     * <ul>
-     *   <li>the LEFT cell starts at the interior's left edge and grows rightwards;</li>
-     *   <li>the RIGHT cell ends at the interior's right edge and grows leftwards;</li>
-     *   <li>neither can pass the other, so the track is what limits them.</li>
-     * </ul>
-     *
-     * <p>An earlier version divided the interior between the two cells in proportion to their
-     * strings. That makes each cell's width depend on the other's CONTENT - place a clock on
-     * the left and the number on the right shrinks - which is what "the two are squeezing each
-     * other" describes, and it produced a press highlight that changed width with whatever the
-     * cell happened to be showing. A component's size is its own business.
-     *
-     * <p>So the answer is the whole track: a reading is fitted to the room it could use if it
-     * were alone, and the other cell does not shrink it. What keeps them apart is the drawing
-     * order and the alignment - each cell hangs off its own edge and grows inwards - so a
-     * reading that would overrun is fitted down by {@code fitSize} against the same number,
-     * not by a width handed out in advance.
-     *
-     * @param stroke       the capsule's stroke, which sets the interior
-     * @param forLeft      which edge to measure from; the track is the same either way
+     * Maximum width of an individual body reading before the two cells are fitted together.
+     * The renderer measures both actual contents and reserves CAP_TEXT_GAP between them.
+     * Left and right anchors stay fixed; only crowded contents need a smaller shared scale.
      */
     static float capReadingTrackWidth(float stroke) {
         return capReadingsWidth(stroke);

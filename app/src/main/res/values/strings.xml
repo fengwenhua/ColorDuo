@@ -304,8 +304,8 @@
     <!-- Capsule interior cell nudges, in design units. -->
     <string name="capsule_container_title">胶囊结构</string>
     <string name="capsule_container_summary">长度与左右两格的位置。</string>
-    <string name="capsule_length_title">胶囊长度</string>
-    <string name="capsule_length_summary">默认 0，可调 -30 到 60。加长的是两端圆角之间的直线段，胶囊随之变宽，圆角与高度不变。</string>
+    <string name="capsule_length_title">胶囊宽度</string>
+    <string name="capsule_length_summary">0 为默认宽度，可调 -30 到 60，拖动实时生效。左右内容分别靠两端排列并保留间距；加宽不改变高度和圆角。</string>
     <string name="capsule_nudge_left_dx_title">左格水平位置</string>
     <string name="capsule_nudge_left_dx_summary">正值右移，负值左移。</string>
     <string name="capsule_nudge_left_dy_title">左格垂直位置</string>

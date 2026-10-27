@@ -240,21 +240,7 @@ internal fun geometrySliders(): List<SliderSpec> {
             summaryRes = { R.string.capsule_nudge_right_dy_summary },
             enabled = { it.glyph && it.capsule },
         ),
-        // How long the capsule is. The straight runs between its two caps are the only part of
-        // the shape that can change without changing its form: the caps keep their radius, the
-        // height does not move, and every proportion the design states against the height is
-        // untouched. This is what "make the capsule wider" means physically.
-        SliderSpec(
-            group = GeometryGroup.Scale,
-            part = null,
-            min = Prefs.MIN_CAPSULE_LENGTH,
-            max = Prefs.MAX_CAPSULE_LENGTH,
-            read = { it.capsuleLayout.length() },
-            write = { r, v -> r.setCapsuleLength(v) },
-            titleRes = { R.string.capsule_length_title },
-            summaryRes = { R.string.capsule_length_summary },
-            enabled = { it.glyph && it.capsule },
-        ),
+        capsuleWidthSlider(),
         SliderSpec(
             group = GeometryGroup.Scale,
             part = null,
@@ -605,16 +591,7 @@ internal fun geometrySliders(): List<SliderSpec> {
 internal fun slidersForPart(part: TrioZones.Part): List<SliderSpec> =
     geometrySliders().filter { it.part == part }
 
-/**
- * The capsule container's own parameters: its length and the two interior cells' offsets.
- *
- * <p>Here rather than in a sheet because these size the CONTAINER, not a component. They
- * used to sit under "Appearance" in the component list, two taps away from the layout that
- * arranges the capsule, which made changing the shape a trip between two sections.
- *
- * <p>The page that draws the layout calls this under its own list, and only while the
- * capsule is the arrangement in force: for a ring these keys mean nothing.
- */
+/** Capsule width and cell offsets, also available beside the layout preview. */
 @Composable
 internal fun CapsuleContainerRows(
     settings: TrioSettings,
@@ -642,10 +619,20 @@ internal fun CapsuleContainerRows(
     }
 }
 
+private fun capsuleWidthSlider(): SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_CAPSULE_LENGTH,
+    max = Prefs.MAX_CAPSULE_LENGTH,
+    read = { it.capsuleLayout.length() },
+    write = { r, v -> r.setCapsuleLength(v) },
+    titleRes = { R.string.capsule_length_title },
+    summaryRes = { R.string.capsule_length_summary },
+    enabled = { it.glyph && it.capsule },
+)
+
 internal fun slidersForEditor(part: TrioSettingsPart): List<SliderSpec> = when (part) {
-    // "Appearance" holds no size rows any more: the capsule's length and the two cells'
-    // offsets size the CONTAINER, and are drawn under the layout that arranges it. What is
-    // left in that sheet is the role colours, which are not a size at all.
+    // Width is shown immediately after the style chooser instead of among colour rows.
     TrioSettingsPart.Appearance -> emptyList()
     TrioSettingsPart.Battery, TrioSettingsPart.Readouts ->
         geometrySliders().filter { it.part == null && it.editorOwner == part }
@@ -742,7 +729,12 @@ internal fun PartSettingsSheet(
                     .verticalScroll(rememberScrollState()).padding(horizontal = 4.dp)) {
                     if (compact) preview?.invoke()
                     if (part == TrioSettingsPart.Vpn) VpnSettings(settings, update)
-                    controls.forEach { control -> ContentControlRow(control, settings, update, ringSettings) }
+                    controls.forEach { control ->
+                        ContentControlRow(control, settings, update, ringSettings)
+                        if (control == ContentControl.Style && a.capsule) {
+                            SliderRow(capsuleWidthSlider(), settings, update)
+                        }
+                    }
                 if (part != TrioSettingsPart.Vpn && rows.isEmpty() && colors.isEmpty() && controls.isEmpty()) {
                     Text(
                         text = stringResource(R.string.drawing_settings_none),
