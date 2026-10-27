@@ -337,6 +337,6 @@
     <string name="compatibility_report_copied">兼容性报告已复制</string>
     <string name="compatibility_report_copy_failed">无法复制报告，请重试</string>
     <string name="vpn_title">VPN</string>
-    <string name="vpn_color_summary">开启系统 VPN 时，Wi-Fi、移动信号和网络类型使用此颜色；关闭后恢复原有配色。圆环与胶囊共用此设置。</string>
+    <string name="vpn_color_summary">开启系统 VPN 时，Wi-Fi 和网络类型使用此颜色；关闭后恢复原有配色。圆环与胶囊共用此设置。</string>
     <string name="vpn_color_reset">恢复默认蓝色</string>
 </resources>

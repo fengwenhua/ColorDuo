@@ -20,6 +20,9 @@ public final class VpnColorTest {
         s.vpnColor = color; s.setShowWifi(true); s.setShowMobile(true); s.setShowSim1(true);
         s.setMobileTypeMode(Prefs.MOBILE_TYPE_IN_RING); s.setTypeHideOnWifi(false);
         s.ringZones = Prefs.decodeLayout(wifi ? "1|3|7|6" : "5|3|7|6");
+        return draw(s, vpn, wifi);
+    }
+    private Frame draw(TrioSettings s, boolean vpn, boolean wifi) {
         TrioState.sClockText = "19:41";
         Frame frame = new Frame(); var g = frame.image.createGraphics();
         Canvas canvas = new Canvas(g) {
@@ -33,7 +36,7 @@ public final class VpnColorTest {
         } finally { g.dispose(); }
         return frame;
     }
-    @Test public void wifiAndMobileTintInBothGlyphsWithoutChangingGeometry() {
+    @Test public void wifiAndTypeTintInBothGlyphsWithoutChangingGeometry() {
         for (int style : new int[]{Prefs.STYLE_RING, Prefs.STYLE_CAPSULE})
             for (boolean wifi : new boolean[]{false, true}) {
                 Frame off = draw(style, false, Prefs.DEF_VPN_COLOR, wifi);
@@ -51,6 +54,26 @@ public final class VpnColorTest {
                 if(on.text.containsKey("19:41"))assertEquals(Integer.valueOf(FG),on.text.get("19:41"));
                 if(!wifi)assertEquals(Integer.valueOf(Prefs.DEF_VPN_COLOR),on.text.get("5G"));
             }
+    }
+    @Test public void signalDotsAndBarsKeepTheirOriginalColors() {
+        for (int style : new int[]{Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
+            TrioSettings s=TrioSettings.defaults(); s.trioStyle=style; s.roleColors=false;
+            s.setShowWifi(false); s.setShowMobile(true); s.setShowSim1(true);
+            s.setMobileTypeMode(Prefs.MOBILE_TYPE_OFF);
+            s.ringZones=Prefs.decodeLayout("3||7|6");
+            Frame off=draw(s,false,false), on=draw(s,true,false);
+            for(int y=0;y<180;y++)for(int x=0;x<320;x++)
+                assertEquals("signal-only glyph must not be recolored",off.image.getRGB(x,y),on.image.getRGB(x,y));
+        }
+        BufferedImage[] images=new BufferedImage[2];
+        for(int i=0;i<2;i++) {
+            images[i]=new BufferedImage(80,80,BufferedImage.TYPE_INT_ARGB);
+            var g=images[i].createGraphics();
+            try { TrioRenderer.drawOutSignal(new Canvas(g),80,80,3,4,FG,
+                    TrioAppearance.of(TrioSettings.defaults(),i==1)); }
+            finally { g.dispose(); }
+        }
+        for(int y=0;y<80;y++)for(int x=0;x<80;x++)assertEquals(images[0].getRGB(x,y),images[1].getRGB(x,y));
     }
     @Test public void customColorAppliesOnlyWhileVpnIsActive() {
         for(int style:new int[]{Prefs.STYLE_RING,Prefs.STYLE_CAPSULE}) {

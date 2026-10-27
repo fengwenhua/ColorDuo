@@ -25,7 +25,7 @@ final class ColorOsBatteryDrawable extends Drawable {
         final int[] slotLevels;
         final ColorOsPowerSource.State power;
         final String clock;
-        final boolean drawsClock;
+        final boolean drawsClock, drawsVpn;
         final ColorOsOutsideLayout outside;
         final int viewWidth, viewHeight;
         Frame(int level, int tint, TrioSettings settings) {
@@ -67,6 +67,8 @@ final class ColorOsBatteryDrawable extends Drawable {
             if (slotLevels != null) slotLevels[readings.mobileSlot] = readings.mobile;
             ColorOsRingPreset.Resolved resolved = ColorOsRingPreset.resolve(settings, level, power.charging, readings);
             drawsClock = resolved.clock && !clock.isEmpty();
+            drawsVpn = vpnActive && (settings.vpnColor >>> 24) != 0
+                    && (resolved.wifi || (resolved.type && !readings.typeLabel.isEmpty()) || outside.hasType());
             if ((network.wifi >= 1 && !resolved.wifi) || (network.mobile >= 0 && !resolved.mobile && !outside.hasSignal()))
                 throw new IllegalStateException("Network reading has no drawable ring zone");
         }

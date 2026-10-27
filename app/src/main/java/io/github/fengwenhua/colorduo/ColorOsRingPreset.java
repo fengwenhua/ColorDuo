@@ -53,9 +53,9 @@ final class ColorOsRingPreset {
     }
 
     static final class Resolved {
-        final boolean wifi, mobile, clock;
-        Resolved(boolean wifi, boolean mobile, boolean clock) {
-            this.wifi = wifi; this.mobile = mobile; this.clock = clock;
+        final boolean wifi, mobile, clock, type;
+        Resolved(boolean wifi, boolean mobile, boolean clock, boolean type) {
+            this.wifi = wifi; this.mobile = mobile; this.clock = clock; this.type = type;
         }
     }
 
@@ -65,12 +65,13 @@ final class ColorOsRingPreset {
         if (appearance.capsule) {
             TrioAppearance.Capsule drawn = appearance.capsule(level, charging, plan.wifi, plan.typeLabel,
                     sims, plan.wifi >= 0);
-            return new Resolved(drawn.wifi, drawn.dots, contains(drawn.parts, Prefs.PART_CLOCK));
+            return new Resolved(drawn.wifi, drawn.dots, contains(drawn.parts, Prefs.PART_CLOCK),
+                    contains(drawn.parts, Prefs.PART_TYPE));
         }
         int[] parts = appearance.ring(level, charging, plan.wifi, plan.typeLabel, sims, plan.wifi >= 0).parts;
         return new Resolved(contains(parts, Prefs.PART_WIFI),
                 contains(parts, plan.mobileSlot == 0 ? Prefs.PART_SIM_1 : Prefs.PART_SIM_2),
-                contains(parts, Prefs.PART_CLOCK));
+                contains(parts, Prefs.PART_CLOCK), contains(parts, Prefs.PART_TYPE));
     }
 
     private static boolean contains(int[] parts, int wanted) {

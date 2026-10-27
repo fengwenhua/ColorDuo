@@ -601,7 +601,6 @@ final class TrioRenderer {
      */
     private static void drawArcDotRow(Canvas c, int active, int zone, float radius,
                                       int fg, TrioAppearance a) {
-        fg = a.networkColor(fg);
         final int inactive = withAlpha(fg, a.trackAlpha);
         if (zone == 1) {
             // The middle third is not a notch: the ring runs past it on both sides, so
@@ -1165,7 +1164,6 @@ final class TrioRenderer {
     private static void drawCapsuleDots(Canvas c, int level, int[] slotLevels, boolean dual,
                                         float stroke, int fg, TrioAppearance a,
                                         TrioAppearance.Capsule cap) {
-        fg = a.networkColor(fg);
         final boolean topRow = cap == null || cap.dotsIn(TrioZones.Zone.TOP);
         final boolean bottomRow = cap == null || cap.dotsIn(TrioZones.Zone.BOTTOM);
         final int top = (dual && slotLevels != null) ? slotLevels[0] : level;
@@ -1356,7 +1354,6 @@ final class TrioRenderer {
      */
     private static void drawRectDots(Canvas c, int level, int[] slotLevels, boolean dual,
                                      int fg, TrioAppearance a) {
-        fg = a.networkColor(fg);
         final int left = (dual && slotLevels != null) ? slotLevels[0] : level;
         final int right = (dual && slotLevels != null) ? slotLevels[1] : level;
         final int inactive = withAlpha(fg, a.trackAlpha);
@@ -1720,7 +1717,6 @@ final class TrioRenderer {
      */
     static boolean drawOutSignal(Canvas c, int width, int height, int bars, int dots,
                                  int fg, TrioAppearance a) {
-        fg = a.networkColor(fg);
         if (bars < 0 || width <= 0 || height <= 0) {
             return false;
         }

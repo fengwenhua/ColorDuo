@@ -34,6 +34,7 @@ final class ColorOsBatteryAdapter {
     private final ColorOsFontSource font;
     private final ColorOsReadoutSource readouts;
     private final VpnStateSource vpn = new VpnStateSource(this::refreshAll);
+    private final ColorOsVpnIcon vpnIcon;
     private final boolean outsideStage = "outside".equals(BuildConfig.COLOROS_STAGE);
     private final boolean capsuleStage = "capsule".equals(BuildConfig.COLOROS_STAGE) || "font".equals(BuildConfig.COLOROS_STAGE) || outsideStage;
     private final boolean userLayout = "ring".equals(BuildConfig.COLOROS_STAGE)
@@ -105,6 +106,7 @@ final class ColorOsBatteryAdapter {
     private ColorOsBatteryAdapter(XposedModule module, ClassLoader loader) {
         this.module = module;
         this.loader = loader;
+        vpnIcon = new ColorOsVpnIcon(loader);
         config = new ColorOsConfig(module, this::refreshAll);
         network = ("network".equals(BuildConfig.COLOROS_STAGE) || userLayout)
                 ? new ColorOsNetworkAdapter(module, loader, this::refreshAll) : null;
@@ -257,6 +259,7 @@ final class ColorOsBatteryAdapter {
                             java.io.PrintWriter out = (java.io.PrintWriter) chain.getArg(0);
                             out.println("  ColorDuo ColorOS adapter: stage=" + BuildConfig.COLOROS_STAGE);
                             out.println("    vpn listening=" + vpn.listening() + " active=" + vpn.active() + " error=" + vpn.error());
+                            out.println("    vpnIcon " + vpnIcon.status());
                             if (clock != null) out.println("    clockReady=" + clock.ready() + " time=" + clock.time());
                             if (font != null) out.println("    fontStatus=" + font.status());
                             if (readouts != null) {
@@ -651,6 +654,7 @@ final class ColorOsBatteryAdapter {
                             network.commit(readyMeter, presented.network);
                             commitClock(readyMeter, host, presented);
                             commitCharge(readyMeter, host, presented);
+                            vpnIcon.commit(readyMeter, presented.drawsVpn && vpn.active());
                             host.presentationPending = false;
                             host.configurationHandoff = false;
                         } else {
@@ -673,6 +677,7 @@ final class ColorOsBatteryAdapter {
                 if (network != null) network.commit(meter, plan);
                 commitClock(meter, host, frame);
                 commitCharge(meter, host, frame);
+                vpnIcon.commit(meter, frame.drawsVpn && vpn.active());
                 host.presentationPending = false;
                 host.configurationHandoff = false;
             }
@@ -778,6 +783,7 @@ final class ColorOsBatteryAdapter {
         host.lastGlobalShown = meter != null && image != null && meter.isShown() && image.isShown();
         if (clock != null && meter != null) clock.release(meter);
         if (network != null && meter != null) network.release(meter);
+        if (meter != null) vpnIcon.release(meter);
         host.size.restore();
         ColorOsBatteryDrawable preview = host.preview;
         if (preview == null) return;
