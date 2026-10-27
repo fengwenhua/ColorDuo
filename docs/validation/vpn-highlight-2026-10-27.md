@@ -72,3 +72,12 @@
 - 维护者已确认圆环／胶囊、VPN 开关、下拉面板均正常；另确认关闭三合一时原生 VPN 恢复，重新开启后消失，自选颜色仅影响 Wi-Fi／网络类型。
 - 此轮功能验收完成。相机／麦克风同时使用及受管设备未作真机实测，代码保留原生图标列表与非 VPN 安全模式；HyperOS 无本轮真机证据。
 - 当前公开稳定版仍为 1.1.7；1.1.8、1.1.10、1.1.11 为同签名候选，1.1.9 候选已取消，均未创建公开 Release。
+
+## 维护者授权后的正式发布
+
+- 维护者验收后授权正式发布 1.1.11；[正式 Actions 40463813752](https://github.com/fengwenhua/ColorDuo/actions/runs/40463813752) 成功。
+- 发布使用 tag `v1.1.11` 的源码 `02f1c4d6b754aded6e0286d3cfb7aba7f628f2dd`，正式 APK 与已安装验收的候选逐字节相同，SHA-256 仍为 `e65371974a7a5e7e559842ac4541c0798976a1d7d96e779dd9a207382d1980df`。
+- [源码仓 v1.1.11](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.11)，Release ID `425122960`；[模块仓 10111-1.1.11](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10111-1.1.11)，Release ID `425130073`。均为公开稳定版与 Latest。
+- 两仓各四个附件（APK、SHA、manifest、manifest 签名）全部公开下载，与 Actions 产物逐字节核对通过；说明与源码 tag 中提交的发布说明一致，包含低于 1.1.0（不包含 1.1.0）卸载重装提醒。
+- 模块仓 README 及 tag 已通过提交 `462be30` 推送；模块仓附件沿用受跟踪的官方网页适配器发布，没有复制源码仓 token 绕过组织限制。
+- 公开稳定版现为 **1.1.11 / 10111**；上文“未公开”的候选记录是正式授权发布前的状态。1.1.8～1.1.10 未创建公开 Release，历史已发布版本保留。
