@@ -24,9 +24,6 @@ final class ColorOsBatterySize {
         if (params == null) return new int[]{0, 0};
         int width = owned ? nativeWidth : params.width, height = owned ? nativeHeight : params.height;
         if (width <= 0 || height <= 0 || meter.getHeight() <= 0) return new int[]{0, 0};
-        int percent = ColorOsStatusBarHeight.percentFor(meter);
-        width = StatusBarHeightPolicy.scale(width, percent);
-        height = StatusBarHeightPolicy.scale(height, percent);
         return settings.trioStyle == Prefs.STYLE_CAPSULE
                 ? target(height, availableHeight(meter, params), meter.getResources().getDisplayMetrics().widthPixels / 3, settings.capsuleLayout.length())
                 : new int[]{width, height};
@@ -35,8 +32,7 @@ final class ColorOsBatterySize {
     boolean resizeNeeded(View meter, TrioSettings settings, int extraWidth) {
         ImageView view = image.get();
         if (view == null) return false;
-        if (settings.trioStyle != Prefs.STYLE_CAPSULE && extraWidth == 0
-                && ColorOsStatusBarHeight.percentFor(meter) == Prefs.DEF_STATUS_BAR_HEIGHT) return owned;
+        if (settings.trioStyle != Prefs.STYLE_CAPSULE && extraWidth == 0) return owned;
         ViewGroup.LayoutParams params = view.getLayoutParams();
         if (params == null) return false;
         if (owned && (params.width != appliedWidth || params.height != appliedHeight))
@@ -52,8 +48,7 @@ final class ColorOsBatterySize {
     }
 
     void apply(View meter, TrioSettings settings, int extraWidth) {
-        if (settings.trioStyle != Prefs.STYLE_CAPSULE && extraWidth == 0
-                && ColorOsStatusBarHeight.percentFor(meter) == Prefs.DEF_STATUS_BAR_HEIGHT) { restore(); return; }
+        if (settings.trioStyle != Prefs.STYLE_CAPSULE && extraWidth == 0) { restore(); return; }
         ImageView view = image.get();
         if (view == null) return;
         ViewGroup.LayoutParams params = view.getLayoutParams();
