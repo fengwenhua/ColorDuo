@@ -368,6 +368,10 @@ public final class CapsuleTest {
         // "simplification" would most plausibly introduce.
         final TrioSettings clockCfg = TrioSettings.defaults();
         clockCfg.trioStyle = Prefs.STYLE_CAPSULE;
+        // Independence holds while both requested sizes fit. Use the wide capsule so
+        // platform font metrics cannot invoke the shared crowding fit in this test.
+        // CapsuleBodySpacingTest covers the separate rule for a crowded body at 100%.
+        clockCfg.capsuleLayout = clockCfg.capsuleLayout.withLength(Prefs.MAX_CAPSULE_LENGTH);
         clockCfg.setShowValue(true);
         clockCfg.setShowMobile(true);
         clockCfg.setShowWifi(false);
