@@ -57,3 +57,13 @@
 - 1.1.14 将缩放作用于外层 `status_bar_end_side_container_for_fake`，相对于稳定的 `status_bar_end_side_container` 预算重新测量；原生 EndSideContentLayout 保留自身缩放动画，内部内容按 END 对齐，恢复时交还原生 gravity。
 - 下拉收回出现小→大抖动：普通 padding 更新不再恢复整组缩放；增加绘制前几何校准，若测量尺寸需更新则推迟该帧，避免画出过渡的小图标帧。
 - 1.1.14 本地完整回归、Lint 和 release 构建已通过；仍需同签名包真机核对右侧稳定、下拉收回、100% 恢复及折叠。
+
+## 1.1.14 真机进度
+
+- 源码 `abf28ae`、tag `v1.1.14`、版本 `1.1.14 / 10114`。已同签名覆盖安装，安装前后配置文件完全一致，已安装 APK 回拉后与候选逐字节一致。
+- [main CI 40497433870](https://github.com/fengwenhua/ColorDuo/actions/runs/40497433870)、[tag CI 40497433894](https://github.com/fengwenhua/ColorDuo/actions/runs/40497433894)、[签名候选 40497608488](https://github.com/fengwenhua/ColorDuo/actions/runs/40497608488) 均成功，未公开发布。
+- APK SHA-256：`23a22fc21c5bfaa9df52717631df97ffb90afadcdfacf0af64330e0b0e4038f8`。签名证书、v2/v3、清单签名与源码身份核验通过。
+- 初始内屏 100%：窗口／Insets 107px，左右 scale=1、centreY=65px，error=None。
+- 外屏 120%：窗口／Insets 128px；左右 scale=1.2、centreY=65.6px，左侧 381px、右侧 373px。重复采样尺寸稳定；维护者确认右侧可见，下拉收回没有先小后大的抖动。
+- 外屏 150%：窗口／Insets 161px；左右 scale=1.5、centreY=65.5px，左侧 305px、右侧 298px。截图确认胶囊、时钟、信号和读数完整，避开摄像头区域；维护者确认圆环／胶囊切换正常。多次采样未再出现收缩至 1px 的反馈。
+- 尚待完成：增高后的 100% 恢复、关闭／开启总开关、内屏倍率及折叠／旋转。不能把当前部分验收记录当作完整验收或发版授权。
