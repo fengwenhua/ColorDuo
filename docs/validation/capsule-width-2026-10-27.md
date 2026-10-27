@@ -24,3 +24,12 @@
 - 最终状态：外屏 `1140×2616`、胶囊、总开关开启、宽度增量 `0`、状态栏 `130%`。窗口与 Insets 为 `139px`；两侧 scale=1.3、centreY=65.3px，error=None；电池宿主 `111×65`、pending=false、failed=false。
 - 本次重载后 PID `28981` 在内外屏取证期间保持不变。100% 且已充满的真实电源状态为 plugged=true／full=true／charging=false。
 - 保留维护者最后选择的宽度与其他偏好；公开稳定版仍为 **1.1.11**，本候选没有公开发布。后续若授权一起发布状态栏高度和本修复，使用本轮验收的 `v1.1.16` 源码及同一 APK。
+
+
+## 正式发布完成
+
+- 维护者已授权发布，1.1.16 已同步至[源码仓](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.16)和[模块仓](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10116-1.1.16)，均为 Latest。
+- [正式 Actions 40518668002](https://github.com/fengwenhua/ColorDuo/actions/runs/40518668002) 全部成功；源码 tag 仍为 `v1.1.16`／`b8fb975`，没有改写验收源码。
+- 两仓四个公开附件逐字节回读核验通过，正式 APK 与手机已安装候选完全相同；无须重新安装。APK SHA-256 保持 `bed532409af089375dd1dc0edfa5f5bd9083f91afcda488f3a54d67f6d81289f`。
+- 正式 APK、checksum 与 manifest 和验收候选一致；ECDSA 清单签名重新生成并验证有效。两仓使用同一份正式清单签名，不要求独立签名任务生成相同的 ECDSA 签名字节。
+- 两仓 README 和 Release 说明均已更新，并保留低于 1.1.0（不包含 1.1.0）卸载重装提醒。没有清理历史版本，也没有重新安装或变更手机配置。
