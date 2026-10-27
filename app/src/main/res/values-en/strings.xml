@@ -337,4 +337,7 @@
     <string name="compatibility_report_summary">Device, system versions and adapter status only. No network names, notifications or raw logs.</string>
     <string name="compatibility_report_copied">Compatibility report copied</string>
     <string name="compatibility_report_copy_failed">Could not copy the report. Try again.</string>
+    <string name="vpn_title">VPN</string>
+    <string name="vpn_color_summary">While a system VPN is active, Wi-Fi, mobile signals and network types use this color. Disconnecting restores their normal colors. Shared by ring and capsule.</string>
+    <string name="vpn_color_reset">Restore default blue</string>
 </resources>

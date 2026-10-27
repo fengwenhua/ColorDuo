@@ -286,7 +286,7 @@ final class TrioRenderer {
         }
         drawInto(canvas, w, h, s.level, s.charging, s.quickCharging, s.powerSave, s.low,
                 s.wifiPresent ? s.wifiLevel : -1, s.mobileLevel, s.slotLevels, s.mobileType,
-                s.foreground(), cfg, true, s.wifiPresent);
+                s.foreground(), cfg, true, s.wifiPresent, s.vpnActive);
     }
 
     /**
@@ -336,6 +336,15 @@ final class TrioRenderer {
                          int wifiLevel, int mobileLevel, int[] slotLevels, String mobileType,
                          int fg, TrioSettings cfg, boolean clearWhenDone,
                          boolean wifiConnected) {
+        drawInto(canvas, w, h, level, charging, quickCharging, powerSave, low, wifiLevel,
+                mobileLevel, slotLevels, mobileType, fg, cfg, clearWhenDone, wifiConnected, false);
+    }
+
+    static void drawInto(Canvas canvas, int w, int h, int level, boolean charging,
+                         boolean quickCharging, boolean powerSave, boolean low,
+                         int wifiLevel, int mobileLevel, int[] slotLevels, String mobileType,
+                         int fg, TrioSettings cfg, boolean clearWhenDone,
+                         boolean wifiConnected, boolean vpnActive) {
         if (w <= 0 || h <= 0 || cfg == null) {
             return;
         }
@@ -344,7 +353,7 @@ final class TrioRenderer {
         // switches themselves, which is what used to let the two arrangements
         // drift apart - and let the documentation drift from both.
         cfg = ChargeLayout.forState(cfg, charging, quickCharging);
-        final TrioAppearance appearance = TrioAppearance.of(cfg);
+        final TrioAppearance appearance = TrioAppearance.of(cfg, vpnActive);
         // The network type is NOT suppressed here any more.
         //
         // It used to be: the whole label was replaced with null at this entry point, which made
@@ -555,7 +564,7 @@ final class TrioRenderer {
                     else {
                         TEXT.setTextAlign(Paint.Align.CENTER);
                         TEXT.setTextSize(fitted);
-                        TEXT.setColor(fg);
+                        TEXT.setColor(part == Prefs.PART_TYPE ? a.networkColor(fg) : fg);
                         c.drawText(text, 0f, baseline, TEXT);
                     }
                 }
@@ -592,6 +601,7 @@ final class TrioRenderer {
      */
     private static void drawArcDotRow(Canvas c, int active, int zone, float radius,
                                       int fg, TrioAppearance a) {
+        fg = a.networkColor(fg);
         final int inactive = withAlpha(fg, a.trackAlpha);
         if (zone == 1) {
             // The middle third is not a notch: the ring runs past it on both sides, so
@@ -1155,6 +1165,7 @@ final class TrioRenderer {
     private static void drawCapsuleDots(Canvas c, int level, int[] slotLevels, boolean dual,
                                         float stroke, int fg, TrioAppearance a,
                                         TrioAppearance.Capsule cap) {
+        fg = a.networkColor(fg);
         final boolean topRow = cap == null || cap.dotsIn(TrioZones.Zone.TOP);
         final boolean bottomRow = cap == null || cap.dotsIn(TrioZones.Zone.BOTTOM);
         final int top = (dual && slotLevels != null) ? slotLevels[0] : level;
@@ -1345,6 +1356,7 @@ final class TrioRenderer {
      */
     private static void drawRectDots(Canvas c, int level, int[] slotLevels, boolean dual,
                                      int fg, TrioAppearance a) {
+        fg = a.networkColor(fg);
         final int left = (dual && slotLevels != null) ? slotLevels[0] : level;
         final int right = (dual && slotLevels != null) ? slotLevels[1] : level;
         final int inactive = withAlpha(fg, a.trackAlpha);
@@ -1556,6 +1568,7 @@ final class TrioRenderer {
      * the identical group, which is what keeps the Wi-Fi icon the same in both.
      */
     private static void drawWifiArcs(Canvas c, int level, int fg, TrioAppearance a) {
+        fg = a.networkColor(fg);
         STROKE.setStrokeWidth(a.arcStroke);
         STROKE.setColor(fg);
         if (level >= 3) {
@@ -1707,6 +1720,7 @@ final class TrioRenderer {
      */
     static boolean drawOutSignal(Canvas c, int width, int height, int bars, int dots,
                                  int fg, TrioAppearance a) {
+        fg = a.networkColor(fg);
         if (bars < 0 || width <= 0 || height <= 0) {
             return false;
         }
@@ -1851,12 +1865,14 @@ final class TrioRenderer {
     /** Centred label, the form every arrangement but the capsule's left cell wants. */
     private static void drawType(Canvas c, String type, float x, float baseline,
                                  float size, int fg, TrioAppearance a) {
+        fg = a.networkColor(fg);
         drawType(c, type, x, baseline, size, fg, a, SlotAlign.CENTRE);
     }
 
     private static void drawType(Canvas c, String type, float x, float baseline,
                                  float size, int fg, TrioAppearance a,
                                  SlotAlign align) {
+        fg = a.networkColor(fg);
         if (!TrioGeometry.hasShrunkSuffix(type, a.typeSuffixScale)) {
             TEXT.setTextAlign(align.paint());
             TEXT.setTextSize(size);

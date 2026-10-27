@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 /** Bounded Canvas bridge; never occupies the OEM's typed batteryStyleDrawable field. */
 final class ColorOsBatteryDrawable extends Drawable {
     static final class Frame {
+        final boolean vpnActive;
         final int level;
         final int tint;
         final TrioSettings settings;
@@ -48,6 +49,12 @@ final class ColorOsBatteryDrawable extends Drawable {
         Frame(int level, int tint, TrioSettings settings, ColorOsNetworkAdapter.Plan network,
               ColorOsPowerSource.State power, String clock, int width, int height, ColorOsOutsideLayout outside,
               ColorOsNetworkAdapter.Plan readings) {
+            this(level, tint, settings, network, power, clock, width, height, outside, readings, false);
+        }
+        Frame(int level, int tint, TrioSettings settings, ColorOsNetworkAdapter.Plan network,
+              ColorOsPowerSource.State power, String clock, int width, int height, ColorOsOutsideLayout outside,
+              ColorOsNetworkAdapter.Plan readings, boolean vpnActive) {
+            this.vpnActive = vpnActive;
             settings = ChargeLayout.forState(settings, power.charging, power.quick);
             this.level = level; this.tint = tint; this.settings = settings;
             this.network = network;
@@ -64,7 +71,7 @@ final class ColorOsBatteryDrawable extends Drawable {
                 throw new IllegalStateException("Network reading has no drawable ring zone");
         }
         boolean same(Frame other) {
-            return other != null && level == other.level && tint == other.tint
+            return other != null && vpnActive == other.vpnActive && level == other.level && tint == other.tint
                     && settings == other.settings && network.same(other.network) && readings.same(other.readings) && power.same(other.power)
                     && clock.equals(other.clock) && viewWidth == other.viewWidth && viewHeight == other.viewHeight && outside.same(other.outside);
         }
@@ -139,7 +146,7 @@ final class ColorOsBatteryDrawable extends Drawable {
         TrioRenderer.drawInto(canvas, width - frame.outside.reserve, height, frame.level, frame.power.charging, frame.power.quick,
                 frame.power.saving, frame.level <= frame.settings.lowThreshold,
                 frame.readings.wifi, frame.readings.mobile, frame.slotLevels, frame.readings.typeLabel, frame.tint, frame.settings, false,
-                frame.readings.wifi >= 0);
+                frame.readings.wifi >= 0, frame.vpnActive);
         } finally { canvas.restoreToCount(saved); }
         saved = canvas.save();
         try {

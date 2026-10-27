@@ -37,7 +37,13 @@ final class ColorOsOutsideLayout {
 
     static ColorOsOutsideLayout create(TrioSettings settings, ColorOsNetworkAdapter.Plan source,
                                        int height, int room, float density, boolean rtl, ColorOsReadoutSource.State readings, boolean wifiInk) {
-        TrioAppearance appearance = TrioAppearance.of(settings);
+        return create(settings, source, height, room, density, rtl, readings, wifiInk, false);
+    }
+
+    static ColorOsOutsideLayout create(TrioSettings settings, ColorOsNetworkAdapter.Plan source,
+                                       int height, int room, float density, boolean rtl, ColorOsReadoutSource.State readings,
+                                       boolean wifiInk, boolean vpnActive) {
+        TrioAppearance appearance = TrioAppearance.of(settings, vpnActive);
         boolean typeWanted = settings.content.mobileTypeMode() == Prefs.MOBILE_TYPE_OUT_RING && !source.typeLabel.isEmpty();
         boolean suppress = typeWanted && appearance.hidesTypeForWifi(source.wifi >= 1)
                 && wifiInk;

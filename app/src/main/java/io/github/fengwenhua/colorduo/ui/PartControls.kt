@@ -53,6 +53,7 @@ internal enum class TrioSettingsPart(val part: TrioZones.Part?, val labelRes: In
     Appearance(null, R.string.drawing_part_appearance),
     Battery(null, R.string.drawing_part_battery),
     Readouts(null, R.string.perf_pair_title),
+    Vpn(null, R.string.vpn_title),
     Wifi(TrioZones.Part.WIFI, R.string.show_wifi_title),
     /**
      * The signal card, and the one place a per-card row is chosen.
@@ -740,8 +741,9 @@ internal fun PartSettingsSheet(
                 Column(modifier = Modifier.weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()).padding(horizontal = 4.dp)) {
                     if (compact) preview?.invoke()
+                    if (part == TrioSettingsPart.Vpn) VpnSettings(settings, update)
                     controls.forEach { control -> ContentControlRow(control, settings, update, ringSettings) }
-                if (rows.isEmpty() && colors.isEmpty() && controls.isEmpty()) {
+                if (part != TrioSettingsPart.Vpn && rows.isEmpty() && colors.isEmpty() && controls.isEmpty()) {
                     Text(
                         text = stringResource(R.string.drawing_settings_none),
                         style = MiuixTheme.textStyles.footnote1,

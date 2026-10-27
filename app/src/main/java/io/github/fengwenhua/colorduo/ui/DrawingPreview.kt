@@ -248,6 +248,10 @@ internal fun DrawingSettingsPreview(
 ) {
     val a = TrioAppearance.of(settings)
     val shape = RoundedCornerShape(12.dp)
+    if (part == TrioSettingsPart.Vpn) {
+        Swatch(settings.vpnColor)
+        return
+    }
     if (part == TrioSettingsPart.Readouts) {
         DrawingReadoutSample(settings, dark, Modifier.fillMaxWidth().height(92.dp))
         Text(stringResource(R.string.drawing_readout_sample_summary),

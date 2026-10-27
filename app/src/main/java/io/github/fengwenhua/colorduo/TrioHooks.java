@@ -3189,7 +3189,7 @@ private static boolean unmarkCollapsed(View child) {
         }
         final TrioState state = stateFor(host);
         if (state != null) {
-            final int colour = state.foreground();
+            final int colour = TrioConfig.appearance().networkColor(state.foreground());
             if (label.getCurrentTextColor() != colour) {
                 label.setTextColor(colour);
             }
@@ -3251,8 +3251,9 @@ private static boolean unmarkCollapsed(View child) {
      */
     private static void applyOutRingInk(ViewGroup container, int ink) {
         final OutTypeLabel label = findOutTypeLabel(container);
-        if (label != null && label.getCurrentTextColor() != ink) {
-            label.setTextColor(ink);
+        final int networkInk = TrioConfig.appearance().networkColor(ink);
+        if (label != null && label.getCurrentTextColor() != networkInk) {
+            label.setTextColor(networkInk);
         }
         // The performance readout is a TextView like the label and needs the
         // same treatment: setting the colour repaints it on the next frame, so
@@ -3410,7 +3411,7 @@ private static boolean unmarkCollapsed(View child) {
             label.fontGeneration = generation;
             label.appliedWeight = a.typeWeight;
         }
-        final int colour = (state != null) ? state.foreground() : 0xFFFFFFFF;
+        final int colour = a.networkColor((state != null) ? state.foreground() : 0xFFFFFFFF);
         if (label.getCurrentTextColor() != colour) {
             label.setTextColor(colour);
         }

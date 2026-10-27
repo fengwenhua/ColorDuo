@@ -61,6 +61,8 @@ public final class TrioSettings {
      */
     public boolean dataSimOnly;
 
+    /** Network highlight while a VPN is active. Global across glyph styles. */
+    public int vpnColor;
     public boolean roleColors;
     public int criticalOnDark;
     public int criticalOnLight;
@@ -279,6 +281,7 @@ public final class TrioSettings {
         s.glyphScale = Prefs.DEF_GLYPH_SCALE;
         s.capsuleLayout = CapsuleLayoutSettings.DEFAULT;
 
+        s.vpnColor = Prefs.DEF_VPN_COLOR;
         s.roleColors = Prefs.DEF_ROLE_COLORS;
         s.criticalOnDark = Prefs.DEF_COLOR_CRITICAL_ON_DARK;
         s.criticalOnLight = Prefs.DEF_COLOR_CRITICAL_ON_LIGHT;
@@ -381,6 +384,7 @@ public final class TrioSettings {
                 p.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
         s.capsuleLayout = CapsuleLayoutSettings.read(p::getInt);
+        s.vpnColor = p.getInt(Prefs.KEY_VPN_COLOR, Prefs.DEF_VPN_COLOR);
         s.roleColors = p.getBoolean(Prefs.KEY_ROLE_COLORS, Prefs.DEF_ROLE_COLORS);
         s.criticalOnDark = p.getInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, Prefs.DEF_COLOR_CRITICAL_ON_DARK);
         s.criticalOnLight = p.getInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, Prefs.DEF_COLOR_CRITICAL_ON_LIGHT);
@@ -604,6 +608,7 @@ public final class TrioSettings {
         s.glyphScale = glyphScale;
         s.capsuleLayout = capsuleLayout;
 
+        s.vpnColor = vpnColor;
         s.roleColors = roleColors;
         s.criticalOnDark = criticalOnDark;
         s.criticalOnLight = criticalOnLight;
@@ -696,6 +701,7 @@ public final class TrioSettings {
             case Prefs.KEY_CAPSULE_RIGHT_DX: capsuleLayout = capsuleLayout.withRightDx(src.capsuleLayout.rightDx()); return true;
             case Prefs.KEY_CAPSULE_RIGHT_DY: capsuleLayout = capsuleLayout.withRightDy(src.capsuleLayout.rightDy()); return true;
             case Prefs.KEY_CAPSULE_LENGTH: capsuleLayout = capsuleLayout.withLength(src.capsuleLayout.length()); return true;
+            case Prefs.KEY_VPN_COLOR: vpnColor = src.vpnColor; return true;
             case Prefs.KEY_ROLE_COLORS: roleColors = src.roleColors; return true;
             case Prefs.KEY_COLOR_CRITICAL_ON_DARK: criticalOnDark = src.criticalOnDark; return true;
             case Prefs.KEY_COLOR_CRITICAL_ON_LIGHT: criticalOnLight = src.criticalOnLight; return true;
@@ -769,6 +775,7 @@ public final class TrioSettings {
                 bundle.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
         s.capsuleLayout = CapsuleLayoutSettings.read(bundle::getInt);
+        s.vpnColor = bundle.getInt(Prefs.KEY_VPN_COLOR, Prefs.DEF_VPN_COLOR);
         s.roleColors = bundle.getBoolean(Prefs.KEY_ROLE_COLORS, Prefs.DEF_ROLE_COLORS);
         s.criticalOnDark = bundle.getInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, Prefs.DEF_COLOR_CRITICAL_ON_DARK);
         s.criticalOnLight = bundle.getInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, Prefs.DEF_COLOR_CRITICAL_ON_LIGHT);
@@ -910,6 +917,7 @@ public final class TrioSettings {
                 && perfWeight == s.perfWeight
                 && glyphScale == s.glyphScale
                 && capsuleLayout.equals(s.capsuleLayout)
+                && vpnColor == s.vpnColor
                 && roleColors == s.roleColors
                 && criticalOnDark == s.criticalOnDark
                 && criticalOnLight == s.criticalOnLight
@@ -952,6 +960,7 @@ public final class TrioSettings {
     public int hashCode() {
         // Immutable groups provide structural hashes; equal snapshots share this fold.
         int h = (enabled ? 1 : 0) ^ content.hashCode() ^ trioStyle;
+        h = h * 31 + vpnColor;
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;

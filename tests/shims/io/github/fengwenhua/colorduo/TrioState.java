@@ -16,6 +16,7 @@ package io.github.fengwenhua.colorduo;
  * reads.
  */
 final class TrioState {
+    boolean vpnActive;
 
     static final int SIM_SLOTS = 2;
 

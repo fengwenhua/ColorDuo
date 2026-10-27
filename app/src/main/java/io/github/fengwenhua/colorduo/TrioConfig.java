@@ -163,7 +163,7 @@ public final class TrioConfig {
      * was noisy enough that the rules started being re-derived by hand again.
      */
     static TrioAppearance appearance() {
-        return TrioAppearance.of(sSnapshot);
+        return TrioAppearance.of(sSnapshot, TrioState.sVpnActive);
     }
 
     static boolean debugLog() {

@@ -212,6 +212,13 @@ final class TrioState {
     // Battery state of this host.
     int level = -1;
     boolean charging;
+    boolean vpnActive;
+    static volatile boolean sVpnActive;
+    private static final VpnStateSource VPN = new VpnStateSource(TrioState::onVpnChanged);
+    private static void onVpnChanged() {
+        sVpnActive = VPN.active();
+        TrioHooks.invalidateHosts();
+    }
     boolean quickCharging;
     boolean low;
     boolean powerSave;
@@ -302,6 +309,7 @@ final class TrioState {
         wifiLevel = sWifiLevel;
         mobileLevel = sMobileLevel;
         wifiPresent = sWifiPresent;
+        vpnActive = sVpnActive;
         islandHideBattery = sIslandHideBattery;
         mobileType = sMobileType;
         // The three battery values are read straight from their statics by the
@@ -338,6 +346,7 @@ final class TrioState {
             final Context app = context.getApplicationContext();
             sContext = (app != null) ? app : context;
             WifiPresence.start(sContext);
+            VPN.setActive(sContext, true);
             // Same context, same reason: the battery broadcast is not routed
             // through the hooked views, so it needs a receiver of its own.
             BatteryPresence.start(sContext);

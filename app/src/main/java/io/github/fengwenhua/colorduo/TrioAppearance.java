@@ -265,7 +265,12 @@ public final class TrioAppearance {
     public final int[] outOrder;
     public final int typeWeight;
 
-    private TrioAppearance(TrioSettings c) {
+    public final boolean vpnActive;
+    public final int vpnColor;
+
+    private TrioAppearance(TrioSettings c, boolean vpnActive) {
+        this.vpnActive = vpnActive;
+        vpnColor = c.vpnColor;
         style = c.trioStyle;
         rect = c.trioStyle == Prefs.STYLE_RECT;
         capsule = c.trioStyle == Prefs.STYLE_CAPSULE;
@@ -339,7 +344,16 @@ public final class TrioAppearance {
 
     /** The appearance of {@code cfg}, or of the shipped defaults when it is null. */
     public static TrioAppearance of(TrioSettings cfg) {
-        return new TrioAppearance(cfg == null ? TrioSettings.defaults() : cfg);
+        return of(cfg, false);
+    }
+
+    /** Resolve transient VPN state without persisting it into user settings. */
+    public static TrioAppearance of(TrioSettings cfg, boolean vpnActive) {
+        return new TrioAppearance(cfg == null ? TrioSettings.defaults() : cfg, vpnActive);
+    }
+
+    public int networkColor(int foreground) {
+        return vpnActive ? vpnColor : foreground;
     }
 
     /**

@@ -573,7 +573,7 @@ internal fun partsForPage(settings: TrioSettings): List<TrioSettingsPart> {
     val slotted = style == Prefs.STYLE_RING || style == Prefs.STYLE_CAPSULE
     return listOf(TrioSettingsPart.Appearance, TrioSettingsPart.Battery, TrioSettingsPart.Wifi,
         TrioSettingsPart.Mobile, TrioSettingsPart.Value, TrioSettingsPart.Bolt,
-        TrioSettingsPart.Type, TrioSettingsPart.Readouts) +
+        TrioSettingsPart.Type, TrioSettingsPart.Readouts, TrioSettingsPart.Vpn) +
         if (slotted) listOf(TrioSettingsPart.Clock) else emptyList()
 }
 

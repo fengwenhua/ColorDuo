@@ -290,6 +290,8 @@ class SettingsRepository @JvmOverloads constructor(
 
     // ----------------------------------------------------------------- colours
 
+    fun setVpnColor(value: Int) = writeInt(Prefs.KEY_VPN_COLOR, value)
+
     fun setRoleColors(value: Boolean) = writeBoolean(Prefs.KEY_ROLE_COLORS, value)
     fun setColorCriticalOnDark(value: Int) = writeInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, value)
     fun setColorCriticalOnLight(value: Int) = writeInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, value)

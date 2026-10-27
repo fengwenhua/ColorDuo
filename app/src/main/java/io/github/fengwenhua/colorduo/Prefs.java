@@ -819,6 +819,9 @@ public final class Prefs {
      */
     public static final String KEY_PERF_WEIGHT = "perf_weight";
 
+    public static final String KEY_VPN_COLOR = "vpn_network_color";
+    public static final int DEF_VPN_COLOR = 0xff2196f3;
+
     public static final String KEY_ROLE_COLORS = "role_colors";
     public static final String KEY_COLOR_CRITICAL_ON_DARK = "color_critical_on_dark";
     public static final String KEY_COLOR_CRITICAL_ON_LIGHT = "color_critical_on_light";

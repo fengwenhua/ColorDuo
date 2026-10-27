@@ -33,6 +33,7 @@ final class ColorOsBatteryAdapter {
     private final ColorOsClockBridge clock;
     private final ColorOsFontSource font;
     private final ColorOsReadoutSource readouts;
+    private final VpnStateSource vpn = new VpnStateSource(this::refreshAll);
     private final boolean outsideStage = "outside".equals(BuildConfig.COLOROS_STAGE);
     private final boolean capsuleStage = "capsule".equals(BuildConfig.COLOROS_STAGE) || "font".equals(BuildConfig.COLOROS_STAGE) || outsideStage;
     private final boolean userLayout = "ring".equals(BuildConfig.COLOROS_STAGE)
@@ -255,6 +256,7 @@ final class ColorOsBatteryAdapter {
                         try {
                             java.io.PrintWriter out = (java.io.PrintWriter) chain.getArg(0);
                             out.println("  ColorDuo ColorOS adapter: stage=" + BuildConfig.COLOROS_STAGE);
+                            out.println("    vpn listening=" + vpn.listening() + " active=" + vpn.active() + " error=" + vpn.error());
                             if (clock != null) out.println("    clockReady=" + clock.ready() + " time=" + clock.time());
                             if (font != null) out.println("    fontStatus=" + font.status());
                             if (readouts != null) {
@@ -449,6 +451,7 @@ final class ColorOsBatteryAdapter {
             }
         }
         power.setActive(context, context != null);
+        vpn.setActive(context, context != null);
         if (font != null) font.setActive(config.fontFile(), context != null);
         if (network != null) {
             TrioSettings settings = config.get();
@@ -618,7 +621,7 @@ final class ColorOsBatteryAdapter {
         }
         if (font != null) font.prepareRenderer();
         ColorOsBatteryDrawable.Frame frame = new ColorOsBatteryDrawable.Frame(level, tint, host.paintSettings, plan, powerState,
-                clock == null ? "" : clock.time(), width, height, outside, rawPlan);
+                clock == null ? "" : clock.time(), width, height, outside, rawPlan, vpn.active());
         if (attachment.action() == HostDecision.Action.PREFLIGHT) {
             if (font == null) TrioRenderer.setFont("");
             ColorOsBatteryDrawable.preflight(width, height, frame);
@@ -708,7 +711,7 @@ final class ColorOsBatteryAdapter {
                 meter.getResources().getDisplayMetrics().density, meter.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL,
                 readouts == null ? ColorOsReadoutSource.State.UNKNOWN : readouts.get(),
                 ColorOsRingPreset.resolve(ColorOsRingPreset.userLayout(settings, outsidePercent, plan),
-                        level, power.get().charging, plan).wifi);
+                        level, power.get().charging, plan).wifi, vpn.active());
     }
 
     private static String visibilityPath(View view) {

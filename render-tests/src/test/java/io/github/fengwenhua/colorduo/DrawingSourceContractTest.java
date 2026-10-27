@@ -21,7 +21,7 @@ public final class DrawingSourceContractTest {
     @Test public void rendererUsesTheSharedTransformForItsActualDrawingBody() throws Exception {
         String renderer = source("TrioRenderer.java");
         matches(renderer, "static boolean designTransform\\(int w, int h, TrioAppearance appearance, float\\[\\] out\\)");
-        var bodies = Pattern.compile("(?s)static void drawInto\\(Canvas canvas, int w, int h, int level, boolean charging,[^)]*boolean wifiConnected\\) \\{.*?\\n    \\}").matcher(renderer);
+        var bodies = Pattern.compile("(?s)static void drawInto\\(Canvas canvas, int w, int h, int level, boolean charging,[^)]*boolean wifiConnected, boolean vpnActive\\) \\{.*?\\n    \\}").matcher(renderer);
         assertTrue("Live drawInto body must exist", bodies.find());
         String body = bodies.group();
         assertFalse("Live drawInto body must be unique", bodies.find());
