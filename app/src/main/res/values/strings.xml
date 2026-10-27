@@ -339,4 +339,9 @@
     <string name="vpn_title">VPN</string>
     <string name="vpn_color_summary">开启系统 VPN 时，Wi-Fi 和网络类型使用此颜色；关闭后恢复原有配色。圆环与胶囊共用此设置。</string>
     <string name="vpn_color_reset">恢复默认蓝色</string>
+    <string name="status_bar_height_title">状态栏高度</string>
+    <string name="status_bar_height_summary" formatted="false">调整 ColorOS 桌面和普通应用的顶部状态栏，圆环／胶囊随之放大。100% 跟随系统，应用顶部占用空间也会改变。</string>
+    <string name="status_bar_height_unsupported">此项仅适用于已适配的 ColorOS 系统。</string>
+    <string name="status_bar_height_reset">恢复系统高度</string>
+    <string name="status_bar_height_default" formatted="false">100% · 跟随当前内屏／外屏的系统默认高度</string>
 </resources>

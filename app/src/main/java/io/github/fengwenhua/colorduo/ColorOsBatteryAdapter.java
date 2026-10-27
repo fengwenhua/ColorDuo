@@ -28,6 +28,7 @@ final class ColorOsBatteryAdapter {
     private final Map<View, Host> hosts = new WeakHashMap<>();
     private final ObservationLedger ledger = new ObservationLedger(64, 500);
     private final ColorOsConfig config;
+    private final ColorOsStatusBarHeight statusBarHeight;
     private final ColorOsNetworkAdapter network;
     private final ColorOsPowerSource power;
     private final ColorOsClockBridge clock;
@@ -109,6 +110,7 @@ final class ColorOsBatteryAdapter {
         this.loader = loader;
         vpnIcon = new ColorOsVpnIcon(loader);
         config = new ColorOsConfig(module, this::refreshAll);
+        statusBarHeight = new ColorOsStatusBarHeight(module, loader, () -> config.ready() ? config.get() : null);
         network = ("network".equals(BuildConfig.COLOROS_STAGE) || userLayout)
                 ? new ColorOsNetworkAdapter(module, loader, this::refreshAll) : null;
         power = userLayout ? new ColorOsPowerSource(module, loader, this::refreshAll, () -> config.get().debugLog) : null;
@@ -124,6 +126,7 @@ final class ColorOsBatteryAdapter {
     private void install() {
         try {
             if (network != null) network.install();
+            statusBarHeight.install();
             vpnChip.install(module, loader);
             if (clock != null) clock.install();
             meterType = type(UI + ColorOsSymbols.CLASS_VIEW_STAT_BATTERY_METER_VIEW);
@@ -263,6 +266,7 @@ final class ColorOsBatteryAdapter {
                             out.println("    vpn listening=" + vpn.listening() + " active=" + vpn.active() + " error=" + vpn.error());
                             out.println("    vpnIcon " + vpnIcon.status());
                             out.println("    vpnChip " + vpnChip.status());
+                            out.println("    statusBarHeight " + statusBarHeight.status());
                             if (clock != null) out.println("    clockReady=" + clock.ready() + " time=" + clock.time());
                             if (font != null) out.println("    fontStatus=" + font.status());
                             if (readouts != null) {
@@ -437,6 +441,7 @@ final class ColorOsBatteryAdapter {
     }
 
     private void refreshAll() {
+        statusBarHeight.refresh();
         syncPower();
         for (Host host : new ArrayList<>(hosts.values())) {
             try { reconcile(host); }

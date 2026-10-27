@@ -89,6 +89,10 @@ public final class Prefs {
      * <p>A brand-new key with a brand-new name.
      */
     public static final String KEY_GLYPH_SCALE = "glyph_scale_pct";
+    public static final String KEY_STATUS_BAR_HEIGHT = "status_bar_height_percent";
+    public static final int DEF_STATUS_BAR_HEIGHT = 100;
+    public static final int MIN_STATUS_BAR_HEIGHT = 100;
+    public static final int MAX_STATUS_BAR_HEIGHT = 150;
     public static final String KEY_SHOW_WIFI = "show_wifi";
     public static final String KEY_SHOW_MOBILE = "show_mobile";
     public static final String KEY_SHOW_VALUE = "show_value";

@@ -43,6 +43,7 @@ final class SettingsSchema {
     }
     static final List<Entry> ENTRIES = List.of(
         entry(Prefs.KEY_VPN_COLOR, "vpnColor", Kind.INT, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.vpnColor),
+        entry(Prefs.KEY_STATUS_BAR_HEIGHT, "statusBarHeightPercent", Kind.INT, Prefs.MIN_STATUS_BAR_HEIGHT, style -> Prefs.MAX_STATUS_BAR_HEIGHT, s -> s.statusBarHeightPercent),
         entry(Prefs.KEY_NAV_STYLE, "navStyle", Kind.INT, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> Prefs.normalizeNavStyle(s.navStyle)),
         entry(Prefs.KEY_NAV_LABELS, "navLabels", Kind.INT, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> Prefs.normalizeNavLabels(s.navLabels)),
         entry(Prefs.KEY_TRIO_STYLE, "trioStyle", Kind.INT, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> Prefs.normalizeTrioStyle(s.trioStyle)),

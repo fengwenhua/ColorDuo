@@ -63,6 +63,8 @@ public final class TrioSettings {
 
     /** Network highlight while a VPN is active. Global across glyph styles. */
     public int vpnColor;
+    /** Global ColorOS status-bar and live glyph host height, independent of charging/style. */
+    public int statusBarHeightPercent;
     public boolean roleColors;
     public int criticalOnDark;
     public int criticalOnLight;
@@ -282,6 +284,7 @@ public final class TrioSettings {
         s.capsuleLayout = CapsuleLayoutSettings.DEFAULT;
 
         s.vpnColor = Prefs.DEF_VPN_COLOR;
+        s.statusBarHeightPercent = Prefs.DEF_STATUS_BAR_HEIGHT;
         s.roleColors = Prefs.DEF_ROLE_COLORS;
         s.criticalOnDark = Prefs.DEF_COLOR_CRITICAL_ON_DARK;
         s.criticalOnLight = Prefs.DEF_COLOR_CRITICAL_ON_LIGHT;
@@ -385,6 +388,7 @@ public final class TrioSettings {
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
         s.capsuleLayout = CapsuleLayoutSettings.read(p::getInt);
         s.vpnColor = p.getInt(Prefs.KEY_VPN_COLOR, Prefs.DEF_VPN_COLOR);
+        s.statusBarHeightPercent = Prefs.clamp(p.getInt(Prefs.KEY_STATUS_BAR_HEIGHT, Prefs.DEF_STATUS_BAR_HEIGHT), Prefs.MIN_STATUS_BAR_HEIGHT, Prefs.MAX_STATUS_BAR_HEIGHT);
         s.roleColors = p.getBoolean(Prefs.KEY_ROLE_COLORS, Prefs.DEF_ROLE_COLORS);
         s.criticalOnDark = p.getInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, Prefs.DEF_COLOR_CRITICAL_ON_DARK);
         s.criticalOnLight = p.getInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, Prefs.DEF_COLOR_CRITICAL_ON_LIGHT);
@@ -609,6 +613,7 @@ public final class TrioSettings {
         s.capsuleLayout = capsuleLayout;
 
         s.vpnColor = vpnColor;
+        s.statusBarHeightPercent = statusBarHeightPercent;
         s.roleColors = roleColors;
         s.criticalOnDark = criticalOnDark;
         s.criticalOnLight = criticalOnLight;
@@ -702,6 +707,7 @@ public final class TrioSettings {
             case Prefs.KEY_CAPSULE_RIGHT_DY: capsuleLayout = capsuleLayout.withRightDy(src.capsuleLayout.rightDy()); return true;
             case Prefs.KEY_CAPSULE_LENGTH: capsuleLayout = capsuleLayout.withLength(src.capsuleLayout.length()); return true;
             case Prefs.KEY_VPN_COLOR: vpnColor = src.vpnColor; return true;
+            case Prefs.KEY_STATUS_BAR_HEIGHT: statusBarHeightPercent = src.statusBarHeightPercent; return true;
             case Prefs.KEY_ROLE_COLORS: roleColors = src.roleColors; return true;
             case Prefs.KEY_COLOR_CRITICAL_ON_DARK: criticalOnDark = src.criticalOnDark; return true;
             case Prefs.KEY_COLOR_CRITICAL_ON_LIGHT: criticalOnLight = src.criticalOnLight; return true;
@@ -776,6 +782,7 @@ public final class TrioSettings {
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
         s.capsuleLayout = CapsuleLayoutSettings.read(bundle::getInt);
         s.vpnColor = bundle.getInt(Prefs.KEY_VPN_COLOR, Prefs.DEF_VPN_COLOR);
+        s.statusBarHeightPercent = Prefs.clamp(bundle.getInt(Prefs.KEY_STATUS_BAR_HEIGHT, Prefs.DEF_STATUS_BAR_HEIGHT), Prefs.MIN_STATUS_BAR_HEIGHT, Prefs.MAX_STATUS_BAR_HEIGHT);
         s.roleColors = bundle.getBoolean(Prefs.KEY_ROLE_COLORS, Prefs.DEF_ROLE_COLORS);
         s.criticalOnDark = bundle.getInt(Prefs.KEY_COLOR_CRITICAL_ON_DARK, Prefs.DEF_COLOR_CRITICAL_ON_DARK);
         s.criticalOnLight = bundle.getInt(Prefs.KEY_COLOR_CRITICAL_ON_LIGHT, Prefs.DEF_COLOR_CRITICAL_ON_LIGHT);
@@ -918,6 +925,7 @@ public final class TrioSettings {
                 && glyphScale == s.glyphScale
                 && capsuleLayout.equals(s.capsuleLayout)
                 && vpnColor == s.vpnColor
+                && statusBarHeightPercent == s.statusBarHeightPercent
                 && roleColors == s.roleColors
                 && criticalOnDark == s.criticalOnDark
                 && criticalOnLight == s.criticalOnLight
@@ -961,6 +969,7 @@ public final class TrioSettings {
         // Immutable groups provide structural hashes; equal snapshots share this fold.
         int h = (enabled ? 1 : 0) ^ content.hashCode() ^ trioStyle;
         h = h * 31 + vpnColor;
+        h = h * 31 + statusBarHeightPercent;
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;

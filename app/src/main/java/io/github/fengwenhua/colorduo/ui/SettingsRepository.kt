@@ -55,6 +55,7 @@ class SettingsRepository @JvmOverloads constructor(
     // ------------------------------------------------------------- appearance
 
     fun setEnabled(value: Boolean) = writeBoolean(Prefs.KEY_ENABLED, value)
+    fun setStatusBarHeight(value: Int) = writeInt(Prefs.KEY_STATUS_BAR_HEIGHT, value.coerceIn(Prefs.MIN_STATUS_BAR_HEIGHT, Prefs.MAX_STATUS_BAR_HEIGHT))
     fun setShowWifi(value: Boolean) = writeComponent(Prefs.KEY_SHOW_WIFI, value)
     fun setShowMobile(value: Boolean) = writeComponent(Prefs.KEY_SHOW_MOBILE, value)
     fun setShowValue(value: Boolean) = writeComponent(Prefs.KEY_SHOW_VALUE, value)

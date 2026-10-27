@@ -32,7 +32,7 @@ Android `SettingsBufferProbe` 在独立文件中验证 240 次输入合并为一
 
 ## Schema 注册表
 
-`SettingsSchema` 声明 62 个持久化模型字段：key、线类型、默认值读取器、范围（含样式相关上限）、
+`SettingsSchema` 声明 63 个持久化模型字段：key、线类型、默认值读取器、范围（含样式相关上限）、
 样式/充电维度、分组和格式版本。`TrioSettings.toBundle()` 由注册表生成，ConfigPacket JSON 复用该输出；
 接收端先用注册表拒绝已知 key 的错误类型并约束数值，再执行历史迁移。
 `vpn_network_color` 是圆环／胶囊共用的 ARGB 整数，默认 `0xff2196f3`；旧配置缺少此项时使用默认蓝色。

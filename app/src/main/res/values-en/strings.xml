@@ -340,4 +340,9 @@
     <string name="vpn_title">VPN</string>
     <string name="vpn_color_summary">While a system VPN is active, Wi-Fi and network types use this color. Disconnecting restores their normal colors. Shared by ring and capsule.</string>
     <string name="vpn_color_reset">Restore default blue</string>
+    <string name="status_bar_height_title">Status bar height</string>
+    <string name="status_bar_height_summary" formatted="false">Resize the ColorOS status bar on the home screen and in apps, enlarging the ring/capsule. 100% follows the system. This also changes the space reserved above app content.</string>
+    <string name="status_bar_height_unsupported">Available only on supported ColorOS systems.</string>
+    <string name="status_bar_height_reset">Restore system height</string>
+    <string name="status_bar_height_default" formatted="false">100% · Follow the current display’s native height</string>
 </resources>

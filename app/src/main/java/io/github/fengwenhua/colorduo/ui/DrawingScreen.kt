@@ -202,6 +202,10 @@ private fun DrawingEditorCard(
             ContentControlRow(ContentControl.Enabled, settings, update)
         }
 
+        DrawingSection(R.string.status_bar_height_title, PaddingValues(0.dp)) {
+            StatusBarHeightSettings(settings, update)
+        }
+
         DrawingSection(R.string.drawing_quick_edit_title) {
             DrawingStyleSelector(
                 settings = settings,
