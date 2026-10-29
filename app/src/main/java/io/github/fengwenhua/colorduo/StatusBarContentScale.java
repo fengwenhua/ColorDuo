@@ -21,6 +21,13 @@ final class StatusBarContentScale {
 
     StatusBarContentScale(View view,boolean start) { this.view=new WeakReference<>(view);this.start=start; }
 
+    boolean contains(View source) {
+        View target=view.get();if(!owned||target==null)return false;
+        for(View current=source;current!=null;current=current.getParent() instanceof View?(View)current.getParent():null)
+            if(current==target)return true;
+        return false;
+    }
+
     boolean apply(int percent) {
         View child=view.get();
         if(child==null || !(child.getParent() instanceof ViewGroup))return false;

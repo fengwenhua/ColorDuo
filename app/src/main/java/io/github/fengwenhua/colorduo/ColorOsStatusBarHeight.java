@@ -36,6 +36,7 @@ final class ColorOsStatusBarHeight {
     private boolean queued;
     private String error="None";
     private int nativeHeight,paddingTop,paddingBottom;
+    private final ColorOsShadeScale shade;
 
     private static final class Row {
         WeakReference<Object> extension=new WeakReference<>(null);
@@ -63,6 +64,10 @@ final class ColorOsStatusBarHeight {
 
     ColorOsStatusBarHeight(XposedModule module,ClassLoader loader,Supplier<TrioSettings> settings) {
         this.module=module;this.loader=loader;this.settings=settings;
+        shade=new ColorOsShadeScale(module,loader,()->ready?percent:Prefs.DEF_STATUS_BAR_HEIGHT,source->{
+            for(Row row:views.values())if(row.left.contains(source)||row.right.contains(source))return true;
+            return false;
+        });
     }
 
     void install() {
@@ -129,7 +134,7 @@ final class ColorOsStatusBarHeight {
                         }catch(ReflectiveOperationException | RuntimeException failure) { fail(failure); }
                         Object result=chain.proceed();schedule();return result;
                     });
-            ready=true;
+            ready=true;shade.install();
         }catch(Throwable failure) { fail(failure); }
     }
 
@@ -155,7 +160,7 @@ final class ColorOsStatusBarHeight {
                 updateWindow.invoke(view);view.requestApplyInsets();
             }catch(ReflectiveOperationException | RuntimeException failure) { fail(failure);break; }
         }
-        schedule();
+        shade.refresh();schedule();
     }
 
     private void schedule() {
@@ -165,6 +170,7 @@ final class ColorOsStatusBarHeight {
             for(View view:new ArrayList<>(views.keySet()))try {
                 if(view.isAttachedToWindow())views.get(view).apply(ready?percent:Prefs.DEF_STATUS_BAR_HEIGHT);
             }catch(RuntimeException failure) { fail(failure); }
+            shade.refresh();
         });
     }
 
@@ -176,6 +182,7 @@ final class ColorOsStatusBarHeight {
                 Object extension=row.extension.get();if(extension!=null)updatePadding.invoke(extension);
                 updateWindow.invoke(view);
             }catch(ReflectiveOperationException | RuntimeException ignored){}
+            shade.refresh();
         });
         try { module.log(5,"ColorDuoStatusBarHeight","Native fallback: "+error); }catch(Throwable ignored){}
     }
@@ -188,6 +195,6 @@ final class ColorOsStatusBarHeight {
         String sides="";
         for(Row row:views.values()) { sides=" left={"+row.left.status()+"} right={"+row.right.status()+"}";break; }
         return "ready="+ready+" percent="+percent+" views="+views.size()+" nativeHeight="+nativeHeight
-                +" padding="+paddingTop+","+paddingBottom+" error="+error+sides;
+                +" padding="+paddingTop+","+paddingBottom+" error="+error+sides+" shade={"+shade.status()+"}";
     }
 }
