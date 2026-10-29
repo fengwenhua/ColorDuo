@@ -38,6 +38,7 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
     inputs.files(templates.file("WifiPresenceTest.java.template"), templates.file("BatteryPresenceTest.java.template"))
     inputs.file(production.resolve("ColorOsNetworkAdapter.java"))
     inputs.file(templates.file("NetworkTypeRecoveryTest.java.template"))
+    inputs.file(templates.file("WifiHandoffTest.java.template"))
     outputs.dir(presenceSources)
     doLast {
         fun method(file: java.io.File, signature: String): String {
@@ -59,6 +60,9 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
             "@RESOLVE@" to method(production.resolve("WifiPresence.java"), "static boolean resolve(boolean iconVisible, int cachedLevel)"),
             "@PUBLISH@" to method(production.resolve("WifiPresence.java"), "private static void publish(boolean next)")))
         val network = production.resolve("ColorOsNetworkAdapter.java")
+        emit("WifiHandoffTest", mapOf(
+            "@APPLIED@" to method(network, "private void onWifiApplied(View group) throws ReflectiveOperationException"),
+            "@SYNC@" to method(network, "private void syncWifi(Plan plan) throws ReflectiveOperationException")))
         val typeRows = Regex("private static final class TypeRow \\{.*?\\n    \\}", RegexOption.DOT_MATCHES_ALL)
             .findAll(network.readText()).toList()
         require(typeRows.size == 1) { "Native type row must be unique" }

@@ -37,7 +37,7 @@ final class ColorOsNetworkAdapter {
     private final Map<View, Lease> leases = new WeakHashMap<>();
     private Class<?> activeType, visibleType, cellularType, containerType;
     private Method wifiLevel, cellLevel, cellLevels, cellChanging, cellInetCondition, cellSlot;
-    private Method iconVisible, iconBlocked, visibleState, slot, addIgnored, removeIgnored;
+    private Method iconVisible, iconBlocked, visibleState, setVisibleState, slot, addIgnored, removeIgnored;
     private Field validated, inService, softSim, ignoredSlots;
     private boolean capable;
     private boolean pending;
@@ -165,6 +165,7 @@ final class ColorOsNetworkAdapter {
             iconVisible = modern.getMethod(ColorOsSymbols.NAME_IS_ICON_VISIBLE);
             iconBlocked = modern.getMethod(ColorOsSymbols.NAME_IS_ICON_BLOCKED);
             visibleState = modern.getMethod(ColorOsSymbols.NAME_GET_VISIBLE_STATE);
+            setVisibleState = modern.getMethod(ColorOsSymbols.NAME_SET_VISIBLE_STATE, int.class, boolean.class);
             slot = modern.getMethod(ColorOsSymbols.NAME_GET_SLOT);
             addIgnored = containerType.getMethod(ColorOsSymbols.NAME_ADD_IGNORED_SLOT, String.class);
             removeIgnored = containerType.getMethod(ColorOsSymbols.NAME_REMOVE_IGNORED_SLOT, String.class);
@@ -175,7 +176,13 @@ final class ColorOsNetworkAdapter {
                 int next = ColorOsNetworkPolicy.wifi(activeType.isInstance(model),
                         activeType.isInstance(model) && validated.getBoolean(model), visibleType.isInstance(result),
                         activeType.isInstance(model) ? ((Number) wifiLevel.invoke(model)).intValue() : -1);
-                if (next != latestWifi) { latestWifi = next; requestRefresh(); }
+                if (next != latestWifi) {
+                    latestWifi = next;
+                    log("wifi/model", "level=" + next + " active=" + activeType.isInstance(model)
+                            + " validated=" + (activeType.isInstance(model) && validated.getBoolean(model))
+                            + " visible=" + visibleType.isInstance(result));
+                    requestRefresh();
+                }
             }, Object.class, Object.class, Object.class, Object.class, Object.class);
             valid &= hook(WIFI + ColorOsSymbols.CLASS_BINDER_WIFI_VIEW_BINDER, ColorOsSymbols.NAME_BIND, (chain, result) -> {
                 requireMain();
@@ -183,6 +190,14 @@ final class ColorOsNetworkAdapter {
                 if (!wifiRows.containsKey(root)) { wifiRows.put(root, true); watch(root); }
                 requestRefresh();
             }, ViewGroup.class, type(WIFI + ColorOsSymbols.CLASS_VIEWMODEL_LOCATION_BASED_WIFI_VIEW_MODEL));
+            // The model transform runs before per-view collectors. Their later VISIBLE write
+            // need not change bounds, so layout/model listeners alone can miss it indefinitely.
+            Class<?> wifiCollector = type(WIFI + ColorOsSymbols.CLASS_WIFI_VISIBILITY_COLLECTOR);
+            Field groupView = wifiCollector.getDeclaredField(ColorOsSymbols.NAME_GROUP_VIEW);
+            groupView.setAccessible(true);
+            valid &= hook(wifiCollector.getName(), ColorOsSymbols.NAME_EMIT, (chain, result) ->
+                    onWifiApplied((View) groupView.get(chain.getThisObject())),
+                    Object.class, type("kotlin.coroutines.Continuation"));
             // Only the exact normal Binder observed on this ROM is owned. Other variants stay native.
             valid &= hook(MOBILE + ColorOsSymbols.NAME_OPLUS_STATUS_BAR_MOBILE_VIEW_BINDER, ColorOsSymbols.NAME_BIND_CUST_EX, (chain, result) -> {
                 requireMain();
@@ -377,6 +392,47 @@ final class ColorOsNetworkAdapter {
         });
     }
 
+    /** Observe the applied view state, including a replay with unchanged data and bounds. */
+    private void onWifiApplied(View group) throws ReflectiveOperationException {
+        requireMain();
+        View root = group;
+        while (root != null && !wifiRows.containsKey(root)) {
+            ViewParent parent = root.getParent();
+            root = parent instanceof View ? (View) parent : null;
+        }
+        if (root == null) return;
+        if (capable) {
+            for (Map.Entry<View, Lease> entry : new ArrayList<>(leases.entrySet())) {
+                View meter = entry.getKey();
+                if (meter.isAttachedToWindow() && meter.isShown() && entry.getValue().plan.wifiRoot.get() == root)
+                    syncWifi(entry.getValue().plan);
+            }
+        }
+        requestRefresh();
+    }
+
+    /** Only an already-drawn lease may suppress native content; never acquire in a collector. */
+    private void syncWifi(Plan plan) throws ReflectiveOperationException {
+        View container = plan.container.get(), root = plan.wifiRoot.get();
+        if (container == null || root == null) return;
+        boolean repaired = !ignored(container);
+        if (repaired) addIgnored.invoke(container, "wifi");
+        if (((Number) visibleState.invoke(root)).intValue() != 2) {
+            setVisibleState.invoke(root, 2, false);
+            repaired = true;
+        }
+        // An older visibility emission can arrive after iconVisibleState already became HIDDEN.
+        // setVisibleState(2) then returns early. Match the native helper's HIDDEN presentation.
+        View group = child(root, ColorOsSymbols.ID_WIFI_GROUP);
+        View dot = child(root, ColorOsSymbols.ID_STATUS_BAR_DOT);
+        if (group != null && group.getVisibility() == View.VISIBLE) {
+            group.setVisibility(View.INVISIBLE);
+            repaired = true;
+        }
+        if (dot != null && dot.getVisibility() != View.INVISIBLE) dot.setVisibility(View.INVISIBLE);
+        if (repaired) log("wifi/reapply/" + Integer.toHexString(System.identityHashCode(root)), "drawnLease=true nativeHidden=true");
+    }
+
     private synchronized void requestRefresh() {
         if (pending) return;
         pending = true;
@@ -504,6 +560,8 @@ final class ColorOsNetworkAdapter {
         Lease old = leases.get(meter);
         if (old != null && old.plan.sameOwners(plan)) {
             old.plan = plan;
+            try { syncWifi(plan); }
+            catch (Throwable failure) { release(meter); disable(failure); return; }
             // Native emit may reapply VISIBLE even when the resource/text did not change.
             ImageView signal = plan.signal.get();
             if (signal != null && signal.getVisibility() != View.GONE) signal.setVisibility(View.GONE);
@@ -529,6 +587,7 @@ final class ColorOsNetworkAdapter {
             boolean addWifi = container != null && (old == null || old.plan.container.get() != container);
             next.plan = plan; next.signalVisibility = visibility; leases.put(meter, next);
             if (addWifi) addIgnored.invoke(container, "wifi");
+            syncWifi(plan);
             if (signal != null) signal.setVisibility(View.GONE);
             if (typeImage != null) typeImage.setVisibility(View.GONE);
             syncGap(leases.get(meter), true);
@@ -673,6 +732,20 @@ final class ColorOsNetworkAdapter {
         out.println("    network/data observing=" + dataEnabled.active() + " enabled=" + dataEnabled.get());
         out.println("    network/state wifiLevel=" + latestWifi + " wifiRows=" + wifiRows.size()
                 + " mobileRows=" + mobileRows.size() + " leases=" + leases.size());
+        for (Map.Entry<View, Lease> entry : new ArrayList<>(leases.entrySet())) {
+            Plan plan = entry.getValue().plan;
+            View root = plan.wifiRoot.get(), container = plan.container.get();
+            try {
+                View group = root == null ? null : child(root, ColorOsSymbols.ID_WIFI_GROUP);
+                out.println("    network/wifiLease meter=" + Integer.toHexString(System.identityHashCode(entry.getKey()))
+                        + " wifi=" + plan.wifi + " root=" + Integer.toHexString(System.identityHashCode(root))
+                        + " ignored=" + (container != null && ignored(container))
+                        + " state=" + (root == null ? -1 : visibleState.invoke(root))
+                        + " group=" + (group == null ? -1 : group.getVisibility()));
+            } catch (ReflectiveOperationException failure) {
+                out.println("    network/wifiLease error=" + failure.getClass().getSimpleName());
+            }
+        }
         for (Map.Entry<ImageView, TypeRow> entry : new ArrayList<>(typeRows.entrySet())) {
             TypeRow row = entry.getValue();
             int modelResource = row.state.resource();

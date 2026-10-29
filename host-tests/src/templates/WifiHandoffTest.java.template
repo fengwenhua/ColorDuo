@@ -1,0 +1,106 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+/** Production collector reconciliation against the native visibility helper's actual contract. */
+public final class WifiHandoffTest {
+    public static class View implements ViewParent {
+        static final int VISIBLE=0, INVISIBLE=4, GONE=8;
+        View parent, group, dot;
+        int visibility=VISIBLE, state;
+        boolean attached=true, shown=true;
+        Set<String> ignored=new HashSet<>();
+        int getVisibility(){return visibility;}
+        void setVisibility(int value){visibility=value;}
+        ViewParent getParent(){return parent;}
+        boolean isAttachedToWindow(){return attached;}
+        boolean isShown(){return shown;}
+        public int getVisibleState(){return state;}
+        public void addIgnoredSlot(String slot){ignored.add(slot);}
+        public void setVisibleState(int value,boolean animate){
+            // ModernStatusBarView returns early for an unchanged state, even if a late
+            // collector has made the group visible. This is the important native edge.
+            if(state==value)return;
+            state=value; nativeVisibility(value);
+        }
+        void nativeVisibility(int value){
+            group.visibility=value==0?VISIBLE:INVISIBLE;
+            dot.visibility=value==0?GONE:value==1?VISIBLE:INVISIBLE;
+        }
+    }
+    interface ViewParent {}
+    static class Plan {
+        final WeakReference<View> container,wifiRoot;
+        Plan(View container,View root){this.container=new WeakReference<>(container);wifiRoot=new WeakReference<>(root);}
+    }
+    static class Lease { final Plan plan;Lease(Plan plan){this.plan=plan;} }
+    static class ColorOsSymbols {
+        static final String ID_WIFI_GROUP="wifi_group",ID_STATUS_BAR_DOT="status_bar_dot";
+    }
+    final Map<View,Boolean> wifiRows=new HashMap<>();
+    final Map<View,Lease> leases=new HashMap<>();
+    final Method visibleState=View.class.getMethod("getVisibleState");
+    final Method setVisibleState=View.class.getMethod("setVisibleState",int.class,boolean.class);
+    final Method addIgnored=View.class.getMethod("addIgnoredSlot",String.class);
+    boolean capable=true;
+    int refreshes;
+    final View container=new View(),root=new View(),meter=new View();
+    public WifiHandoffTest()throws Exception {
+        root.parent=container;root.group=new View();root.group.parent=root;root.dot=new View();root.dot.parent=root;
+        wifiRows.put(root,true);
+    }
+    private static void requireMain(){}
+    private boolean ignored(View view){return view.ignored.contains("wifi");}
+    private static View child(View root,String id){return id.equals("wifi_group")?root.group:root.dot;}
+    private void requestRefresh(){refreshes++;}
+    private void log(String key,String message){}
+    @APPLIED@
+    @SYNC@
+
+    @Test public void lateVisibleReplayIsRepairedBeforeAnotherDrawOrClockTick()throws Exception {
+        Plan plan=new Plan(container,root);leases.put(meter,new Lease(plan));syncWifi(plan);
+        assertEquals(2,root.state);
+        root.nativeVisibility(0); // delayed collector; native setVisibleState(2) alone is a no-op
+        onWifiApplied(root.group);
+        assertEquals(View.INVISIBLE,root.group.visibility);
+        assertEquals(View.INVISIBLE,root.dot.visibility);
+        assertEquals(1,refreshes);
+        assertTrue(container.ignored.contains("wifi"));
+    }
+    @Test public void periodicNativeReplaysAndIgnoredSlotRemovalKeepExistingLease()throws Exception {
+        Plan plan=new Plan(container,root);leases.put(meter,new Lease(plan));syncWifi(plan);
+        for(int i=0;i<20;i++){
+            container.ignored.clear();root.state=0;root.nativeVisibility(0);
+            onWifiApplied(root);
+            assertEquals(2,root.state);assertEquals(View.INVISIBLE,root.group.visibility);
+            assertTrue(container.ignored.contains("wifi"));assertSame(plan,leases.get(meter).plan);
+        }
+    }
+    @Test public void newConnectionQueuesReconciliationButDoesNotHideBeforeCustomDraw()throws Exception {
+        root.state=0;root.nativeVisibility(0);onWifiApplied(root);
+        assertEquals(View.VISIBLE,root.group.visibility);assertTrue(container.ignored.isEmpty());assertEquals(1,refreshes);
+        Plan drawn=new Plan(container,root);leases.put(meter,new Lease(drawn));syncWifi(drawn);
+        assertEquals(View.INVISIBLE,root.group.visibility);
+    }
+    @Test public void releasedOrInvisibleHostDoesNotSuppressNativeWifi()throws Exception {
+        Plan plan=new Plan(container,root);leases.put(meter,new Lease(plan));syncWifi(plan);
+        leases.clear();container.ignored.clear();root.setVisibleState(0,false);onWifiApplied(root.group);
+        assertEquals(View.VISIBLE,root.group.visibility);
+        leases.put(meter,new Lease(plan));meter.shown=false;onWifiApplied(root.group);
+        assertEquals(View.VISIBLE,root.group.visibility);assertTrue(container.ignored.isEmpty());
+    }
+    @Test public void unregisteredViewsAndFailedCapabilityStayNative()throws Exception {
+        onWifiApplied(new View());assertEquals(0,refreshes);
+        leases.put(meter,new Lease(new Plan(container,root)));capable=false;onWifiApplied(root);
+        assertEquals(View.VISIBLE,root.group.visibility);assertTrue(container.ignored.isEmpty());assertEquals(1,refreshes);
+    }
+}

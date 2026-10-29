@@ -100,6 +100,10 @@ final class ColorOsSymbols {
     static final String ID_STATUS_BAR_CONTENTS = "status_bar_contents";
     static final String ID_STATUS_BAR_DOT = "status_bar_dot";
     static final String CLASS_BINDER_WIFI_VIEW_BINDER = "ui.binder.WifiViewBinder";
+    static final String CLASS_WIFI_VISIBILITY_COLLECTOR = "ui.binder.WifiViewBinder$bind$1$1$1$1";
+    static final String NAME_GROUP_VIEW = "$groupView";
+    static final String NAME_SET_VISIBLE_STATE = "setVisibleState";
+    static final String ID_WIFI_GROUP = "wifi_group";
     static final String CLASS_MODEL_WIFI_ICON_VISIBLE = "ui.model.WifiIcon$Visible";
     static final String CLASS_VIEWMODEL_LOCATION_BASED_WIFI_VIEW_MODEL = "ui.viewmodel.LocationBasedWifiViewModel";
     static final String CLASS_VIEWMODEL_WIFI_VIEW_MODEL_WIFI_ICON_1 = "ui.viewmodel.WifiViewModel$wifiIcon$1";
