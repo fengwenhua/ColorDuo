@@ -10,6 +10,12 @@ import static io.github.fengwenhua.colorduo.CompatibilitySnapshot.Capability.*;
 final class ColorOsSymbols {
     static final String NAME_ICON_VIEW = "$iconView";
     static final String NAME_R8_CLASS_ID = "$r8$classId";
+    static final String NAME_OPLUS_MOBILE_ICONS_VIEW_MODEL = "oplusMobileIconsViewModel";
+    static final String NAME_VIEW_MODEL_FOR_SUB = "viewModelForSub";
+    static final String NAME_GET_SUBSCRIPTION_ID = "getSubscriptionId";
+    static final String NAME_GET_NETWORK_TYPE_ICON = "getNetworkTypeIcon";
+    static final String NAME_GET_VALUE = "getValue";
+    static final String CLASS_STATE_FLOW = "kotlinx.coroutines.flow.StateFlow";
     static final String NAME_OPLUS_STATUS_BAR_MOBILE_VIEW_BINDER = "OplusStatusBarMobileViewBinder";
     static final String NAME_OPLUS_STATUS_BAR_MOBILE_VIEW_BINDER_BIND_CUST_EX_1_2_1_2_1 = "OplusStatusBarMobileViewBinder$bindCustEx$1$2$1$2$1";
     static final String NAME_ADD_IGNORED_SLOT = "addIgnoredSlot";

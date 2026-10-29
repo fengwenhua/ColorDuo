@@ -1,0 +1,119 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.WeakHashMap;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+/** Real adapter registration/sampling methods against the JADX-observed StateFlow contract. */
+public final class NetworkTypeRecoveryTest {
+    public static class View {
+        static final int VISIBLE = 0, GONE = 8;
+        ImageView image;
+    }
+    public static class ImageView extends View {
+        int visibility = VISIBLE;
+        boolean owned;
+        int getVisibility() { return visibility; }
+        void setVisibility(int value) { visibility = value; }
+        Resources getResources() { return new Resources(); }
+    }
+    static class Resources {
+        String getResourceEntryName(int id) {
+            return switch(id) { case 5 -> "stat_signal_connected_5g";
+                case 4 -> "stat_signal_connected_4g_lte_big"; default -> "unrecognized_warning"; };
+        }
+    }
+    static class ColorOsSymbols { static final String ID_MOBILE_TYPE = "mobile_type"; }
+    public record Resource(int res) { public int getRes() { return res; } }
+    public static class Flow {
+        Object value = new Resource(5);
+        public Object getValue() { return value; }
+    }
+    public static class Model {
+        Flow flow = new Flow();
+        public Flow getNetworkTypeIcon() { return flow; }
+    }
+    public static class Factory {
+        Model model = new Model();
+        public Model viewModelForSub(int id) { return model; }
+    }
+    public static class Binder { public Factory factory = new Factory(); }
+    public static class Location { public int getSubscriptionId() { return 1; } }
+    private final Map<ImageView, TypeRow> typeRows = new WeakHashMap<>();
+    private final Map<ImageView, Integer> pendingTypes = new WeakHashMap<>();
+    private final Class<?> typeResource = Resource.class;
+    private final Method typeResourceId = Resource.class.getMethod("getRes");
+    private final Method flowValue = Flow.class.getMethod("getValue");
+    private final Method subscriptionId = Location.class.getMethod("getSubscriptionId");
+    private final Method modelForSubscription = Factory.class.getMethod("viewModelForSub", int.class);
+    private final Method networkTypeIcon = Model.class.getMethod("getNetworkTypeIcon");
+    private Field mobileModels = Binder.class.getField("factory");
+    public NetworkTypeRecoveryTest() throws Exception {}
+    private static View child(View root, String name) { return root.image; }
+    private boolean ownsType(ImageView image) { return image.owned; }
+    private void requestRefresh() {}
+    private void log(String key, String message) {}
+    @TYPE_ROW@
+    @REGISTER@
+    @BIND_SOURCE@
+    @NOTE@
+    @SYNC@
+
+    @Test public void sameViewRebindAfterImmediateCollectorReplayDoesNotErase5g() {
+        View root = new View(); root.image = new ImageView();
+        Binder binder = new Binder(); Location location = new Location();
+        pendingTypes.put(root.image, 5);
+        registerType(root, binder, location);
+        TypeRow before = typeRows.get(root.image);
+        root.image.owned = true; root.image.setVisibility(View.GONE);
+        // bindCustEx initializes the icon, then repeatWhenAttached can replay synchronously
+        // BEFORE the bind after-hook. The collector has already consumed the pending icon.
+        pendingTypes.put(root.image, 5);
+        root.image.setVisibility(View.VISIBLE);
+        noteType(root.image, pendingTypes.remove(root.image));
+        assertEquals(View.GONE, root.image.getVisibility());
+        registerType(root, binder, location);
+        TypeRow after = typeRows.get(root.image);
+        assertSame("rebind must retain an observed row", before, after);
+        assertEquals("5G", after.label);
+        assertEquals("our GONE lease must not erase native availability", View.VISIBLE, after.nativeVisibility);
+    }
+
+    @Test public void missedCallbacksRecoverFromCurrentModelAndDoNotRetainStale5g() {
+        View root = new View(); root.image = new ImageView(); Binder binder = new Binder();
+        registerType(root, binder, new Location());
+        TypeRow row = typeRows.get(root.image);
+        binder.factory.model.flow.value = null;
+        syncType(root.image, row); // no collector callback: current native state still wins
+        assertEquals("", row.label); assertEquals(View.GONE, row.nativeVisibility);
+        binder.factory.model.flow.value = new Resource(5);
+        syncType(root.image, row);
+        assertEquals("5G", row.label); assertTrue(row.state.live());
+        binder.factory.model.flow.value = new Resource(4);
+        syncType(root.image, row);
+        assertEquals("4G", row.label);
+        binder.factory.model.flow.value = new Resource(999);
+        syncType(root.image, row);
+        assertEquals("unknown warning must remain native", "", row.label);
+        assertEquals(View.VISIBLE, row.nativeVisibility);
+    }
+
+    @Test public void changedSubscriptionUsesItsOwnSourceAndFallbackKeepsCallbackUpdates() {
+        View root = new View(); root.image = new ImageView(); Binder binder = new Binder();
+        registerType(root, binder, new Location());
+        binder.factory.model = new Model(); binder.factory.model.flow.value = new Resource(4);
+        registerType(root, binder, new Location());
+        assertEquals("4G", typeRows.get(root.image).label);
+        View fallback = new View(); fallback.image = new ImageView(); mobileModels = null;
+        pendingTypes.put(fallback.image, 5); registerType(fallback, binder, new Location());
+        registerType(fallback, binder, new Location());
+        assertEquals("5G", typeRows.get(fallback.image).label);
+        noteType(fallback.image, null);
+        assertEquals("native null must clear fallback too", "", typeRows.get(fallback.image).label);
+    }
+}

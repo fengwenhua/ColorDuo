@@ -36,6 +36,8 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
     val templates = layout.projectDirectory.dir("src/templates")
     inputs.files(production.resolve("WifiPresence.java"), production.resolve("BatteryPresence.java"), readoutHooks)
     inputs.files(templates.file("WifiPresenceTest.java.template"), templates.file("BatteryPresenceTest.java.template"))
+    inputs.file(production.resolve("ColorOsNetworkAdapter.java"))
+    inputs.file(templates.file("NetworkTypeRecoveryTest.java.template"))
     outputs.dir(presenceSources)
     doLast {
         fun method(file: java.io.File, signature: String): String {
@@ -56,6 +58,16 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
         emit("WifiPresenceTest", mapOf(
             "@RESOLVE@" to method(production.resolve("WifiPresence.java"), "static boolean resolve(boolean iconVisible, int cachedLevel)"),
             "@PUBLISH@" to method(production.resolve("WifiPresence.java"), "private static void publish(boolean next)")))
+        val network = production.resolve("ColorOsNetworkAdapter.java")
+        val typeRows = Regex("private static final class TypeRow \\{.*?\\n    \\}", RegexOption.DOT_MATCHES_ALL)
+            .findAll(network.readText()).toList()
+        require(typeRows.size == 1) { "Native type row must be unique" }
+        emit("NetworkTypeRecoveryTest", mapOf(
+            "@TYPE_ROW@" to typeRows.single().value,
+            "@REGISTER@" to method(network, "private void registerType(View root, Object binder, Object locationModel)"),
+            "@BIND_SOURCE@" to method(network, "private void bindTypeSource(TypeRow row, Object binder, Object locationModel)"),
+            "@NOTE@" to method(network, "private void noteType(ImageView image, Integer resource)"),
+            "@SYNC@" to method(network, "private void syncType(ImageView image, TypeRow row)")))
         val separator = Regex("static final char PERF_BREAK = '(.*?)';").find(readoutHooks.readText())
             ?: error("Production performance separator missing")
         emit("BatteryPresenceTest", mapOf(
@@ -76,6 +88,8 @@ tasks.named<JavaCompile>("compileTestJava") {
         include("GlyphDrawable.java", "Refl.java")
     })
     source(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/HyperOsReadout.java"))
+    source(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/ColorOsTypeState.java"))
+    source(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/ColorOsTypeLabels.java"))
 }
 tasks.test {
     maxHeapSize = "128m"

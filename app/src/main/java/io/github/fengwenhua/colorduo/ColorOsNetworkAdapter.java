@@ -45,6 +45,9 @@ final class ColorOsNetworkAdapter {
     private final boolean typeStage = "type".equals(BuildConfig.COLOROS_STAGE) || "capsule".equals(BuildConfig.COLOROS_STAGE)
             || "font".equals(BuildConfig.COLOROS_STAGE) || "outside".equals(BuildConfig.COLOROS_STAGE);
     private boolean typeCapable;
+    private Class<?> typeResource;
+    private Method typeResourceId, flowValue, subscriptionId, modelForSubscription, networkTypeIcon;
+    private Field mobileModels;
 
     static final class Plan {
         static final Plan EMPTY = new Plan(-1, -1, null, null, null);
@@ -129,9 +132,12 @@ final class ColorOsNetworkAdapter {
 
     private static final class TypeRow {
         final WeakReference<View> root;
+        final ColorOsTypeState state;
         String label = "";
+        int resource = ColorOsTypeState.UNKNOWN;
+        boolean live;
         int nativeVisibility = View.GONE;
-        TypeRow(View root) { this.root = new WeakReference<>(root); }
+        TypeRow(View root, ColorOsTypeState state) { this.root = new WeakReference<>(root); this.state = state; }
     }
 
     private interface After { void run(XposedInterface.Chain chain, Object result) throws Throwable; }
@@ -185,14 +191,7 @@ final class ColorOsNetworkAdapter {
                 if (signal instanceof ImageView && !mobileRows.containsKey(signal)) {
                     mobileRows.put((ImageView) signal, new Mobile(root)); watch(root);
                 }
-                if (typeCapable) {
-                    View typeView = child(root, ColorOsSymbols.ID_MOBILE_TYPE);
-                    if (typeView instanceof ImageView) {
-                        ImageView image = (ImageView) typeView;
-                        typeRows.put(image, new TypeRow(root));
-                        noteType(image, pendingTypes.remove(image), image.getVisibility());
-                    }
-                }
+                if (typeCapable) registerType(root, chain.getThisObject(), chain.getArg(0));
                 requestRefresh();
             }, type(ColorOsSymbols.CLASS_VIEWMODEL_LOCATION_BASED_MOBILE_VIEW_MODEL),
                     ViewGroup.class, type("kotlinx.coroutines.flow.Flow"), type("kotlinx.coroutines.flow.StateFlow"),
@@ -239,6 +238,21 @@ final class ColorOsNetworkAdapter {
             image.setAccessible(true); branch.setAccessible(true);
             Class<?> resource = type(ColorOsSymbols.CLASS_MODEL_ICON_RESOURCE);
             Method resourceId = resource.getMethod(ColorOsSymbols.NAME_GET_RES);
+            typeResource = resource; typeResourceId = resourceId;
+            try {
+                Class<?> binder = type(MOBILE + ColorOsSymbols.NAME_OPLUS_STATUS_BAR_MOBILE_VIEW_BINDER);
+                mobileModels = binder.getDeclaredField(ColorOsSymbols.NAME_OPLUS_MOBILE_ICONS_VIEW_MODEL);
+                mobileModels.setAccessible(true);
+                modelForSubscription = mobileModels.getType().getMethod(ColorOsSymbols.NAME_VIEW_MODEL_FOR_SUB, int.class);
+                subscriptionId = type(ColorOsSymbols.CLASS_VIEWMODEL_LOCATION_BASED_MOBILE_VIEW_MODEL)
+                        .getMethod(ColorOsSymbols.NAME_GET_SUBSCRIPTION_ID);
+                networkTypeIcon = modelForSubscription.getReturnType().getMethod(ColorOsSymbols.NAME_GET_NETWORK_TYPE_ICON);
+                flowValue = type(ColorOsSymbols.CLASS_STATE_FLOW).getMethod(ColorOsSymbols.NAME_GET_VALUE);
+                log("type/source", "snapshotReady=true");
+            } catch (ReflectiveOperationException failure) {
+                mobileModels = null;
+                log("type/source", "snapshotReady=false reason=" + failure.getClass().getSimpleName());
+            }
             boolean valid = hook(ColorOsSymbols.CLASS_BINDER_ICON_VIEW_BINDER, ColorOsSymbols.NAME_BIND, (chain, result) -> {
                 if (Looper.myLooper() != Looper.getMainLooper()) return;
                 ImageView view = (ImageView) chain.getArg(1);
@@ -265,7 +279,7 @@ final class ColorOsNetworkAdapter {
                 Object value = chain.getArg(0);
                 Integer id = resource.isInstance(value) ? ((Number) resourceId.invoke(value)).intValue() : null;
                 pendingTypes.remove(view);
-                noteType(view, id, view.getVisibility());
+                noteType(view, id);
             }, Object.class, type("kotlin.coroutines.Continuation"));
             typeCapable = valid;
             ColorOsProfile.note(CompatibilitySnapshot.Capability.TYPE_HOOK, valid, "HookUnavailable");
@@ -277,18 +291,62 @@ final class ColorOsNetworkAdapter {
         }
     }
 
-    private void noteType(ImageView image, Integer resource, int visibility) {
+    private void registerType(View root, Object binder, Object locationModel) {
+        View typeView = child(root, ColorOsSymbols.ID_MOBILE_TYPE);
+        if (typeView instanceof ImageView) {
+            ImageView image = (ImageView) typeView;
+            TypeRow row = typeRows.get(image);
+            if (row == null || row.root.get() != root) {
+                row = new TypeRow(root, new ColorOsTypeState(flowValue, typeResource, typeResourceId));
+                typeRows.put(image, row);
+            }
+            Integer initial = pendingTypes.remove(image);
+            if (initial != null) row.state.observe(initial);
+            bindTypeSource(row, binder, locationModel);
+            syncType(image, row);
+        }
+    }
+
+    private void bindTypeSource(TypeRow row, Object binder, Object locationModel) {
+        row.state.bind(null);
+        if (mobileModels == null) return;
+        try {
+            Object model = modelForSubscription.invoke(mobileModels.get(binder), subscriptionId.invoke(locationModel));
+            row.state.bind(networkTypeIcon.invoke(model));
+        } catch (ReflectiveOperationException | RuntimeException failure) {
+            log("type/source", "bindFailed=" + failure.getClass().getSimpleName());
+        }
+    }
+
+    private void noteType(ImageView image, Integer resource) {
         TypeRow row = typeRows.get(image);
         if (row == null) return;
-        String label = "";
-        if (resource != null && resource != 0) {
-            try { label = ColorOsTypeLabels.get(image.getResources().getResourceEntryName(resource)); }
-            catch (RuntimeException ignored) {}
-        }
-        row.label = label;
-        row.nativeVisibility = visibility;
-        if (!label.isEmpty() && ownsType(image) && image.getVisibility() == View.VISIBLE) image.setVisibility(View.GONE);
+        row.state.observe(resource);
+        syncType(image, row);
         requestRefresh();
+    }
+
+    private void syncType(ImageView image, TypeRow row) {
+        int resource = row.state.resource();
+        if (resource == ColorOsTypeState.UNKNOWN) return;
+        boolean changed = row.resource != resource || row.live != row.state.live();
+        if (changed) {
+            String name = resource == ColorOsTypeState.UNSUPPORTED ? "unsupported" : "none";
+            if (resource > 0) {
+                try { name = image.getResources().getResourceEntryName(resource); }
+                catch (RuntimeException ignored) { name = "unknown"; }
+            }
+            row.resource = resource;
+            row.live = row.state.live();
+            row.label = ColorOsTypeLabels.get(name);
+            // A GONE lease is presentation state, never evidence that the native model is empty.
+            row.nativeVisibility = resource == 0 ? View.GONE : View.VISIBLE;
+            log("type/" + Integer.toHexString(System.identityHashCode(image)),
+                    "live=" + row.live + " resource=" + name + " label=" + row.label
+                            + " nativeVisibility=" + row.nativeVisibility);
+        }
+        if (!row.label.isEmpty() && ownsType(image) && image.getVisibility() == View.VISIBLE)
+            image.setVisibility(View.GONE);
     }
 
     private Class<?> type(String name) throws ClassNotFoundException { return Class.forName(name, false, loader); }
@@ -381,6 +439,7 @@ final class ColorOsNetworkAdapter {
             if (typeCapable && mobileCount == 1 && mobileRoot != null) {
                 View view = child(mobileRoot, ColorOsSymbols.ID_MOBILE_TYPE);
                 TypeRow row = view instanceof ImageView ? typeRows.get(view) : null;
+                if (row != null) syncType((ImageView) view, row);
                 if (row != null && row.nativeVisibility == View.VISIBLE && !row.label.isEmpty()) {
                     label = ColorOsNetworkPolicy.typeLabel(row.label, dataEnabled.get());
                     typeImage = (ImageView) view;
@@ -612,6 +671,16 @@ final class ColorOsNetworkAdapter {
 
     void dump(java.io.PrintWriter out) {
         out.println("    network/data observing=" + dataEnabled.active() + " enabled=" + dataEnabled.get());
+        out.println("    network/state wifiLevel=" + latestWifi + " wifiRows=" + wifiRows.size()
+                + " mobileRows=" + mobileRows.size() + " leases=" + leases.size());
+        for (Map.Entry<ImageView, TypeRow> entry : new ArrayList<>(typeRows.entrySet())) {
+            TypeRow row = entry.getValue();
+            int modelResource = row.state.resource();
+            out.println("    network/typeState id=" + Integer.toHexString(System.identityHashCode(entry.getKey()))
+                    + " live=" + row.state.live() + " label=" + row.label + " nativeVisibility=" + row.nativeVisibility
+                    + " actualVisibility=" + entry.getKey().getVisibility() + " cachedResource=" + row.resource
+                    + " modelResource=" + modelResource);
+        }
         for (String line : ledger.snapshot()) out.println("    network/" + line);
     }
 
