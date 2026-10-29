@@ -26,4 +26,14 @@ JADX MCP 对照 FakeBinder、StatusBarFakeFrame、ClockFakeFrame、NotificationF
 - 实际 Canvas 像素回归先复现原始镜像遗漏倍率，再核对修复后的宽高、左右物理边缘、通知偏移，以及 100% 原始绘制一致性。
 - 时钟动画逐步验证自定义起点与原生终点连续，不产生倍率叠加和中途过冲。
 - 完整 JUnit 182 项（app 57／render 81／host 44）、Python 22 项通过，Release 构建、签名集成验证和 Observer 不打包检查通过；Lint 0 errors、34 warnings、1 hint。后续补强的默认倍率／RTL 几何专项也已通过。
-- 准备同签名 1.1.18 候选，尚待手机动画录像、恢复默认、总开关及折叠验收。当前公开 Latest 仍为 1.1.16，未经授权不公开发布。
+
+## 同签名候选与真机结果
+
+- 源码 `325f2e1`，tag `v1.1.18`，版本 `1.1.18 / 10118`。保留上一轮 1.1.17 网络类型恢复修复。
+- [main CI 40806831435](https://github.com/fengwenhua/ColorDuo/actions/runs/40806831435)、[tag CI 40806831363](https://github.com/fengwenhua/ColorDuo/actions/runs/40806831363)、[候选签名 40806927433](https://github.com/fengwenhua/ColorDuo/actions/runs/40806927433) 均成功，publish 跳过。
+- signed-release artifact `12869060922`；APK SHA-256：`fbc22a7be3d7c5ee4b2cc0ab0385d1b71c357cfaf426045fc3b7d62c7ef70d5e`。证书、v2/v3、manifest 签名与源码身份均校验通过；覆盖安装前后配置相同，安装后回拉 APK 与签名候选一致。
+- 已在 Find N5 覆盖安装并重载实际 SystemUI；UID 10168，PID 15869。安装后日志 shade ready=true、headers=2、error=None，镜像适配已启用。
+- 维护者明确确认：“原始高度和调整之后的高度，动画都没问题了”。随后自动录制两轮下拉／收回并抽帧，未再观察到交回真实状态栏时从原始大小突然跳为自定义大小；系统原有位移、透明度与时钟过渡保留。
+- 最终外屏 1140×2616、圆环、120%、总开关开启。两侧 scale=1.2，centreY=65.6px；shade headers=2、mirrors=6、draws=661、error=None。SystemUI 仍为同一 PID，未靠再次重启完成验收。
+- 保留维护者最后选择的 120%，没有回灌历史配置。100% 恢复及自定义尺寸的动画由维护者确认；本轮没有单独重复锁屏、内屏旋转或所有倍率的真机用例，不据此声称所有系统场景均已验证。
+- 当前手机安装的是 **1.1.18 同签名验收候选**，两仓公开 Latest 仍为 **1.1.16**，尚未公开发版。后续授权发布时，使用本 tag 的同一份验收 APK，保留既有签名升级提醒。
