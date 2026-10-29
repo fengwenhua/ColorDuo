@@ -17,5 +17,14 @@ JADX 对照 WifiViewBinder、ModernStatusBarView、ModernStatusBarViewVisibility
 新增五项直接提取生产方法的主机回归：迟到可见性写入、20 次重复刷新与 slot 清除、先应用原生后自定义绘制的交接、释放／不可见后的原生恢复、未知视图与能力失败回退。
 
 完整 JUnit 187 项（Release app 57、render 81、host 49）及 Python 22 项通过；Release 构建、Observer 不打包检查通过，Lint 0 errors、34 warnings、1 hint。负向对照移除实际可见性应用回调处理后，五项新增测试中三项失败；恢复生产修复后全部通过。
+## 同签名候选与当前结果
 
-同签名候选、真机回归及发布结果待后续补充；本记录不代表所有系统场景已验收。
+- 源码 `2848b95112761f4b522a6a071f92c1398ca7564e`，tag `v1.1.19`，版本 `1.1.19 / 10119`。
+- main CI `40811554253`、tag CI `40811554002`、候选签名 `40811578019` 均成功；候选 publish 跳过，artifact `12871081165`。
+- APK SHA-256：`70a98d12e603d14533b2d464aa0a337f7f478a0fd52455f9fc21e0368129b6e9`。固定正式证书、v2/v3、manifest 签名、版本与源码身份通过校验。
+- 覆盖安装后回拉 APK 相同；安装前后偏好完全一致。实际 SystemUI UID 10168，PID `15869 → 17177`，新 collector hook 已启用，networkReady=true，未产生 network/failure。
+- 维护者解锁后自行操作并确认“看起来没问题了”；日志中多次 nativeHidden 修正已生效，已有 Wi-Fi 接管均为 ignored=true、state=2、group=4，120% 缩放及镜像适配 error=None。
+- 自动执行 4 轮 Wi-Fi 断开／重连、6 个间隔 8 秒的静置采样，另有 2 轮切换；26 份快照中，所有 wifi=4 的既有接管均保持 HIDDEN，网络开关恢复、移动数据未改。期间手机自动息屏，默认物理屏录屏／截图不足以证明整段可见显示，故仅计入后台模型和接管状态回归，不声称完成连续亮屏视频验收。
+- 正式运行 `40812391977` 生成 artifact `12871291201`；正式 APK、校验文件、manifest 与手机候选逐字节相同，两个独立 manifest 签名均验证通过。
+
+补录明确指定外屏物理显示 ID 的锁屏录像，确认亮屏期间从 Wi-Fi 切到 5G 时没有左侧重复 Wi-Fi；随后系统自动息屏，后段黑屏不计入显示验收。额外的胶囊／总开关恢复人工确认尚待维护者回复，不据后台采样声称已经完成。
