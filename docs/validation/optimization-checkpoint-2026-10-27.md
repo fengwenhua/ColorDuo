@@ -2,9 +2,11 @@
 
 ## 最新状态：2026-10-29
 
-**1.1.18 / 10118 已在[源码仓](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.18)与[LSPosed 模块仓](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10118-1.1.18)正式发布为 Latest**，包含网络类型缓存恢复和状态栏镜像过渡修复。两仓八个公开附件回读一致，正式 APK 与手机验收包完全相同，无须重装。
+**1.1.19 / 10119 已在[源码仓](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.19)与[LSPosed 模块仓](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10119-1.1.19)正式发布为 Latest**。修复原生 Wi-Fi 图标延迟隐藏／后续重复出现，保留状态栏镜像动画和网络类型恢复修复。维护者已撤回 1.1.18 的两仓 Release，本轮没有重新发布它。
 
-功能 CI 与正式发布流程成功；JUnit 182 项、Python 22 项通过。手机最后验收状态为外屏、圆环、120%、总开关开启，发布没有操作手机配置。原优化清单剩余项不变；下一阶段以 [1.1.18 正式发布记录](release-1.1.18-2026-10-29.md)为当前基线。
+功能 CI 与正式发布流程成功；JUnit 187 项、Python 22 项通过。两仓八个公开附件回读一致，正式 APK 与手机修复候选完全相同，无须重装。维护者确认圆环操作后正常；后台切网与接管状态回归通过，额外胶囊／总开关恢复人工复核尚未收到结果，不计作本轮已验收。
+
+手机保留圆环、120%、总开关开启，未回灌历史配置。原优化清单剩余项不变；下一阶段以 [1.1.19 正式发布记录](release-1.1.19-2026-10-29.md)为当前基线。
 
 以下保留此前各轮的历史交接和候选状态，当前版本以上述最新状态为准。
 
