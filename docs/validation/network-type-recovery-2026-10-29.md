@@ -23,4 +23,13 @@ ADB 读取 Find N5（PKH110），系统界面仍为 16.99.12，模块 1.1.16。�
 - 将注册阶段替换为旧的“新建行＋消费 pending”行为作对照，3 个回归失败；修复实现的 3 个回归通过。
 - JUnit 178 项（app 57／render 77／host 44）、Python 22 项、独立 ColorOS 策略检查、Lint、Release 构建、签名验证集成及 Observer 不打包检查均通过。Lint 0 errors、33 warnings、1 hint。
 
-同签名 1.1.17 测试包与 Find N5 回归待完成；当前公开稳定版仍为 1.1.16，未经发布授权不公开发布本候选。
+## 同签名与真机验收完成
+
+- 源码 `a9fe90dcee40ff0f1120df772fb53c80402f8ff8`，tag `v1.1.17`，版本 `1.1.17 / 10117`。
+- [main CI 40801310350](https://github.com/fengwenhua/ColorDuo/actions/runs/40801310350)、[tag CI 40801309634](https://github.com/fengwenhua/ColorDuo/actions/runs/40801309634)、[同签名候选 40801324262](https://github.com/fengwenhua/ColorDuo/actions/runs/40801324262) 成功，publish 跳过。
+- artifact `12866127074`；APK SHA-256：`4c297c9ebdd8493bc872787ab9689b2f04d95bf017c68f5be2536b87d06ed514`。正式证书、v2/v3、manifest 签名、源码身份与版本均校验通过，安装后回拉 APK 一致，覆盖安装前后模块偏好完全一致。
+- 重载实际 SystemUI（UID 10168）后 PID `32681`。真机日志 snapshotReady=true，全部类型行 live=true，缓存资源与系统模型当前资源一致；读取原生源已生效。
+- 自动记录 9 个状态：双开基线、Wi-Fi 断开、双关、恢复数据、恢复 Wi-Fi、仅 Wi-Fi、双开恢复、再次仅数据、最终双开。截图确认两次离开 Wi-Fi 都显示 5G，双关时上部留空，仅 Wi-Fi 与双开时显示 Wi-Fi。dataEnabled 缓存随开关准确更新，最终恢复双开。
+- 维护者确认“圆环／胶囊和折叠后都正常”，包括展开／合上及下拉收回。最终外屏 1140×2616，圆环、状态栏 120%、总开关开启；SystemUI 仍为 PID 32681，height error=None，电池布局 pending=false／failed=false。保存用户最后选择，未回灌历史配置。
+- 此轮已确定并修复模块缓存丢失路径，常规真机恢复回归通过；地铁弱信号与现场原始触发尚未完整重现。若再次出现，应在开关数据前保留现场，结合当前模型、缓存、数据开关和 Wi-Fi 等级诊断，不把一次正常回归当作所有潜在原因均已排除。
+- 当前公开稳定版仍为 **1.1.16**。**1.1.17 只作为已安装验收候选，尚未公开发布**；后续若授权发版，使用本 tag 的同一份已验收 APK，保留既有签名升级提醒。
