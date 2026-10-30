@@ -1,0 +1,141 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+
+import java.util.Objects;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+/** Compile the complete production source against queued Android service contracts. */
+public final class DataEnabledSourceTest {
+    @interface SuppressLint { String[] value(); }
+    static class Build { static class VERSION { static int SDK_INT=36; } }
+    static class Looper { static Looper getMainLooper(){return new Looper();} }
+    static class Handler { Handler(Looper looper){} }
+    static class Uri { String getLastPathSegment(){return "mobile_data";} }
+    static class Settings { static class Global { static final Uri CONTENT_URI=new Uri(); } }
+    static abstract class ContentObserver {
+        ContentObserver(Handler handler){}
+        public void onChange(boolean self,Uri uri){}
+        public void onChange(boolean self){}
+    }
+    static class Resolver {
+        ContentObserver observer;
+        void registerContentObserver(Uri uri,boolean descendants,ContentObserver value){observer=value;}
+        void unregisterContentObserver(ContentObserver value){if(observer==value)observer=null;}
+        void change(){if(observer!=null)observer.onChange(false,new Uri());}
+    }
+    static class Intent {}
+    static class IntentFilter { IntentFilter(String action){} }
+    static abstract class BroadcastReceiver { public abstract void onReceive(Context context,Intent intent); }
+    static class Context {
+        static final int RECEIVER_EXPORTED=2;
+        final Resolver resolver=new Resolver();
+        final SubscriptionManager subscriptions=new SubscriptionManager();
+        final TelephonyManager telephony=new TelephonyManager();
+        final ArrayDeque<Runnable> queue=new ArrayDeque<>();
+        BroadcastReceiver receiver;
+        Context getApplicationContext(){return this;}
+        Resolver getContentResolver(){return resolver;}
+        <T>T getSystemService(Class<T> type){return type.cast(type==TelephonyManager.class?telephony:subscriptions);}
+        Executor getMainExecutor(){return queue::add;}
+        void registerReceiver(BroadcastReceiver value,IntentFilter filter,int flags){receiver=value;}
+        void registerReceiver(BroadcastReceiver value,IntentFilter filter){receiver=value;}
+        void unregisterReceiver(BroadcastReceiver value){if(receiver==value)receiver=null;}
+        void drain(){while(!queue.isEmpty())queue.remove().run();}
+        void defaultChanged(){receiver.onReceive(this,new Intent());}
+    }
+    static class SubscriptionManager {
+        static final int INVALID_SUBSCRIPTION_ID=-1;
+        static int current;
+        OnSubscriptionsChangedListener listener;
+        static int getDefaultDataSubscriptionId(){return current;}
+        static boolean isValidSubscriptionId(int id){return id>=0;}
+        static class OnSubscriptionsChangedListener { public void onSubscriptionsChanged(){} }
+        void addOnSubscriptionsChangedListener(OnSubscriptionsChangedListener value){listener=value;}
+        void removeOnSubscriptionsChangedListener(OnSubscriptionsChangedListener value){if(listener==value)listener=null;}
+        void changed(){listener.onSubscriptionsChanged();}
+    }
+    static class TelephonyCallback {
+        interface UserMobileDataStateListener { void onUserMobileDataStateChanged(boolean value); }
+    }
+    static class TelephonyManager {
+        final Map<Integer,TelephonyManager> sims=new HashMap<>();
+        boolean enabled=true,failRegistration;
+        int reads,registered,unregistered;
+        Executor executor;
+        TelephonyCallback callback;
+        TelephonyManager createForSubscriptionId(int id){return sims.computeIfAbsent(id,k->new TelephonyManager());}
+        boolean isDataEnabled(){reads++;return enabled;}
+        void registerTelephonyCallback(Executor value,TelephonyCallback next){
+            if(failRegistration)throw new SecurityException();
+            executor=value;callback=next;registered++;
+            emit(enabled); // Android's initial callback is asynchronous, like later changes.
+        }
+        void unregisterTelephonyCallback(TelephonyCallback value){if(callback==value){callback=null;unregistered++;}}
+        void emit(boolean value){TelephonyCallback target=callback;if(target==null)return;executor.execute(()->((TelephonyCallback.UserMobileDataStateListener)target).onUserMobileDataStateChanged(value));}
+    }
+
+    @SOURCE@
+
+    Context context;
+    ColorOsDataEnabledSource source;
+    int changes;
+    @Before public void setup(){SubscriptionManager.current=1;Build.VERSION.SDK_INT=36;context=new Context();source=new ColorOsDataEnabledSource(()->changes++,ignored->{});}
+    TelephonyManager sim(int id){return context.telephony.createForSubscriptionId(id);}
+
+    @Test public void settingsNotificationBeforePhoneUpdateCannotLeaveFalseCache(){
+        sim(1).enabled=false;source.setActive(context,true);context.drain();assertEquals(false,source.get());
+        context.resolver.change(); // Settings provider notified before telephony updated its state.
+        sim(1).enabled=true;sim(1).emit(true);context.drain();
+        assertEquals(true,source.get());assertEquals("5G",ColorOsNetworkPolicy.typeLabel("5G",source.get()));
+        assertEquals("only initial snapshot uses Binder",1,sim(1).reads);
+    }
+    @Test public void noDefaultSimAtSystemUiStartupIsUnknownThenRecoversWithoutSettingsChange(){
+        SubscriptionManager.current=-1;source.setActive(context,true);assertNull(source.get());
+        SubscriptionManager.current=1;context.subscriptions.changed();context.drain();
+        assertEquals(true,source.get());assertTrue(source.live());assertEquals(1,source.subscription());
+    }
+    @Test public void defaultDataSwitchRebindsAndRejectsQueuedOldSimCallbacks(){
+        source.setActive(context,true);context.drain();TelephonyManager old=sim(1);old.emit(false);
+        sim(2).enabled=true;SubscriptionManager.current=2;context.defaultChanged();context.drain();
+        assertEquals(1,old.unregistered);assertEquals(2,source.subscription());assertEquals(true,source.get());
+        sim(2).emit(false);context.drain();assertEquals("",ColorOsNetworkPolicy.typeLabel("5G",source.get()));
+    }
+    @Test public void leavingWifiWithoutDataSettingChangesKeepsEnabledDataAndThenRealOffHidesType(){
+        source.setActive(context,true);context.drain();
+        assertEquals(true,source.get());
+        assertEquals(-1,ColorOsNetworkPolicy.wifi(false,false,false,0)); // Wi-Fi enabled but disconnected.
+        assertEquals("5G",ColorOsNetworkPolicy.typeLabel("5G",source.get()));
+        sim(1).enabled=false;sim(1).emit(false);context.drain();
+        assertEquals("",ColorOsNetworkPolicy.typeLabel("5G",source.get()));
+    }
+    @Test public void stopUnregistersAllListenersAndRejectsPendingCallbacks(){
+        source.setActive(context,true);context.drain();sim(1).emit(false);source.setActive(null,false);context.drain();
+        assertNull(source.get());assertFalse(source.active());assertFalse(source.live());
+        assertNull(context.resolver.observer);assertNull(context.subscriptions.listener);assertNull(context.receiver);
+        assertEquals(1,sim(1).unregistered);
+        source.setActive(context,true);context.drain();assertEquals(true,source.get());assertEquals(2,sim(1).registered);
+    }
+    @Test public void repeatedGlobalNotificationsDoNotReregisterOrReadBinder(){
+        source.setActive(context,true);context.drain();
+        for(int i=0;i<30;i++)context.resolver.change();
+        assertEquals(1,sim(1).registered);assertEquals(1,sim(1).reads);assertEquals(1,changes);
+    }
+    @Test public void missingCallbackPermissionKeepsSettingsFallback(){
+        sim(1).failRegistration=true;source.setActive(context,true);
+        assertEquals(true,source.get());assertFalse(source.live());
+        sim(1).enabled=false;context.resolver.change();assertEquals(false,source.get());
+    }
+    @Test public void removedSimDoesNotInventUserOffAndLegacySdkKeepsObserver(){
+        source.setActive(context,true);context.drain();SubscriptionManager.current=-1;context.subscriptions.changed();
+        assertNull(source.get());assertFalse(source.live());assertEquals(1,sim(1).unregistered);
+        source.setActive(null,false);SubscriptionManager.current=1;Build.VERSION.SDK_INT=30;source.setActive(context,true);
+        assertEquals(true,source.get());assertFalse(source.live());sim(1).enabled=false;context.resolver.change();assertEquals(false,source.get());
+    }
+}

@@ -39,6 +39,8 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
     inputs.file(production.resolve("ColorOsNetworkAdapter.java"))
     inputs.file(templates.file("NetworkTypeRecoveryTest.java.template"))
     inputs.file(templates.file("WifiHandoffTest.java.template"))
+    inputs.file(production.resolve("ColorOsDataEnabledSource.java"))
+    inputs.file(templates.file("DataEnabledSourceTest.java.template"))
     outputs.dir(presenceSources)
     doLast {
         fun method(file: java.io.File, signature: String): String {
@@ -60,6 +62,10 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
             "@RESOLVE@" to method(production.resolve("WifiPresence.java"), "static boolean resolve(boolean iconVisible, int cachedLevel)"),
             "@PUBLISH@" to method(production.resolve("WifiPresence.java"), "private static void publish(boolean next)")))
         val network = production.resolve("ColorOsNetworkAdapter.java")
+        val dataSource = production.resolve("ColorOsDataEnabledSource.java").readText()
+        emit("DataEnabledSourceTest", mapOf("@SOURCE@" to dataSource.substring(
+            dataSource.indexOf("final class ColorOsDataEnabledSource {")).replaceFirst(
+                "final class ColorOsDataEnabledSource", "static final class ColorOsDataEnabledSource")))
         emit("WifiHandoffTest", mapOf(
             "@APPLIED@" to method(network, "private void onWifiApplied(View group) throws ReflectiveOperationException"),
             "@SYNC@" to method(network, "private void syncWifi(Plan plan) throws ReflectiveOperationException")))
@@ -93,6 +99,7 @@ tasks.named<JavaCompile>("compileTestJava") {
     })
     source(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/HyperOsReadout.java"))
     source(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/ColorOsTypeState.java"))
+    source(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/ColorOsNetworkPolicy.java"))
     source(rootProject.file("app/src/main/java/io/github/fengwenhua/colorduo/ColorOsTypeLabels.java"))
 }
 tasks.test {

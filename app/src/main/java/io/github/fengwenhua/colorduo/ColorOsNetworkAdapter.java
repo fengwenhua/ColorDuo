@@ -729,7 +729,8 @@ final class ColorOsNetworkAdapter {
     }
 
     void dump(java.io.PrintWriter out) {
-        out.println("    network/data observing=" + dataEnabled.active() + " enabled=" + dataEnabled.get());
+        out.println("    network/data observing=" + dataEnabled.active() + " enabled=" + dataEnabled.get()
+                + " live=" + dataEnabled.live() + " subscription=" + dataEnabled.subscription());
         out.println("    network/state wifiLevel=" + latestWifi + " wifiRows=" + wifiRows.size()
                 + " mobileRows=" + mobileRows.size() + " leases=" + leases.size());
         for (Map.Entry<View, Lease> entry : new ArrayList<>(leases.entrySet())) {
