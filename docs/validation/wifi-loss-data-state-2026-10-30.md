@@ -24,4 +24,14 @@ Find N5、ColorOS 16、SystemUI 16.99.12，模块 1.1.19。ADB 初始现场仍�
 
 完整 JUnit 195 项（Release app 57／render 81／host 57）、Python 22 项、Release 构建、签名集成与 Observer 不打包检查通过；Lint 0 errors、34 warnings、1 hint。以旧生产状态源执行相同的乱序通知用例，实测失败为 expected true／actual false；修复后的完整生产源通过。
 
-同签名候选及准确断连场景修复后验收结果待补充；当前公开版本仍为 1.1.19。
+## 同签名候选与真机验收
+
+- 源码 `223cd6f8885dde44d48c8e6be5ac528d74939497`，tag `v1.1.20`，版本 `1.1.20 / 10120`。
+- [main CI 40990482717](https://github.com/fengwenhua/ColorDuo/actions/runs/40990482717)、[tag CI 40990482312](https://github.com/fengwenhua/ColorDuo/actions/runs/40990482312)、[同签名候选 40990543169](https://github.com/fengwenhua/ColorDuo/actions/runs/40990543169) 均成功；publish 跳过，artifact `12948798981`。
+- APK SHA-256：`d1628b146cd367f2add07d5aa2836ef83cf52e55a56a61a4bd2e7ecc57e88abf`。固定正式证书、v2/v3、签名清单、版本与源码身份通过校验；安装后回拉 APK 一致，覆盖安装前后偏好完全相同。
+- 仅重载实际 UID 10168 的 SystemUI，PID `31965 → 6092`。数据状态为 enabled=true、live=true、subscription=1；原 Wi-Fi 未连接、开关未关，圆环实际绘制的类型已恢复 5G，截图与 handoff 日志一致。
+- 保持 Wi-Fi 开启且未连接，自动执行三轮移动数据关闭／开启，共六个状态；每次回调均准确更新，关闭时上部留空、开启后恢复 5G，截图核对通过。最后恢复移动数据开启，未操作 Wi-Fi 总开关。
+- 维护者按圆环／胶囊核对请求回复“看着没问题了”。最后为内屏 2248×2480、圆环、120%、总开关开启，Wi-Fi 开启未连接、移动数据开启。最终截图中 5G 及信号点阵正常，原生移动信号未重复出现，状态栏及镜像 error=None，SystemUI 仍为 PID 6092。
+- 原先现场缓存错判及旧代码乱序通知失败均有证据；这次没有再次模拟物理出门／基站切换、真实双卡切换或整机重启，相关分支由主机测试覆盖，不据常规真机回归声称所有系统情形均已验收。
+
+**1.1.20 仅为已安装、已验收的同签名候选，尚未公开发布。当前两仓公开稳定版仍为 1.1.19。** 后续发版应使用本 tag 的同一份验收 APK，保留签名升级提醒。

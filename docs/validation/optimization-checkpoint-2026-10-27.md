@@ -1,6 +1,8 @@
 # 优化进度交接：2026-10-27
 
-## 最新状态：2026-10-29
+## 最新状态：2026-10-30
+
+当前手机为 **1.1.20 / 10120 同签名验收候选，尚未公开发布**。已准确复现 Wi-Fi 保持开启、断连后上部空白，实际捕获模块数据缓存 false 与系统用户数据开关 true 不一致；通过实时电话／订阅事件修复。195 项 JUnit、22 项 Python、main/tag/候选 CI、三轮流量开关及维护者圆环／胶囊确认通过，见 [Wi-Fi 断连与数据状态验证](wifi-loss-data-state-2026-10-30.md)。最终内屏、圆环、120%、Wi-Fi 开启未连接、流量开启；原优化清单剩余项不变，公开稳定版仍为下述 1.1.19。
 
 **1.1.19 / 10119 已在[源码仓](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.19)与[LSPosed 模块仓](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10119-1.1.19)正式发布为 Latest**。修复原生 Wi-Fi 图标延迟隐藏／后续重复出现，保留状态栏镜像动画和网络类型恢复修复。维护者已撤回 1.1.18 的两仓 Release，本轮没有重新发布它。
 
