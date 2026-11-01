@@ -28,4 +28,4 @@
 
 维护者已反馈“感觉没啥问题”，并授权核对日志后发布。随后只读日志：home 持续绘制 386 次、configuration retained=true；networkReady=true，batteryLayout pending=false/failed=false，状态栏及镜像 error=None。真实 SystemUI 仍为安装后的进程；crash buffer 只有当天较早的旧记录，没有本轮新的崩溃。当前为满电已插电但未在充电，功率无有效读数，未把 NaN 当作错误显示。
 
-准备由 GitHub Actions 重新构建并签署不可变标签，公开前将正式 APK、校验和与清单逐字节对照已验收候选，并核验两个清单签名。人工反馈不替代上面列出的独立原生检查。
+GitHub Actions 正式发布 `41321602577` 已成功：不可变标签重新构建并签署，正式 APK、校验和与清单逐字节匹配已验收候选，两个清单签名均有效。两仓均为 Latest，八个公开附件下载全部对照通过，见 [发布验收](release-1.1.26-2026-11-01.md)。人工反馈不替代上面列出的独立原生检查。
