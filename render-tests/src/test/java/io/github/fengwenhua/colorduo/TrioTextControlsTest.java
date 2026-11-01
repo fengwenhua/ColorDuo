@@ -13,6 +13,19 @@ import static org.junit.Assert.*;
 public class TrioTextControlsTest {
     @After public void restoreFont() { TrioRenderer.setFont(""); }
 
+    @Test public void increasingWeightDoesNotShrinkDigitsAtTheSlotCeiling() {
+        for (int zone : new int[]{0, 1, 2}) {
+            TrioSettings s=RingOpeningTest.settings(Prefs.PART_VALUE,zone);s.valueSize=56;
+            float previous=-1;
+            for(int weight:new int[]{100,400,700,900}) {
+                s.valueWeight=weight;
+                float size=TrioRenderer.fittedRingTextSize(TrioAppearance.of(s),zone,Prefs.PART_VALUE,"100",56);
+                if(previous>=0)assertEquals("weight must change strokes, not compensate by shrinking the em",previous,size,.05f);
+                previous=size;
+            }
+        }
+    }
+
     @Test public void endSlotSlidersStopBeforeTheAutomaticFitPlateau() {
         for (int z : new int[]{0, 2}) for (int weight : new int[]{100, 700, 900}) {
             TrioSettings s = RingOpeningTest.settings(Prefs.PART_VALUE, z);

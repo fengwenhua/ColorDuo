@@ -459,6 +459,19 @@ final class TrioRenderer {
                                     float requested) {
         final int weight = part == Prefs.PART_VALUE ? a.valueWeight
                 : part == Prefs.PART_TYPE ? a.typeWeight : a.clockWeight;
+        // Reserve the bold face's room before choosing the numeric em. Otherwise a
+        // weight increase widens the ink, triggers another fit, and scales down the
+        // very strokes the slider just thickened. Keep a safety fit for an unusual
+        // custom font whose lighter face is wider than its bold face.
+        final float reserved = part == Prefs.PART_VALUE
+                ? fittedRingTextAtWeight(a, z, part, text, requested, Prefs.MAX_VALUE_WEIGHT)
+                : Float.POSITIVE_INFINITY;
+        if (part == Prefs.PART_VALUE && weight == Prefs.MAX_VALUE_WEIGHT) return reserved;
+        return Math.min(reserved, fittedRingTextAtWeight(a,z,part,text,requested,weight));
+    }
+
+    private static float fittedRingTextAtWeight(TrioAppearance a, int z, int part,
+                                                String text, float requested, int weight) {
         applyWeight(weight);
         TEXT.setTextSize(requested);
         // Type is fitted to the THIRD it sits in, not to the small
