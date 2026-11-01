@@ -36,6 +36,7 @@ public class Path {
     public void close() { delegate.closePath(); }
 
     public void reset() { delegate.reset(); }
+    public void addPath(Path path) { delegate.append(path.delegate,false); }
 
     public float[] approximate(float error) {
         java.awt.geom.PathIterator iterator = delegate.getPathIterator(null, error);

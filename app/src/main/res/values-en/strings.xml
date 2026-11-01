@@ -167,8 +167,9 @@
     <string name="value_size_title">Number size</string>
     <string name="value_size_summary">Default: 36. The limit depends on the style; text fits the available space.</string>
     <string name="value_size_ring_summary">This layout supports %1$d–%2$d. The limit follows the enlargement mode and available space.</string>
-    <string name="ring_value_priority_title">Enlarging top digits</string>
-    <string name="ring_value_priority_summary">Applies to top digits. Keep the middle layout to use remaining space, or let middle components move or shrink as the digits grow.</string>
+    <string name="ring_glyph_scale_summary" formatted="false">60–100% adjusts the drawing; 100–150% enlarges the status-bar ring and its contents within available height. Previews fit their cards.</string>
+    <string name="ring_value_priority_title">Enlarging battery digits</string>
+    <string name="ring_value_priority_summary">Supports network above battery or battery above network. Keep the middle position, or let components yield space to the battery digits.</string>
     <string name="ring_value_keep_middle">Keep middle layout</string>
     <string name="ring_value_yield_middle">Make room for digits</string>
 
@@ -182,7 +183,7 @@
     <string name="clock_weight_summary">The default is 700 and the slider covers 100–900.</string>
 
     <string name="type_size_title">Network type size</string>
-    <string name="type_size_summary">The default is 32 and the slider covers 16–44.</string>
+    <string name="type_size_summary">Default: 32. Rings allow up to 64; longer labels fit the available space. Enlarge the whole ring for a larger result.</string>
 
     <string name="out_type_size_title">Out-of-ring type size</string>
     <string name="out_type_size_summary">The default is 14dp and the slider covers 8–26dp.</string>

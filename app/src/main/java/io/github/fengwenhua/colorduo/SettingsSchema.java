@@ -68,7 +68,7 @@ final class SettingsSchema {
         entry(Prefs.KEY_PERF_TEMP_CHARGING_ONLY, "perfTempChargingOnly", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.perfTempChargingOnly()),
         entry(Prefs.KEY_PERF_SCALE, "perfScale", Kind.INT, Prefs.MIN_PERF_SCALE, style -> Prefs.MAX_PERF_SCALE, s -> s.perfScale),
         entry(Prefs.KEY_PERF_WEIGHT, "perfWeight", Kind.INT, Prefs.MIN_PERF_WEIGHT, style -> Prefs.MAX_PERF_WEIGHT, s -> s.perfWeight),
-        entry(Prefs.KEY_GLYPH_SCALE, "glyphScale", Kind.INT, Prefs.MIN_GLYPH_SCALE, style -> Prefs.MAX_GLYPH_SCALE, s -> s.glyphScale),
+        entry(Prefs.KEY_GLYPH_SCALE, "glyphScale", Kind.INT, Prefs.MIN_GLYPH_SCALE, Prefs::maxGlyphScale, s -> s.glyphScale),
         entry(Prefs.KEY_CAPSULE_LEFT_DX, "capsuleLeftDx", Kind.INT, Prefs.MIN_CAPSULE_NUDGE_X, style -> Prefs.MAX_CAPSULE_NUDGE_X, s -> s.capsuleLayout.leftDx()),
         entry(Prefs.KEY_CAPSULE_LEFT_DY, "capsuleLeftDy", Kind.INT, Prefs.MIN_CAPSULE_NUDGE, style -> Prefs.MAX_CAPSULE_NUDGE, s -> s.capsuleLayout.leftDy()),
         entry(Prefs.KEY_CAPSULE_RIGHT_DX, "capsuleRightDx", Kind.INT, Prefs.MIN_CAPSULE_NUDGE_X_RIGHT, style -> Prefs.MAX_CAPSULE_NUDGE_X_RIGHT, s -> s.capsuleLayout.rightDx()),

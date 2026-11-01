@@ -185,8 +185,9 @@
     <string name="value_size_title">数字字号</string>
     <string name="value_size_summary">默认 36，上限随样式调整；空间不足时自动适配。</string>
     <string name="value_size_ring_summary">当前布局可调 %1$d–%2$d；上限随放大方式和可用空间调整。</string>
-    <string name="ring_value_priority_title">上部数字放大方式</string>
-    <string name="ring_value_priority_summary">仅电量数字位于上部时生效。保持布局时利用剩余空间；选择让位后，中部组件随数字放大自动移动或缩小。</string>
+    <string name="ring_glyph_scale_summary" formatted="false">60%–100% 调整图案比例，100%–150% 放大状态栏里的整个圆环和内容，受可用高度限制。预览按卡片尺寸适配。</string>
+    <string name="ring_value_priority_title">电量数字放大方式</string>
+    <string name="ring_value_priority_summary">支持上部网络／中部电量和上部电量／中部网络。保持时保留中部位置；让位时为电量调整空间。</string>
     <string name="ring_value_keep_middle">保持中部布局</string>
     <string name="ring_value_yield_middle">为数字让位</string>
 
@@ -200,7 +201,7 @@
     <string name="clock_weight_summary">默认 700，可调 100–900。</string>
 
     <string name="type_size_title">网络类型字号</string>
-    <string name="type_size_summary">默认 32，可调 16–44。</string>
+    <string name="type_size_summary">默认 32，圆环最高可设 64；较长标签会按实际空间适配。还需更大可调整圆环整体大小。</string>
 
     <string name="out_type_size_title">环外网络类型字号</string>
     <string name="out_type_size_summary">默认 14dp，可调 8–26dp。</string>

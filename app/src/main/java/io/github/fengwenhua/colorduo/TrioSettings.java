@@ -387,7 +387,7 @@ public final class TrioSettings {
                 Prefs.MIN_PERF_WEIGHT, Prefs.MAX_PERF_WEIGHT);
         s.glyphScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
-                Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
+                Prefs.MIN_GLYPH_SCALE, Prefs.maxGlyphScale(s.trioStyle));
         s.capsuleLayout = CapsuleLayoutSettings.read(p::getInt);
         s.vpnColor = p.getInt(Prefs.KEY_VPN_COLOR, Prefs.DEF_VPN_COLOR);
         s.statusBarHeightPercent = Prefs.clamp(p.getInt(Prefs.KEY_STATUS_BAR_HEIGHT, Prefs.DEF_STATUS_BAR_HEIGHT), Prefs.MIN_STATUS_BAR_HEIGHT, Prefs.MAX_STATUS_BAR_HEIGHT);
@@ -784,7 +784,7 @@ public final class TrioSettings {
                 Prefs.MIN_PERF_WEIGHT, Prefs.MAX_PERF_WEIGHT);
         s.glyphScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
-                Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
+                Prefs.MIN_GLYPH_SCALE, Prefs.maxGlyphScale(s.trioStyle));
         s.capsuleLayout = CapsuleLayoutSettings.read(bundle::getInt);
         s.vpnColor = bundle.getInt(Prefs.KEY_VPN_COLOR, Prefs.DEF_VPN_COLOR);
         s.statusBarHeightPercent = Prefs.clamp(bundle.getInt(Prefs.KEY_STATUS_BAR_HEIGHT, Prefs.DEF_STATUS_BAR_HEIGHT), Prefs.MIN_STATUS_BAR_HEIGHT, Prefs.MAX_STATUS_BAR_HEIGHT);

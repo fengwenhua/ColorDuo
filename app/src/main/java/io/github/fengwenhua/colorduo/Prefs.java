@@ -1641,7 +1641,7 @@ public final class Prefs {
 
     /** The network type's ceiling for the arrangement in force. */
     public static int maxTypeSize(int trioStyle) {
-        return trioStyle == STYLE_CAPSULE ? MAX_CAPSULE_TYPE_SIZE : MAX_TYPE_SIZE;
+        return trioStyle == STYLE_CAPSULE ? MAX_CAPSULE_TYPE_SIZE : trioStyle == STYLE_RING ? MAX_RING_TYPE_SIZE : MAX_TYPE_SIZE;
     }
 
     public static int maxValueSize(int trioStyle) {
@@ -1672,6 +1672,7 @@ public final class Prefs {
     public static final int MAX_CLOCK_WEIGHT = 900;
     public static final int MIN_TYPE_SIZE = 16;
     public static final int MAX_TYPE_SIZE = 44;
+    public static final int MAX_RING_TYPE_SIZE = 64;
     /** The network type's ceiling in the CAPSULE; see {@link #MAX_CAPSULE_VALUE_SIZE}. */
     public static final int MAX_CAPSULE_TYPE_SIZE = 50;
     public static final int MIN_OUT_TYPE_SIZE = 16;
@@ -1772,6 +1773,11 @@ public final class Prefs {
      */
     public static final int MIN_GLYPH_SCALE = 60;
     public static final int MAX_GLYPH_SCALE = 100;
+    public static final int MAX_RING_GLYPH_SCALE = 150;
+
+    public static int maxGlyphScale(int style) {
+        return style == STYLE_RING ? MAX_RING_GLYPH_SCALE : MAX_GLYPH_SCALE;
+    }
     /**
      * The performance-readout size span, in percent of the size the adaptive fit
      * settles on.

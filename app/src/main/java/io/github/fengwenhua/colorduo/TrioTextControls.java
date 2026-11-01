@@ -71,17 +71,17 @@ public final class TrioTextControls {
             boolean placed = false;
             for (int part : a.ringZones[z]) placed |= part == Prefs.PART_VALUE;
             if (!placed) continue;
-            int last = Prefs.MIN_VALUE_SIZE;
-            for (int size = Prefs.MIN_VALUE_SIZE; size <= maximum; size++) {
+            int low=Prefs.MIN_VALUE_SIZE,high=maximum;
+            while(low<high) {
+                int size=(low+high+1)/2;
                 boolean fits = true;
                 for (int level = 0; level <= 100 && fits; level++) {
                     fits = TrioRenderer.fittedRingTextSize(a, z, Prefs.PART_VALUE,
                             String.valueOf(level), size) >= size - .05f;
                 }
-                if (!fits) break;
-                last = size;
+                if(fits)low=size;else high=size-1;
             }
-            answer = Math.min(answer, last);
+            answer = Math.min(answer, low);
         }
         sizeKey = key;
         sizeMax = answer;

@@ -95,7 +95,15 @@ public class Paint {
 
     public void getTextPath(String text, int start, int end, float x, float y, Path path) {
         java.awt.font.FontRenderContext context = new java.awt.font.FontRenderContext(null, true, true);
-        path.delegate.append(font().createGlyphVector(context, text.substring(start, end)).getOutline(x, y), false);
+        if(letterSpacing==0f)path.delegate.append(font().createGlyphVector(context, text.substring(start, end)).getOutline(x,y),false);
+        else {
+            float cursor=x;
+            for(int i=start;i<end;i++) {
+                java.awt.font.GlyphVector glyph=font().createGlyphVector(context,text.substring(i,i+1));
+                path.delegate.append(glyph.getOutline(cursor,y),false);
+                cursor+=(float)glyph.getGlyphPosition(1).getX()+letterSpacing*textSize;
+            }
+        }
     }
 
     public Font font() {

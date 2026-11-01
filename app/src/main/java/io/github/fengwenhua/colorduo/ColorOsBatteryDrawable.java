@@ -94,9 +94,9 @@ final class ColorOsBatteryDrawable extends Drawable {
 
     ColorOsBatteryDrawable(Drawable original, Frame frame, Runnable onFailed, Consumer<Frame> onDrawn) {
         nativeDrawable = new WeakReference<>(original);
-        intrinsicWidth = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0) && frame.viewWidth > 0
+        intrinsicWidth = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0 || ColorOsBatterySize.enlargedRing(frame.settings)) && frame.viewWidth > 0
                 ? frame.viewWidth : original.getIntrinsicWidth();
-        intrinsicHeight = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0) && frame.viewHeight > 0
+        intrinsicHeight = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0 || ColorOsBatterySize.enlargedRing(frame.settings)) && frame.viewHeight > 0
                 ? frame.viewHeight : original.getIntrinsicHeight();
         this.frame = frame;
         this.onFailed = onFailed;
@@ -106,6 +106,12 @@ final class ColorOsBatteryDrawable extends Drawable {
     void update(Frame next) {
         if (!frame.same(next)) {
             frame = next;
+            if(next.settings.trioStyle==Prefs.STYLE_CAPSULE||next.outside.reserve>0||ColorOsBatterySize.enlargedRing(next.settings)) {
+                intrinsicWidth=next.viewWidth;intrinsicHeight=next.viewHeight;
+            } else if(next.settings.trioStyle!=Prefs.STYLE_CAPSULE&&next.outside.reserve==0) {
+                Drawable original=nativeDrawable.get();
+                if(original!=null){intrinsicWidth=original.getIntrinsicWidth();intrinsicHeight=original.getIntrinsicHeight();}
+            }
             invalidateSelf();
         }
     }
@@ -114,9 +120,9 @@ final class ColorOsBatteryDrawable extends Drawable {
         // Style 2 has no OEM Drawable; retain only its harmless transparent fallback strongly.
         emptyFallback = original instanceof android.graphics.drawable.ColorDrawable ? original : null;
         nativeDrawable = new WeakReference<>(original);
-        intrinsicWidth = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0) && frame.viewWidth > 0
+        intrinsicWidth = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0 || ColorOsBatterySize.enlargedRing(frame.settings)) && frame.viewWidth > 0
                 ? frame.viewWidth : original.getIntrinsicWidth();
-        intrinsicHeight = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0) && frame.viewHeight > 0
+        intrinsicHeight = (frame.settings.trioStyle == Prefs.STYLE_CAPSULE || frame.outside.reserve > 0 || ColorOsBatterySize.enlargedRing(frame.settings)) && frame.viewHeight > 0
                 ? frame.viewHeight : original.getIntrinsicHeight();
         if (intrinsicWidth <= 0 && frame.viewWidth > 0) intrinsicWidth = frame.viewWidth;
         if (intrinsicHeight <= 0 && frame.viewHeight > 0) intrinsicHeight = frame.viewHeight;

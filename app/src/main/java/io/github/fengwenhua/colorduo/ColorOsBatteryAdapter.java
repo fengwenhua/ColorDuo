@@ -294,6 +294,8 @@ final class ColorOsBatteryAdapter {
                                 out.println("    batteryLayout measured=" + (image == null ? "missing" : image.getWidth() + "x" + image.getHeight())
                                         + " requested=" + (params == null ? "missing" : params.width + "x" + params.height)
                                         + " outside=" + host.outside.reserve + " pending=" + host.awaitLayout + " failed=" + host.failed);
+                                View meter=host.meter.get();
+                                if(meter!=null)out.println("    ringViewport "+host.size.describe(meter));
                             }
                             if (host != null && host.percentIcon != null)
                                 out.println("    percentIcon owned=" + host.percentIcon.owned()

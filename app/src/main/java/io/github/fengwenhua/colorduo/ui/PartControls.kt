@@ -249,10 +249,11 @@ internal fun geometrySliders(): List<SliderSpec> {
             part = null,
             min = Prefs.MIN_GLYPH_SCALE,
             max = Prefs.MAX_GLYPH_SCALE,
+            maxFor = { if (it.ring && io.github.fengwenhua.colorduo.ColorOsFontPublisher.supportedDevice()) Prefs.MAX_RING_GLYPH_SCALE else Prefs.MAX_GLYPH_SCALE },
             read = { it.glyphScale },
             write = { r, v -> r.setGlyphScale(v) },
             titleRes = { R.string.glyph_scale_title },
-            summaryRes = { R.string.glyph_scale_summary },
+            summaryRes = { if (it.ring && io.github.fengwenhua.colorduo.ColorOsFontPublisher.supportedDevice()) R.string.ring_glyph_scale_summary else R.string.glyph_scale_summary },
             // Gated on the master switch and nothing else: it sizes the glyph
             // itself, so with the glyph off there is nothing for it to act on. No
             // row is gated by it, so it can never be the reason another is shut.
@@ -422,7 +423,7 @@ internal fun geometrySliders(): List<SliderSpec> {
             part = type,
             min = Prefs.MIN_TYPE_SIZE,
             max = Prefs.MAX_TYPE_SIZE,
-            maxFor = { if (it.capsule) Prefs.MAX_CAPSULE_TYPE_SIZE else Prefs.MAX_TYPE_SIZE },
+            maxFor = { Prefs.maxTypeSize(it.style) },
             read = { it.typeSize },
             write = { r, v -> r.setTypeSize(v) },
             titleRes = { R.string.type_size_title },
