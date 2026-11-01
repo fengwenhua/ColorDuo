@@ -2,6 +2,8 @@
 
 ## 最新状态：2026-11-01
 
+手机最新为 **1.1.22 / 10122 同签名验收候选，尚未公开发布**。issue #8 的环线开口已按实际数字／文字／闪电墨迹自适应，并同步编辑点击范围；207 项 JUnit、22 项 Python、main/tag/候选 CI、同签名安装和维护者视觉确认通过，见 [圆环开口验证](ring-opening-2026-11-01.md)。安装保留全部偏好，最后参数以维护者手动选择为准；USB 已断开，收尾没有再改手机。原优化清单剩余项不变，公开稳定版仍为下述 1.1.21。
+
 **1.1.21 / 10121 已在[源码仓](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.21)与[LSPosed 模块仓](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10121-1.1.21)正式发布为 Latest**，修复系统外置百分比导致圆环／胶囊内部电量留空与重复数字的问题（issue #7），保留此前网络与状态栏适配修复。
 
 200 项 JUnit、22 项 Python、候选和正式发布 CI 通过。Find N5 已完成两种样式、三种百分比设置及关闭／恢复检查，维护者手动确认正常；其他机型未真机验收的边界保留，见 [外置百分比验收](outside-percentage-2026-11-01.md)。两仓八个公开附件回读一致，正式 APK 与已安装验收包完全相同，无须重装。

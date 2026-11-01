@@ -19,4 +19,14 @@
 
 完整 JUnit 207 项（Release app 58／render 92／host 57）、Python 22 项、Lint、Release 构建、签名集成与 Observer 不打包检查通过。Lint 为 0 errors、34 warnings、1 hint。将同一绘制路径退回固定参考开口作负向对照，7 项新增回归全部失败；修复实现全部通过。旧／新比较图包含 64、闪电和时间，端点能随实际墨迹收拢。
 
-同签名真机验收结果待补充；当前公开稳定版仍为 1.1.21。
+## 同签名候选与真机验收
+
+- 源码 `0c5cb9f9e83654cc3961dce370d64ffc8877e7b4`，tag `v1.1.22`，版本 `1.1.22 / 10122`。
+- [main CI 41274989918](https://github.com/fengwenhua/ColorDuo/actions/runs/41274989918)、[tag CI 41274990134](https://github.com/fengwenhua/ColorDuo/actions/runs/41274990134)、[候选签名 41275061511](https://github.com/fengwenhua/ColorDuo/actions/runs/41275061511) 均成功，publish 跳过；artifact `13071217484`。
+- APK SHA-256：`1dd9c92c48515ea47b60d67b2eb5e8d08a6a7f1c54e97d86317f8bc44415c91c`。固定正式证书、v2/v3、签名清单、版本／包名和源码身份通过校验。备用 APK 与四个签名附件保存在 `dist/candidate-1.1.22/`。
+- Find N5 覆盖安装后回拉 APK 相同，安装前后全部偏好值一致，没有卸载或回写历史配置；精确重载 UID 10168 的 SystemUI，PID `21306 → 28840`。
+- 设备日志确认 networkReady=true、batteryLayout pending=false／failed=false，120% 状态栏与镜像适配 error=None；外置百分比接管正常。截图与现场日志仅保留在忽略目录，锁屏／息屏截图不算作完整视觉验收。
+- 维护者按首页「正常／充电」预览、数字字号／字重及闪电大小的实时调整核对请求，回复“看着没问题”。本轮没有要求物理插拔充电器；该确认针对实际可见效果，不以主机绘图替代设备判断。
+- 收尾时 USB 已断开，未再追加命令或恢复测试前参数；最终参数保留维护者的手动选择。其他机型、所有自定义字体和整机重启未在本轮逐一真机验收，不据此宣称全面覆盖。
+
+**1.1.22 为已安装、已确认效果的同签名测试包，尚未公开发布；当前两仓稳定版仍为 1.1.21。** 后续发布应使用本 tag 的同一份验收 APK，并保留旧签名升级提醒。
