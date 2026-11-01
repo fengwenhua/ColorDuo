@@ -17,7 +17,7 @@ ColorOsRingPreset 在探测到原生外置百分比 View 可见时，用 `showVa
 
 执行真实 ColorOsRingPreset 的 JUnit 回归覆盖圆环、胶囊及验证布局的电量开关；渲染测试直接编译生产 ColorOsPercentIcon，检查提交前保留、提交后隐藏、重复提交、三种可见性、运行中切换、释放、独立宿主及外来可见性变更。桌面 View 替身只验证可见性协议，不代表 OEM Hook 已在设备执行。
 
-本地 JUnit 200 项（Release app 58／render 85／host 57）、Lint 与 Release 构建通过；Python 22 项、Wrapper、签名集成与 Observer 不打包检查通过。本轮仅生成测试包，不公开发布。
+本地 JUnit 200 项（Release app 58／render 85／host 57）、Lint 与 Release 构建通过；Python 22 项、Wrapper、签名集成与 Observer 不打包检查通过。修复验收阶段仅生成测试包，未公开发布；后续正式发布见文末。
 
 
 ## 同签名候选与真机验收
@@ -32,3 +32,7 @@ ColorOsRingPreset 在探测到原生外置百分比 View 可见时，用 `showVa
 - 维护者随后手动测试圆环、胶囊，并确认在「在电池外显示」下均正常。其他机型（包括 issue 原报告的一加 12）未在本轮真机实测，不以 Find N5 结果代替这些设备的验收。
 
 测试包备份：`dist/candidate-1.1.21/ColorDuo-1.1.21.apk`，同目录保留 checksum 和签名清单。
+
+## 后续正式发布
+
+维护者授权后，**1.1.21 已在源码仓与 LSPosed 模块仓正式发布为 Latest**，两仓八个公开附件回读一致。正式 APK、checksum、manifest 与上述验收包逐字节相同，独立清单签名分别验证通过；手机不需要重装，未再操作手机或更改配置。发布说明明确关联 issue #7，并保留旧签名版本升级提醒，详见 [1.1.21 正式发布记录](release-1.1.21-2026-11-01.md)。

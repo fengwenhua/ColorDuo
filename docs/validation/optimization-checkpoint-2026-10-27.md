@@ -1,12 +1,12 @@
 # 优化进度交接：2026-10-27
 
-## 最新状态：2026-10-30
+## 最新状态：2026-11-01
 
-**1.1.20 / 10120 已在[源码仓](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.20)与[LSPosed 模块仓](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10120-1.1.20)正式发布为 Latest**。修复 Wi-Fi 保持开启、断连后因过期流量关闭缓存导致上部留空的问题，保留此前原生 Wi-Fi 接管、网络类型缓存与状态栏镜像动画修复。
+**1.1.21 / 10121 已在[源码仓](https://github.com/fengwenhua/ColorDuo/releases/tag/v1.1.21)与[LSPosed 模块仓](https://github.com/Xposed-Modules-Repo/io.github.fengwenhua.colorduo/releases/tag/10121-1.1.21)正式发布为 Latest**，修复系统外置百分比导致圆环／胶囊内部电量留空与重复数字的问题（issue #7），保留此前网络与状态栏适配修复。
 
-195 项 JUnit、22 项 Python、功能与正式发布 CI 通过；准确断连现场、三轮流量开关及维护者圆环／胶囊确认已记录。两仓八个公开附件回读一致，正式 APK 与手机验收包完全相同，无须重装。原始触发、修复及覆盖限制见 [Wi-Fi 断连验证](wifi-loss-data-state-2026-10-30.md)。
+200 项 JUnit、22 项 Python、候选和正式发布 CI 通过。Find N5 已完成两种样式、三种百分比设置及关闭／恢复检查，维护者手动确认正常；其他机型未真机验收的边界保留，见 [外置百分比验收](outside-percentage-2026-11-01.md)。两仓八个公开附件回读一致，正式 APK 与已安装验收包完全相同，无须重装。
 
-最后手机验收状态为内屏、圆环、120%、总开关开启，Wi-Fi 开启未连接、流量开启。发布没有操作手机配置，原优化清单剩余项不变；下一阶段以 [1.1.20 正式发布记录](release-1.1.20-2026-10-30.md)为基线。维护者此前撤回的 1.1.18 没有重新发布。
+本次发布没有操作手机或更改配置，原优化清单剩余项不变；后续以 [1.1.21 正式发布记录](release-1.1.21-2026-11-01.md)为当前基线。维护者此前撤回的 1.1.18 没有重新发布。
 
 以下保留此前各轮的历史交接和候选状态，当前版本以上述最新状态为准。
 
