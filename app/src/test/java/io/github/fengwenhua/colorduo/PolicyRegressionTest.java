@@ -40,9 +40,27 @@ public final class PolicyRegressionTest {
         settings.ringZones = Prefs.decodeLayout("5|||");
         for (int style : new int[] {Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
             settings.trioStyle = style;
-            TrioSettings paint = ColorOsRingPreset.userLayout(settings, false, source);
+            TrioSettings paint = ColorOsRingPreset.userLayout(settings, source);
             assertEquals(Prefs.MOBILE_TYPE_OFF, paint.content.mobileTypeMode());
             assertTrue(ColorOsRingPreset.represented(paint, 79, false, source).hideType);
+        }
+    }
+
+    @Test public void moduleValueFollowsItsOwnSwitchInRingCapsuleAndFallbackLayouts() {
+        // No OEM percentage visibility input may remove the user's configured value.
+        var plan = ColorOsNetworkAdapter.Plan.EMPTY;
+        TrioSettings settings = TrioSettings.defaults();
+        settings.ringZones = Prefs.decodeLayout("|3|");
+        for (int style : new int[] {Prefs.STYLE_RING, Prefs.STYLE_CAPSULE}) {
+            settings.trioStyle = style;
+            for (boolean show : new boolean[] {true, false, true}) {
+                settings.setShowValue(show);
+                TrioSettings paint = ColorOsRingPreset.userLayout(settings, plan);
+                assertEquals(show, paint.content.showValue());
+                assertEquals(show, TrioAppearance.of(paint).ownsValue());
+                assertEquals(show, ColorOsRingPreset.create(settings, false, plan).content.showValue());
+                assertEquals(show, settings.content.showValue());
+            }
         }
     }
 

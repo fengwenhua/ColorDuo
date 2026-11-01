@@ -19,7 +19,7 @@ import io.github.libxposed.api.XposedModule;
 
 /**
  * Own only a ready native battery ImageView and the native rows its actual frame represents.
- * Unsupported battery styles, outside percent, reverse charge and exceptional network icons stay native.
+ * Unsupported battery styles, reverse charge and exceptional network icons stay native.
  */
 final class ColorOsBatteryAdapter {
     private static final String UI = ColorOsSymbols.BATTERY_UI_PREFIX;
@@ -76,7 +76,7 @@ final class ColorOsBatteryAdapter {
         boolean presentationPending;
         boolean refreshQueued;
         long refreshSequence;
-        boolean lastOutsidePercent;
+        ColorOsPercentIcon percentIcon;
         ColorOsChargeIcon chargeIcon;
         TrioSettings layoutSource;
         TrioSettings layoutSettings;
@@ -229,6 +229,13 @@ final class ColorOsBatteryAdapter {
                         }
                     }, meterType, type(UI + ColorOsSymbols.CLASS_MODEL_STAT_BATTERY_ICON));
             valid &= installStyleHook(binder);
+            valid &= hook(binder, ColorOsSymbols.NAME_BIND_UPDATE_PERCENT_OUT_VIEW, null, chain -> {
+                Host host = hosts.get(chain.getArg(1));
+                if (host != null && chain.getArg(2) != null && chain.getArg(0) instanceof View) {
+                    percentIcon(host, (View) chain.getArg(0)).onNativeUpdate();
+                    reconcile(host);
+                }
+            }, android.widget.TextView.class, meterType, type(UI + ColorOsSymbols.CLASS_MODEL_PERCENT_OUT_ICON));
             valid &= hook(binder, ColorOsSymbols.NAME_BIND_UPDATE_CHARGING_VIEW, null, chain -> {
                 Host host = hosts.get(chain.getArg(1));
                 if (host != null && chain.getArg(2) != null && chain.getArg(0) instanceof ImageView) {
@@ -288,6 +295,9 @@ final class ColorOsBatteryAdapter {
                                         + " requested=" + (params == null ? "missing" : params.width + "x" + params.height)
                                         + " outside=" + host.outside.reserve + " pending=" + host.awaitLayout + " failed=" + host.failed);
                             }
+                            if (host != null && host.percentIcon != null)
+                                out.println("    percentIcon owned=" + host.percentIcon.owned()
+                                        + " nativeVisibility=" + host.percentIcon.nativeVisibility());
                             if (host != null && host.chargeIcon != null)
                                 out.println("    chargeIcon owned=" + host.chargeIcon.owned()
                                         + " nativeVisibility=" + host.chargeIcon.nativeVisibility());
@@ -568,12 +578,10 @@ final class ColorOsBatteryAdapter {
             release(host, model.reason()); return;
         }
         ColorOsNetworkAdapter.Plan rawPlan = network == null ? ColorOsNetworkAdapter.Plan.EMPTY : network.prepare(meter, settings);
-        View nativePercent = child(meter, ColorOsSymbols.ID_BATTERY_PERCENTAGE_VIEW);
-        boolean outsidePercent = nativePercent != null && nativePercent.getVisibility() == View.VISIBLE;
 
         if (font != null) font.prepareRenderer();
         int[] base = host.size.baseSize(meter, config.get());
-        ColorOsOutsideLayout outside = outsideLayout(meter, settings, rawPlan, outsidePercent, level,
+        ColorOsOutsideLayout outside = outsideLayout(meter, settings, rawPlan, level,
                 base[1], meter.getResources().getDisplayMetrics().widthPixels / 3 - base[0]);
         HostDecision.Decision preparation = HostDecision.prepare(new HostDecision.Preparation(
                 capsuleStage && host.size.resizeNeeded(meter, config.get(), outside.reserve),
@@ -599,7 +607,7 @@ final class ColorOsBatteryAdapter {
         if (preparation.action() == HostDecision.Action.FIT_OUTSIDE) {
             log(host.key + "/outside-fit", "measured=" + width + "x" + height
                     + " base=" + base[0] + "x" + base[1] + " requestedOutside=" + outside.reserve);
-            outside = outsideLayout(meter, settings, rawPlan, outsidePercent, level,
+            outside = outsideLayout(meter, settings, rawPlan, level,
                     Math.min(height, base[1]), Math.max(0, width - base[0]));
         }
         if (host.preview != null && image.getDrawable() != host.preview) {
@@ -614,7 +622,7 @@ final class ColorOsBatteryAdapter {
         host.outside = outside;
         ColorOsPowerSource.State powerState = power == null ? ColorOsPowerSource.State.UNKNOWN : power.get();
         if (userLayout) {
-            TrioSettings desired = ColorOsRingPreset.userLayout(settings, outsidePercent, plan);
+            TrioSettings desired = ColorOsRingPreset.userLayout(settings, plan);
             plan = ColorOsRingPreset.represented(desired, level, powerState.charging, plan, outside);
         }
         boolean networkChanged = !host.networkPlan.same(plan);
@@ -622,12 +630,11 @@ final class ColorOsBatteryAdapter {
         if (networkChanged && network != null) network.retain(meter, plan);
         host.networkPlan = plan;
         host.readingsPlan = rawPlan;
-        if (host.paintSettings == null || host.sourceSettings != settings || host.lastOutsidePercent != outsidePercent
+        if (host.paintSettings == null || host.sourceSettings != settings
                 || networkChanged || readingsChanged || !host.paintSettings.fontPath.equals(font == null ? "" : font.key())) {
             host.sourceSettings = settings;
-            host.lastOutsidePercent = outsidePercent;
-            host.paintSettings = userLayout ? ColorOsRingPreset.userLayout(settings, outsidePercent, rawPlan)
-                    : ColorOsRingPreset.create(settings, outsidePercent, network != null, rawPlan);
+            host.paintSettings = userLayout ? ColorOsRingPreset.userLayout(settings, rawPlan)
+                    : ColorOsRingPreset.create(settings, network != null, rawPlan);
             host.paintSettings.fontPath = font == null ? "" : font.key();
         }
         if (font != null) font.prepareRenderer();
@@ -662,6 +669,7 @@ final class ColorOsBatteryAdapter {
                             network.commit(readyMeter, presented.network);
                             commitClock(readyMeter, host, presented);
                             commitCharge(readyMeter, host, presented);
+                            commitPercent(readyMeter, host, presented);
                             vpnIcon.commit(readyMeter, presented.drawsVpn && vpn.active());
                             commitVpnChip(readyMeter, host, presented);
                             host.presentationPending = false;
@@ -686,6 +694,7 @@ final class ColorOsBatteryAdapter {
                 if (network != null) network.commit(meter, plan);
                 commitClock(meter, host, frame);
                 commitCharge(meter, host, frame);
+                commitPercent(meter, host, frame);
                 vpnIcon.commit(meter, frame.drawsVpn && vpn.active());
                 commitVpnChip(meter, host, frame);
                 host.presentationPending = false;
@@ -720,12 +729,12 @@ final class ColorOsBatteryAdapter {
     }
 
     private ColorOsOutsideLayout outsideLayout(View meter, TrioSettings settings, ColorOsNetworkAdapter.Plan plan,
-                                               boolean outsidePercent, int level, int height, int room) {
+                                               int level, int height, int room) {
         if (!outsideStage || height <= 0) return ColorOsOutsideLayout.EMPTY;
         return ColorOsOutsideLayout.create(settings, plan, height, room,
                 meter.getResources().getDisplayMetrics().density, meter.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL,
                 readouts == null ? ColorOsReadoutSource.State.UNKNOWN : readouts.get(),
-                ColorOsRingPreset.resolve(ColorOsRingPreset.userLayout(settings, outsidePercent, plan),
+                ColorOsRingPreset.resolve(ColorOsRingPreset.userLayout(settings, plan),
                         level, power.get().charging, plan).wifi, vpn.active());
     }
 
@@ -744,7 +753,7 @@ final class ColorOsBatteryAdapter {
         TrioSettings settings = layoutSettings(host);
         ColorOsNetworkAdapter.Plan plan = network.prepare(meter, settings);
         if (!userLayout) return plan;
-        TrioSettings paint = ColorOsRingPreset.userLayout(settings, host.lastOutsidePercent, plan);
+        TrioSettings paint = ColorOsRingPreset.userLayout(settings, plan);
         return ColorOsRingPreset.represented(paint, level, power.get().charging, plan, host.outside);
     }
 
@@ -769,6 +778,23 @@ final class ColorOsBatteryAdapter {
         return host.chargeIcon;
     }
 
+    private ColorOsPercentIcon percentIcon(Host host, View view) {
+        if (host.percentIcon == null || !host.percentIcon.isFor(view)) {
+            if (host.percentIcon != null) host.percentIcon.restore();
+            host.percentIcon = new ColorOsPercentIcon(view);
+        }
+        return host.percentIcon;
+    }
+
+    private void commitPercent(View meter, Host host, ColorOsBatteryDrawable.Frame frame) {
+        View view = child(meter, ColorOsSymbols.ID_BATTERY_PERCENTAGE_VIEW);
+        if (view == null) return;
+        // Preserve the native percentage if the user removed the module's value component.
+        // Check current intent as well so a delayed frame cannot hide a newer native layout.
+        percentIcon(host, view).commit(userLayout && TrioAppearance.of(frame.settings).ownsValue()
+                && TrioAppearance.of(layoutSettings(host)).ownsValue());
+    }
+
     private void commitCharge(View meter, Host host, ColorOsBatteryDrawable.Frame frame) {
         View view = child(meter, ColorOsSymbols.ID_BATTERY_CHARGE_ICON);
         if (!(view instanceof ImageView)) return;
@@ -790,6 +816,7 @@ final class ColorOsBatteryAdapter {
         ImageView image = host.image.get();
         restoreDescription(host);
         if (host.chargeIcon != null) host.chargeIcon.restore();
+        if (host.percentIcon != null) host.percentIcon.restore();
         host.lastGlobalShown = meter != null && image != null && meter.isShown() && image.isShown();
         if (clock != null && meter != null) clock.release(meter);
         if (network != null && meter != null) network.release(meter);

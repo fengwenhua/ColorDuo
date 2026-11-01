@@ -3,14 +3,14 @@ package io.github.fengwenhua.colorduo;
 
 /** Fixed validation layout, shared with the Android rendering checks. */
 final class ColorOsRingPreset {
-    static TrioSettings create(TrioSettings settings, boolean outsidePercent, boolean network,
+    static TrioSettings create(TrioSettings settings, boolean network,
                                ColorOsNetworkAdapter.Plan plan) {
         TrioSettings paint = settings.copy();
         paint.trioStyle = Prefs.STYLE_RING;
         ContentSettings c = settings.content;
         boolean mobile = plan.mobile >= 0;
         paint.content = new ContentSettings(
-                plan.wifi >= 1, mobile, c.showValue() && !outsidePercent, false,
+                plan.wifi >= 1, mobile, c.showValue(), false,
                 Prefs.MOBILE_TYPE_OFF, c.valueCentred(), c.dualSim(), Prefs.SIGNAL_IN_RING,
                 c.stackedSignal(), mobile && plan.mobileSlot == 0, mobile && plan.mobileSlot == 1,
                 c.typeHideOnWifi(), c.chargingShowsValue(), false, false, c.perfTempChargingOnly());
@@ -23,12 +23,12 @@ final class ColorOsRingPreset {
         return paint;
     }
 
-    static TrioSettings userLayout(TrioSettings settings, boolean outsidePercent, ColorOsNetworkAdapter.Plan plan) {
+    static TrioSettings userLayout(TrioSettings settings, ColorOsNetworkAdapter.Plan plan) {
         TrioSettings paint = settings.copy();
         ContentSettings c = settings.content;
         paint.content = new ContentSettings(
                 c.showWifi() && plan.wifi >= 1, c.showMobile() && plan.mobile >= 0,
-                c.showValue() && !outsidePercent, c.showBolt(),
+                c.showValue(), c.showBolt(),
                 !plan.typeLabel.isEmpty() && c.mobileTypeMode() == Prefs.MOBILE_TYPE_IN_RING
                         ? Prefs.MOBILE_TYPE_IN_RING : Prefs.MOBILE_TYPE_OFF,
                 c.valueCentred(), c.dualSim(), c.signalMode(), c.stackedSignal(),

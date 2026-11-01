@@ -22,6 +22,8 @@ final class ColorOsSymbols {
     static final String ID_BATTERY_CHARGE_ICON = "battery_charge_icon";
     static final String ID_BATTERY_ICON_VIEW = "battery_icon_view";
     static final String ID_BATTERY_PERCENTAGE_VIEW = "battery_percentage_view";
+    static final String NAME_BIND_UPDATE_PERCENT_OUT_VIEW = "bind$updatePercentOutView";
+    static final String CLASS_MODEL_PERCENT_OUT_ICON = "model.PercentOutIcon";
     static final String NAME_BIND = "bind";
     static final String NAME_BIND_UPDATE_BATTERY_CONTENT_VIEW = "bind$updateBatteryContentView";
     static final String NAME_BIND_UPDATE_BATTERY_ICON_STYLE = "bind$updateBatteryIconStyle";
@@ -122,7 +124,8 @@ final class ColorOsSymbols {
                 new Spec(BATTERY_UI_PREFIX + CLASS_MODEL_STAT_BATTERY_ICON,
                         new String[]{NAME_GET_POWER_LEVEL, NAME_GET_TINT_COLOR, NAME_GET_CONTENT_DESCRIPTION}, new String[]{}),
                 new Spec(BATTERY_UI_PREFIX + CLASS_BINDER_BATTERY_VIEW_BINDER,
-                        new String[]{NAME_BIND_UPDATE_BATTERY_ICON_STYLE, NAME_BIND_UPDATE_BATTERY_CONTENT_VIEW, NAME_BIND_UPDATE_CHARGING_VIEW}, new String[]{})));
+                        new String[]{NAME_BIND_UPDATE_BATTERY_ICON_STYLE, NAME_BIND_UPDATE_BATTERY_CONTENT_VIEW,
+                                NAME_BIND_UPDATE_PERCENT_OUT_VIEW, NAME_BIND_UPDATE_CHARGING_VIEW}, new String[]{})));
         result.put(NETWORK_SYMBOLS, probe(loader,
                 new Spec(WIFI_PREFIX + CLASS_MODEL_WIFI_NETWORK_MODEL_ACTIVE, new String[]{NAME_GET_LEVEL}, new String[]{NAME_IS_VALIDATED}),
                 new Spec(CLASS_MODEL_SIGNAL_ICON_MODEL_CELLULAR, new String[]{NAME_GET_LEVEL, NAME_GET_NUMBER_OF_LEVELS,
