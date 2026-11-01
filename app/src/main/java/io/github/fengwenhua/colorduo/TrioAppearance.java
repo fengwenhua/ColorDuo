@@ -766,6 +766,8 @@ public final class TrioAppearance {
      * <p>Immutable.
      */
     public static final class Ring {
+        final int levelReading;
+        final String typeReading;
         /** Actual occupants this frame; null selects the original automatic layout. */
         public final int[] parts;
         /** The arcs leave ink this frame. */
@@ -792,16 +794,9 @@ public final class TrioAppearance {
         public final boolean dual;
 
         /**
-         * The renderer and editor use the same opening around the top component.
-         *
-         * <p>Only the <em>dual reading</em> widens the mouth: its top row is
-         * {@code DOTS} mirrored about the ring centre, so the outer dots sit almost on
-         * the arc's own radius and a narrow mouth runs the rounded stroke end into
-         * them.
-         *
-         * <p>The ring's <b>bottom</b> opening is the reference for symmetry, not this
-         * mouth - see {@code TrioGeometry.B_SWEEP}, where the arc's own bottom opening
-         * was brought down to the top gap's width so the two halves mirror each other.
+         * Stable fitting envelope and calibrated Wi-Fi/signal-row opening.
+         * Text and bolt openings are refined from fitted ink by TrioRenderer.ringArc;
+         * the draw path and editor hit testing use that same measured geometry.
          */
         public float gapStart() {
             return !gapUsed ? TrioGeometry.GAP_NONE
@@ -831,7 +826,7 @@ public final class TrioAppearance {
             return parts[2] != Prefs.PART_NONE;
         }
 
-        /** The arc's angular sweep this frame; the full circle minus the bottom opening. */
+        /** Reference sweep before runtime ink refines the bottom opening. */
         public float sweep() {
             return bottomOpen() ? TrioGeometry.B_SWEEP : 360f;
         }
@@ -875,6 +870,8 @@ public final class TrioAppearance {
          */
         private Ring(TrioAppearance a, int level, boolean charging, int wifiLevel,
                      String mobileType, int sims, boolean wifiConnected) {
+            levelReading = level;
+            typeReading = mobileType;
             // ZONE_COUNT, not 3: the layout stores five sections now (three ring zones plus
             // the capsule's two), and this array is indexed by Zone.ordinal. The ring only
             // draws the first three; the rest resolve to PART_NONE because a ring install

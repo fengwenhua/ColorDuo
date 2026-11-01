@@ -37,6 +37,11 @@ public class Path {
 
     public void reset() { delegate.reset(); }
 
+    public void computeBounds(RectF bounds, boolean exact) {
+        java.awt.geom.Rectangle2D box = delegate.getBounds2D();
+        bounds.set((float) box.getMinX(), (float) box.getMinY(), (float) box.getMaxX(), (float) box.getMaxY());
+    }
+
     /**
      * Eight radii in Android's order: top-left, top-right, bottom-right,
      * bottom-left, two floats each. Java2D can only round all four corners

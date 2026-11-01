@@ -342,8 +342,10 @@ public final class FreeRingTest {
             Method draw = TrioRenderer.class.getDeclaredMethod("drawBattery", Canvas.class, int.class,
                     int.class, int.class, TrioAppearance.class, float.class, float.class, float.class, float.class);
             draw.setAccessible(true);
-            draw.invoke(null, c, 100, 0xffff0000, 0xffffffff, TrioAppearance.of(s),
-                    r.gapStart(), r.gapEnd(), r.sweep(), r.arcStart());
+            TrioAppearance a = TrioAppearance.of(s);
+            TrioGeometry.RingArc arc = TrioRenderer.ringArc(a, r);
+            draw.invoke(null, c, 100, 0xffff0000, 0xffffffff, a,
+                    arc.gapStart, arc.gapEnd, arc.sweep, arc.start);
         } finally { g.dispose(); }
         return image;
     }

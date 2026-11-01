@@ -33,6 +33,7 @@ final class TrioRenderer {
     private static final Paint FILL = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Paint TEXT = new Paint(Paint.ANTI_ALIAS_FLAG);
     private static final Path BOLT = buildBolt();
+    private static final RectF BOLT_INK = boltInkBounds();
     private static final Path WIFI_DOT = buildWifiDot();
     private static final RectF ARC = new RectF();
     /** Scratch for the rectangular battery bar; rewritten every frame, never kept. */
@@ -447,11 +448,109 @@ final class TrioRenderer {
                 slotLevels, mobileType, role, fg, a, r);
     }
 
+    private static float fittedRingTextSize(TrioAppearance a, int z, int part, String text) {
+        final int weight = part == Prefs.PART_VALUE ? a.valueWeight
+                : part == Prefs.PART_TYPE ? a.typeWeight : a.clockWeight;
+        final float requested = part == Prefs.PART_VALUE ? a.valueSize
+                : part == Prefs.PART_TYPE ? a.typeSize : a.clockSize;
+        applyWeight(weight);
+        TEXT.setTextSize(requested);
+        // Type is fitted to the THIRD it sits in, not to the small
+        // placement box that positions a drawn figure (28/44/20 units).
+        //
+        // The height term measures the INK, not ascent + descent. That
+        // distinction is the whole bug the size setting had: the metrics
+        // reserve leading above the capitals and below the descenders that
+        // a reading never draws - at 36pt they are 45 units against 26.3
+        // units of actual ink - so dividing by them capped every line at
+        // about 58% of the room it really had, and the bottom third came
+        // out around a third of the size asked for.
+        final float room = TrioGeometry.zoneTextRoomH(z);
+        final int suffixScale = part == Prefs.PART_TYPE ? a.typeSuffixScale : 100;
+        // The height cap is a straight ratio at the requested size.
+        final float inkAtRequested = Math.max(1f, textInkHeight(text, requested));
+        final float maxByHeight = requested * room / inkAtRequested;
+        // The width cap is NOT independent of the answer: the budget is the
+        // narrowest chord the line spans, which depends on how tall the line
+        // ends up - and that depends on the size being solved for. Iterate
+        // to a fixed point instead of guessing once. (The first attempt at
+        // this multiplied the ink height by fitted/requested as well, which
+        // scaled it twice and never converged.)
+        float fitted = maxByHeight;
+        for (int pass = 0; pass < 4; pass++) {
+            final float inkH = Math.max(1f, textInkHeight(text, fitted));
+            final float maxByWidth = fitSize(text, requested,
+                    TrioGeometry.zoneTextRoomW(z, a.ringStroke, inkH), suffixScale);
+            final float next = Math.min(maxByHeight, maxByWidth);
+            if (Math.abs(next - fitted) < 0.05f) {
+                fitted = next;
+                break;
+            }
+            fitted = next;
+        }
+        return fitted;
+    }
+
+    private static RectF boltInkBounds() {
+        RectF bounds = new RectF();
+        BOLT.computeBounds(bounds, false);
+        return bounds;
+    }
+
+    /** Shared by real drawing and preview hit testing; never use a different font/fit for the notch. */
+    static TrioGeometry.RingArc ringArc(TrioAppearance a, TrioAppearance.Ring r) {
+        float top = (r.gapEnd() - r.gapStart()) * r.sweep() * 0.5f;
+        float bottom = (360f - r.sweep()) * 0.5f;
+        RectF ink = new RectF();
+        if (ringInkBounds(ink, a, r, 0)) top = TrioGeometry.openingForInk(0, a.ringStroke,
+                ink.left, ink.top, ink.right, ink.bottom);
+        if (ringInkBounds(ink, a, r, 2)) bottom = TrioGeometry.openingForInk(2, a.ringStroke,
+                ink.left, ink.top, ink.right, ink.bottom);
+        return new TrioGeometry.RingArc(top, bottom);
+    }
+
+    /** Bounds of the very same fitted text/path used below, in the ring's design coordinates. */
+    static boolean ringInkBounds(RectF out, TrioAppearance a, TrioAppearance.Ring r, int zone) {
+        int part = r.parts[zone];
+        if (part == Prefs.PART_BOLT) {
+            float height = zone == 0 ? TrioGeometry.DOT_BOX_TOP : TrioGeometry.DOT_BOX_BOTTOM;
+            float scale = Math.min((78f - a.ringStroke) / 15f, height / TrioGeometry.BOLT_INK_H) * a.boltScaleFactor();
+            out.set(TrioGeometry.B_CX + (BOLT_INK.left - TrioGeometry.BOLT_CX_REF) * scale,
+                    TrioGeometry.ZONE_CY[zone] + (BOLT_INK.top - TrioGeometry.BOLT_INK_CY) * scale,
+                    TrioGeometry.B_CX + (BOLT_INK.right - TrioGeometry.BOLT_CX_REF) * scale,
+                    TrioGeometry.ZONE_CY[zone] + (BOLT_INK.bottom - TrioGeometry.BOLT_INK_CY) * scale);
+            return true;
+        }
+        if (part != Prefs.PART_VALUE && part != Prefs.PART_TYPE && part != Prefs.PART_CLOCK) return false;
+        String text = part == Prefs.PART_VALUE ? String.valueOf(r.levelReading)
+                : part == Prefs.PART_TYPE ? r.typeReading : TrioState.sClockText;
+        if (text == null || text.isEmpty()) return false;
+        float size = fittedRingTextSize(a, zone, part, text);
+        float baseline = inkCentredBaseline(text, size, TrioGeometry.zoneTextCy(zone, a.ringStroke));
+        int suffixScale = part == Prefs.PART_TYPE ? a.typeSuffixScale : 100;
+        float left = TrioGeometry.B_CX - measureType(text, size, suffixScale) * 0.5f;
+        boolean suffix = TrioGeometry.hasShrunkSuffix(text, suffixScale);
+        String base = suffix ? TrioGeometry.typeBase(text) : text;
+        TEXT.getTextBounds(base, 0, base.length(), TEXT_INK);
+        out.set(left + TEXT_INK.left, baseline + TEXT_INK.top, left + TEXT_INK.right, baseline + TEXT_INK.bottom);
+        if (suffix) {
+            float cursor = left + TEXT.measureText(base);
+            String tail = String.valueOf(TrioGeometry.TYPE_SUFFIX);
+            TEXT.setTextSize(size * suffixScale / 100f);
+            TEXT.getTextBounds(tail, 0, tail.length(), TEXT_INK);
+            out.set(Math.min(out.left, cursor + TEXT_INK.left), Math.min(out.top, baseline + TEXT_INK.top),
+                    Math.max(out.right, cursor + TEXT_INK.right), Math.max(out.bottom, baseline + TEXT_INK.bottom));
+            TEXT.setTextSize(size);
+        }
+        return true;
+    }
+
     /** Explicit slots share the editor's thirds and fit ink on BOTH axes. */
     private static void drawFreeRing(Canvas c, int level, boolean quickCharging, int wifiLevel,
                                      int mobileLevel, int[] levels, String type, int role, int fg,
                                      TrioAppearance a, TrioAppearance.Ring r) {
-        drawBattery(c, level, role, fg, a, r.gapStart(), r.gapEnd(), r.sweep(), r.arcStart());
+        final TrioGeometry.RingArc arc = ringArc(a, r);
+        drawBattery(c, level, role, fg, a, arc.gapStart, arc.gapEnd, arc.sweep, arc.start);
         for (int z = 0; z < 3; z++) {
             final int part = r.parts[z];
             if (part == Prefs.PART_NONE) continue;
@@ -509,46 +608,7 @@ final class TrioRenderer {
                 final String text = part == Prefs.PART_VALUE ? String.valueOf(level)
                         : part == Prefs.PART_TYPE ? type : TrioState.sClockText;
                 if (text != null && !text.isEmpty()) {
-                    final int weight = part == Prefs.PART_VALUE ? a.valueWeight
-                            : part == Prefs.PART_TYPE ? a.typeWeight : a.clockWeight;
-                    final float requested = part == Prefs.PART_VALUE ? a.valueSize
-                            : part == Prefs.PART_TYPE ? a.typeSize : a.clockSize;
-                    applyWeight(weight);
-                    TEXT.setTextSize(requested);
-                    // Type is fitted to the THIRD it sits in, not to the small
-                    // placement box that positions a drawn figure (28/44/20 units).
-                    //
-                    // The height term measures the INK, not ascent + descent. That
-                    // distinction is the whole bug the size setting had: the metrics
-                    // reserve leading above the capitals and below the descenders that
-                    // a reading never draws - at 36pt they are 45 units against 26.3
-                    // units of actual ink - so dividing by them capped every line at
-                    // about 58% of the room it really had, and the bottom third came
-                    // out around a third of the size asked for.
-                    final float room = TrioGeometry.zoneTextRoomH(z);
-                    final int suffixScale = part == Prefs.PART_TYPE ? a.typeSuffixScale : 100;
-                    // The height cap is a straight ratio at the requested size.
-                    final float inkAtRequested = Math.max(1f, textInkHeight(text, requested));
-                    final float maxByHeight = requested * room / inkAtRequested;
-                    // The width cap is NOT independent of the answer: the budget is the
-                    // narrowest chord the line spans, which depends on how tall the line
-                    // ends up - and that depends on the size being solved for. Iterate
-                    // to a fixed point instead of guessing once. (The first attempt at
-                    // this multiplied the ink height by fitted/requested as well, which
-                    // scaled it twice and never converged.)
-                    float fitted = maxByHeight;
-                    for (int pass = 0; pass < 4; pass++) {
-                        final float inkH = Math.max(1f, textInkHeight(text, fitted));
-                        final float maxByWidth = fitSize(text, requested,
-                                TrioGeometry.zoneTextRoomW(z, a.ringStroke, inkH), suffixScale);
-                        final float next = Math.min(maxByHeight, maxByWidth);
-                        if (Math.abs(next - fitted) < 0.05f) {
-                            fitted = next;
-                            break;
-                        }
-                        fitted = next;
-                    }
-                    final float inkH = Math.max(1f, textInkHeight(text, requested));
+                    final float fitted = fittedRingTextSize(a, z, part, text);
                     // Centred in the band, and on its INK rather than its metrics: the
                     // metrics reserve leading above the capitals that a digits-only
                     // string never draws, so a metrics-centred line sits high enough to

@@ -395,7 +395,8 @@ public final class DrawingZonesTest {
         if (c.trioStyle == Prefs.STYLE_RECT) return "rect";
         final TrioAppearance.Ring r = TrioAppearance.of(c).ring(scene.level, scene.charging,
                 scene.wifiLevel, "5G", TWO_SIMS.length);
-        return r.gapStart() + "/" + r.gapEnd() + "/" + r.sweep() + "/" + r.arcStart();
+        final TrioGeometry.RingArc arc = TrioRenderer.ringArc(TrioAppearance.of(c), r);
+        return arc.gapStart + "/" + arc.gapEnd + "/" + arc.sweep + "/" + arc.start;
     }
 
     /**
@@ -429,8 +430,8 @@ public final class DrawingZonesTest {
                 String.valueOf(TrioGeometry.GAP_START_IDLE));
         eq("the mouth is the idle width at the far end",
                 String.valueOf(r.gapEnd()), String.valueOf(TrioGeometry.GAP_END_IDLE));
-        // And it is one number regardless of what is placed: the mouth no longer depends
-        // on which piece occupies the notch.
+        // The fitting envelope is stable across occupants. RingOpeningTest separately
+        // checks the actual rendered notch, which follows the fitted component ink.
         final TrioSettings bare = cfg(false, s -> {
             s.ringZones = Prefs.decodeLayout("6||");
         }).settings;

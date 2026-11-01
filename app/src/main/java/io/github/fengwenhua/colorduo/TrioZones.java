@@ -643,15 +643,16 @@ public final class TrioZones {
         // The sweep follows the arc actually drawn: with the bottom closed there is ink all
         // the way round, so a tap down there has to land on the ring. The three ZONE bands
         // stay where they are - this only decides "is this tap on the battery outline".
-        final float sweep = ring.sweep();
-        final float start = ring.arcStart();
+        final TrioGeometry.RingArc arc = TrioRenderer.ringArc(a, ring);
+        final float sweep = arc.sweep;
+        final float start = arc.start;
         double angle = (Math.toDegrees(Math.atan2(y, x)) - start + 360) % 360;
         if (angle > 360 - cap) angle -= 360;
         if (angle < -cap || angle > sweep + cap) return false;
         double progress = angle / sweep;
         double pad = cap / sweep;
-        return ring.gapStart() == ring.gapEnd()
-                || progress <= ring.gapStart() + pad || progress >= ring.gapEnd() - pad;
+        return arc.gapStart == arc.gapEnd
+                || progress <= arc.gapStart + pad || progress >= arc.gapEnd - pad;
     }
 
     // ------------------------------------------------------- placement rules

@@ -27,6 +27,58 @@ final class TrioGeometry {
     static final float B_CX = 59.5f;
     static final float B_CY = 61.48715261785473f;
     static final float B_R = 51.5f;
+
+    /** Physical openings, converted once to the progress convention used by the battery fill. */
+    static final class RingArc {
+        final float gapStart, gapEnd, sweep, start;
+        RingArc(float topHalfDegrees, float bottomHalfDegrees) {
+            sweep = 360f - 2f * bottomHalfDegrees;
+            start = 270f - sweep * 0.5f;
+            gapStart = topHalfDegrees == 0f ? 0f : 0.5f - topHalfDegrees / sweep;
+            gapEnd = topHalfDegrees == 0f ? 0f : 0.5f + topHalfDegrees / sweep;
+        }
+    }
+
+    private static final int OPENING_STEPS = 128;
+    private static final float[] OPENING_X = new float[OPENING_STEPS + 1];
+    private static final float[] OPENING_Y = new float[OPENING_STEPS + 1];
+    static {
+        for (int i = 0; i <= OPENING_STEPS; i++) {
+            double angle = Math.PI * 0.5 * i / OPENING_STEPS;
+            OPENING_X[i] = B_R * (float) Math.sin(angle);
+            OPENING_Y[i] = B_R * (float) Math.cos(angle);
+        }
+    }
+
+    /** Last angular contact with actual ink, including round caps and an AA clearance. */
+    static float openingForInk(int zone, float stroke, float left, float top, float right, float bottom) {
+        float clearance = stroke * 0.5f + 2f;
+        int last = -1;
+        for (int i = 0; i <= OPENING_STEPS; i++) {
+            float y = B_CY + (zone == 0 ? -OPENING_Y[i] : OPENING_Y[i]);
+            if (touchesInk(B_CX - OPENING_X[i], y, left, top, right, bottom, clearance)
+                    || touchesInk(B_CX + OPENING_X[i], y, left, top, right, bottom, clearance)) last = i;
+        }
+        if (last < 0) return 0f;
+        if (last == OPENING_STEPS) return 90f;
+        float lo = 90f * last / OPENING_STEPS, hi = 90f * (last + 1) / OPENING_STEPS;
+        for (int i = 0; i < 12; i++) {
+            float middle = (lo + hi) * 0.5f;
+            double angle = Math.toRadians(middle);
+            float x = B_R * (float) Math.sin(angle);
+            float y = B_CY + (zone == 0 ? -1f : 1f) * B_R * (float) Math.cos(angle);
+            if (touchesInk(B_CX - x, y, left, top, right, bottom, clearance)
+                    || touchesInk(B_CX + x, y, left, top, right, bottom, clearance)) lo = middle;
+            else hi = middle;
+        }
+        return hi;
+    }
+
+    private static boolean touchesInk(float x, float y, float left, float top, float right, float bottom, float clearance) {
+        float dx = Math.max(Math.max(left - x, x - right), 0f);
+        float dy = Math.max(Math.max(top - y, y - bottom), 0f);
+        return dx * dx + dy * dy < clearance * clearance;
+    }
     /** Default ring stroke; the user's {@code ring_stroke} setting overrides it. */
     static final float B_STROKE = 8f;
 

@@ -156,15 +156,33 @@ public class Paint {
             return;
         }
         final String slice = text.substring(start, end);
-        java.awt.Canvas probe = new java.awt.Canvas();
         final java.awt.Font font = font();
-        final java.awt.geom.Rectangle2D bounds = font.createGlyphVector(
-                probe.getFontMetrics(font).getFontRenderContext(), slice).getVisualBounds();
+        final java.awt.font.FontRenderContext context = new java.awt.font.FontRenderContext(null, true, true);
+        java.awt.geom.Rectangle2D bounds = null;
+        if (letterSpacing == 0f) {
+            bounds = font.createGlyphVector(context, slice).getVisualBounds();
+        } else {
+            // Canvas draws tracked glyphs separately. Bounds must use those same glyph
+            // positions; the untracked whole-string box leaves a false gap after digits.
+            float cursor = 0f;
+            for (int i = 0; i < slice.length(); i++) {
+                String ch = slice.substring(i, i + 1);
+                java.awt.geom.Rectangle2D glyph = font.createGlyphVector(context, ch).getVisualBounds();
+                if (!glyph.isEmpty()) {
+                    java.awt.geom.Rectangle2D shifted = new java.awt.geom.Rectangle2D.Double(
+                            cursor + glyph.getX(), glyph.getY(), glyph.getWidth(), glyph.getHeight());
+                    if (bounds == null) bounds = shifted;
+                    else bounds = bounds.createUnion(shifted);
+                }
+                cursor += measureText(ch) + letterSpacing * textSize;
+            }
+        }
+        if (bounds == null || bounds.isEmpty()) { out.setEmpty(); return; }
         // The platform reports integer bounds relative to the baseline; round the same
         // way it does rather than truncating toward zero.
         out.left = (int) Math.floor(bounds.getX());
         out.top = (int) Math.floor(bounds.getY());
-        out.right = out.left + (int) Math.ceil(measureText(slice));
+        out.right = (int) Math.ceil(bounds.getMaxX());
         out.bottom = out.top + (int) Math.ceil(bounds.getHeight());
     }
 
