@@ -37,6 +37,21 @@ public class Path {
 
     public void reset() { delegate.reset(); }
 
+    public float[] approximate(float error) {
+        java.awt.geom.PathIterator iterator = delegate.getPathIterator(null, error);
+        java.util.ArrayList<Float> points = new java.util.ArrayList<>();
+        float[] xy = new float[6];
+        while (!iterator.isDone()) {
+            int kind = iterator.currentSegment(xy);
+            // The renderer's control only compares complete outlines for equality.
+            points.add((float) kind); points.add(xy[0]); points.add(xy[1]);
+            iterator.next();
+        }
+        float[] result = new float[points.size()];
+        for (int i = 0; i < result.length; i++) result[i] = points.get(i);
+        return result;
+    }
+
     public void computeBounds(RectF bounds, boolean exact) {
         java.awt.geom.Rectangle2D box = delegate.getBounds2D();
         bounds.set((float) box.getMinX(), (float) box.getMinY(), (float) box.getMaxX(), (float) box.getMaxY());

@@ -93,6 +93,11 @@ public class Paint {
         return fakeBold;
     }
 
+    public void getTextPath(String text, int start, int end, float x, float y, Path path) {
+        java.awt.font.FontRenderContext context = new java.awt.font.FontRenderContext(null, true, true);
+        path.delegate.append(font().createGlyphVector(context, text.substring(start, end)).getOutline(x, y), false);
+    }
+
     public Font font() {
         // The synthetic flag wins over the typeface's own style, matching the
         // platform's behaviour of emboldening whatever face is installed.

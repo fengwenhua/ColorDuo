@@ -165,10 +165,11 @@
     <string name="arc_stroke_summary_rect">The default is 12dp and the slider covers 3–16dp.</string>
 
     <string name="value_size_title">Number size</string>
-    <string name="value_size_summary">The default is 36 and the slider covers 16–44 (up to 56 when centred in the ring).</string>
+    <string name="value_size_summary">Default: 36. The limit depends on the style; text fits the available space.</string>
+    <string name="value_size_ring_summary">This layout supports %1$d–%2$d. Top and bottom slots have less room; the centre allows larger digits.</string>
 
     <string name="value_weight_title">Number weight</string>
-    <string name="value_weight_summary">The default is 700 and the slider covers 100–900.</string>
+    <string name="value_weight_summary">Uses weights supported by the current font; identical results share one step.</string>
 
     <string name="clock_size_title">Clock size</string>
     <string name="clock_size_summary">The default is 36 and the slider covers 16–44.</string>

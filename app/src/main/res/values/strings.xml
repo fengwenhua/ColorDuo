@@ -183,10 +183,11 @@
     <string name="arc_stroke_summary_rect">默认 12dp，可调 3–16dp。</string>
 
     <string name="value_size_title">数字字号</string>
-    <string name="value_size_summary">默认 36，可调 16–44（环内居中最大 56）。</string>
+    <string name="value_size_summary">默认 36，上限随样式调整；空间不足时自动适配。</string>
+    <string name="value_size_ring_summary">当前布局可调 %1$d–%2$d；上、下部空间较小，居中可放大更多。</string>
 
     <string name="value_weight_title">数字字重</string>
-    <string name="value_weight_summary">默认 700，可调 100–900。</string>
+    <string name="value_weight_summary">按当前字体可用字重调节，效果相同的档位会合并。</string>
 
     <string name="clock_size_title">时钟字号</string>
     <string name="clock_size_summary">默认 36，可调 16–44。</string>

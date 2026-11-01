@@ -12,6 +12,8 @@ package android.graphics;
 
 /** Minimal desktop stand-in for {@code android.graphics.Typeface}. */
 public class Typeface {
+    /** Test-only counter for avoiding repeated font probing on UI recomposition. */
+    public static int weightRequests;
 
     public static final int NORMAL = 0;
     public static final int BOLD = 1;
@@ -49,6 +51,7 @@ public class Typeface {
      * text is bolder and therefore measured wider.
      */
     public static Typeface create(Typeface base, int weight, boolean italic) {
+        weightRequests++;
         int style = weight >= 600 ? BOLD : NORMAL;
         if (italic) {
             style |= ITALIC;

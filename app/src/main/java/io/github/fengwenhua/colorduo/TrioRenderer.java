@@ -449,10 +449,16 @@ final class TrioRenderer {
     }
 
     private static float fittedRingTextSize(TrioAppearance a, int z, int part, String text) {
-        final int weight = part == Prefs.PART_VALUE ? a.valueWeight
-                : part == Prefs.PART_TYPE ? a.typeWeight : a.clockWeight;
         final float requested = part == Prefs.PART_VALUE ? a.valueSize
                 : part == Prefs.PART_TYPE ? a.typeSize : a.clockSize;
+        return fittedRingTextSize(a, z, part, text, requested);
+    }
+
+    /** Also used by the settings controls to stop at the last effective size. */
+    static float fittedRingTextSize(TrioAppearance a, int z, int part, String text,
+                                    float requested) {
+        final int weight = part == Prefs.PART_VALUE ? a.valueWeight
+                : part == Prefs.PART_TYPE ? a.typeWeight : a.clockWeight;
         applyWeight(weight);
         TEXT.setTextSize(requested);
         // Type is fitted to the THIRD it sits in, not to the small

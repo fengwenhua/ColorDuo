@@ -56,7 +56,7 @@ tasks.named<JavaCompile>("compileTestJava") {
     dependsOn(generateHandoffBridge)
     options.encoding = "UTF-8"
     source(listOf("Prefs.java", "ChargeLayout.java", "TrioSettings.java", "TrioAppearance.java",
-            "TrioGeometry.java", "TrioZones.java", "TrioRenderer.java", "ConfigPacket.java",
+            "TrioGeometry.java", "TrioZones.java", "TrioRenderer.java", "TrioTextControls.java", "ConfigPacket.java",
             "RemoteFontKey.java", "FirstRunDefaults.java", "PreferencesSnapshot.java", "UpdateManifest.java",
             "SettingsSchema.java", "HyperOsIconLease.java", "Refl.java", "CapsuleLayoutSettings.java", "ContentSettings.java", "ShadeMirrorGeometry.java", "ColorOsPercentIcon.java").map { name ->
         val alternate = ringOverride ?: leaseOverride

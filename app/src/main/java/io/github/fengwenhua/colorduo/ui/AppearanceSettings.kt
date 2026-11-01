@@ -214,6 +214,7 @@ internal fun IntSlider(
     onValueChange: (Int) -> Unit,
     step: Int = 1,
     valueTextSuffix: String? = null,
+    valueText: String? = null,
 ) {
     val sliderContext = LocalContext.current.applicationContext
     SliderPreference(
@@ -228,7 +229,7 @@ internal fun IntSlider(
         },
         title = title,
         summary = summary,
-        valueText = value.toString() + (valueTextSuffix ?: ""),
+        valueText = valueText ?: (value.toString() + (valueTextSuffix ?: "")),
         enabled = enabled,
         valueRange = min.toFloat()..max.toFloat(),
         // NO discrete steps. Compose treats steps as the number of marks BETWEEN the

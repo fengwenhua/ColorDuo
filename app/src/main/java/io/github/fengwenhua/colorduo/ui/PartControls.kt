@@ -33,6 +33,7 @@ import io.github.fengwenhua.colorduo.Prefs
 import io.github.fengwenhua.colorduo.R
 import io.github.fengwenhua.colorduo.TrioAppearance
 import io.github.fengwenhua.colorduo.TrioSettings
+import io.github.fengwenhua.colorduo.TrioTextControls
 import io.github.fengwenhua.colorduo.TrioZones
 import io.github.fengwenhua.colorduo.WindowSheetPolicy
 import top.yukonga.miuix.kmp.basic.Text
@@ -137,6 +138,8 @@ internal class SliderSpec(
      * Defaults to [max], so every other row keeps its constant span.
      */
     val maxFor: (TrioAppearance) -> Int = { max },
+    /** Discrete effective settings, when several numeric requests draw the same font. */
+    val choices: ((TrioAppearance) -> IntArray)? = null,
     val read: (TrioSettings) -> Int,
     val write: (SettingsRepository, Int) -> Unit,
     val titleRes: (TrioAppearance) -> Int,
@@ -340,17 +343,7 @@ internal fun geometrySliders(): List<SliderSpec> {
             part = value,
             min = Prefs.MIN_VALUE_SIZE,
             max = Prefs.MAX_VALUE_SIZE,
-            // Each arrangement gets the ceiling it can actually draw to, and nothing more:
-            // a slider that runs past what the glyph can hold is a slider that does nothing
-            // at the top. The ring sizes a piece by the third it sits in; the capsule divides
-            // its interior by what its two cells draw; the rectangle has a fixed slot.
-            maxFor = {
-                when {
-                    it.ring -> Prefs.MAX_RING_VALUE_SIZE
-                    it.capsule -> Prefs.MAX_CAPSULE_VALUE_SIZE
-                    else -> Prefs.MAX_VALUE_SIZE
-                }
-            },
+            maxFor = { TrioTextControls.maxValueSize(it) },
             read = { it.valueSize },
             write = { r, v -> r.setValueSize(v) },
             titleRes = { R.string.value_size_title },
@@ -363,6 +356,7 @@ internal fun geometrySliders(): List<SliderSpec> {
             min = Prefs.MIN_VALUE_WEIGHT,
             max = Prefs.MAX_VALUE_WEIGHT,
             step = WEIGHT_STEP,
+            choices = { TrioTextControls.valueWeights(it) },
             read = { it.valueWeight },
             write = { r, v -> r.setValueWeight(v) },
             titleRes = { R.string.value_weight_title },
@@ -821,16 +815,23 @@ private fun SliderRow(
     update: ((SettingsRepository) -> Unit) -> Unit,
 ) {
     val a = TrioAppearance.of(settings)
+    val choices = spec.choices?.invoke(a)
+    val selected = spec.read(settings)
+    val maximum = spec.maxFor(a)
+    val index = choices?.indices?.minByOrNull { kotlin.math.abs(choices[it] - selected) } ?: 0
     IntSlider(
-        value = spec.read(settings).coerceAtMost(spec.maxFor(a)),
-        min = spec.min,
-        max = spec.maxFor(a),
-        step = spec.step,
+        value = if (choices != null) index else selected.coerceIn(spec.min, maximum),
+        min = if (choices != null) 0 else spec.min,
+        max = if (choices != null) (choices.size - 1).coerceAtLeast(1) else maximum,
+        step = if (choices != null) 1 else spec.step,
         title = stringResource(spec.titleRes(a)),
-        summary = stringResource(spec.summaryRes(a)),
-        enabled = spec.enabled(a),
+        summary = if (a.ring && spec.titleRes(a) == R.string.value_size_title)
+            stringResource(R.string.value_size_ring_summary, spec.min, maximum)
+        else stringResource(spec.summaryRes(a)),
+        enabled = spec.enabled(a) && (choices == null || choices.size > 1),
+        valueText = choices?.get(index)?.toString(),
         valueTextSuffix = spec.suffix,
-        onValueChange = { v -> update { r -> spec.write(r, v) } },
+        onValueChange = { v -> update { r -> spec.write(r, choices?.get(v.coerceIn(choices.indices)) ?: v) } },
     )
 }
 
