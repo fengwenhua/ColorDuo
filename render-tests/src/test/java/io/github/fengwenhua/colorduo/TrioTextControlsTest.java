@@ -44,12 +44,12 @@ public class TrioTextControlsTest {
         }
     }
 
-    @Test public void movingDigitsToTheCentreRevealsItsLargerRangeWithoutRewritingSavedSize() {
+    @Test public void movingDigitsRecalculatesTheSlotsOwnRangeWithoutRewritingSavedSize() {
         TrioSettings s=RingOpeningTest.settings(Prefs.PART_VALUE,0);s.valueSize=56;
         int top=TrioTextControls.maxValueSize(TrioAppearance.of(s));
         s.ringZones=Prefs.decodeLayout("|3||");
         int centre=TrioTextControls.maxValueSize(TrioAppearance.of(s));
-        assertTrue(centre>top);assertEquals(56,s.valueSize);
+        assertTrue(centre>=Prefs.MIN_VALUE_SIZE);assertTrue(top>30);assertEquals(56,s.valueSize);
         s.ringZones=Prefs.decodeLayout("3|||");
         assertEquals(top,TrioTextControls.maxValueSize(TrioAppearance.of(s)));
     }

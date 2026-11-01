@@ -62,7 +62,9 @@ public final class TrioTextControls {
         final int maximum = Prefs.maxValueSize(a.style);
         if (!a.ring) return maximum;
         String key = TrioRenderer.fontGeneration() + ":" + a.valueWeight + ":"
-                + a.ringStroke + ":" + Prefs.encodeLayout(a.ringZones);
+                + a.ringStroke + ":" + Prefs.encodeLayout(a.ringZones)+":"+a.ringValuePriority
+                +":"+a.wifiScale+":"+a.boltScale+":"+a.dotScale+":"+a.arcStroke
+                +":"+a.typeSize+":"+a.typeWeight+":"+a.clockSize+":"+a.clockWeight+":"+a.value;
         if (key.equals(sizeKey)) return sizeMax;
         int answer = maximum;
         for (int z = 0; z < 3; z++) {

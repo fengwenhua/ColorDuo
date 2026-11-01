@@ -319,6 +319,7 @@ class SettingsRepository @JvmOverloads constructor(
     fun setRingStroke(value: Int) = writeInt(Prefs.KEY_RING_STROKE, value)
     fun setArcStroke(value: Int) = writeInt(Prefs.KEY_ARC_STROKE, value)
     fun setValueSize(value: Int) = writeInt(Prefs.KEY_VALUE_SIZE, value)
+    fun setRingValuePriority(value: Boolean) = writeBoolean(Prefs.KEY_RING_VALUE_PRIORITY, value)
     fun setValueWeight(value: Int) = writeInt(Prefs.KEY_VALUE_WEIGHT, value)
     fun setClockSize(value: Int) = writeInt(Prefs.KEY_CLOCK_SIZE, value)
     fun setClockWeight(value: Int) = writeInt(Prefs.KEY_CLOCK_WEIGHT, value)

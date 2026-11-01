@@ -66,6 +66,7 @@ internal enum class ContentControl(val owner: TrioSettingsPart) {
     Sim1(TrioSettingsPart.Mobile),
     Sim2(TrioSettingsPart.Mobile),
     Value(TrioSettingsPart.Value),
+    ValuePriority(TrioSettingsPart.Value),
     /** A charger puts the number in the ring's middle; see Prefs.KEY_CHARGING_SHOWS_VALUE. */
     ChargingShowsValue(TrioSettingsPart.Value),
     Bolt(TrioSettingsPart.Bolt),
@@ -103,6 +104,18 @@ internal fun ContentControlRow(
     update: ((SettingsRepository) -> Unit) -> Unit,
     ringSettings: TrioSettings = settings,
 ) {
+    if (control == ContentControl.ValuePriority) {
+        val appearance = TrioAppearance.of(settings)
+        if (appearance.ring) ContentChoice(
+            selected = if (settings.ringValuePriority) 1 else 0,
+            title = R.string.ring_value_priority_title,
+            summaryRes = R.string.ring_value_priority_summary,
+            options = listOf(R.string.ring_value_keep_middle, R.string.ring_value_yield_middle),
+            dependencies = listOf(appearance.glyph to R.string.master_title),
+            onChange = { index -> update { it.setRingValuePriority(index == 1) } },
+        )
+        return
+    }
     val a = TrioAppearance.of(settings)
     val master = listOf(a.glyph to R.string.master_title)
     val positioned = when (control) {
@@ -224,6 +237,7 @@ internal fun ContentControlRow(
                 update { it.setPerfTempChargingOnly(value) }
             }
         ContentControl.Clock -> Unit // Capsule time has a fixed slot.
+        ContentControl.ValuePriority -> Unit // Handled above the generic controls.
     }
 }
 

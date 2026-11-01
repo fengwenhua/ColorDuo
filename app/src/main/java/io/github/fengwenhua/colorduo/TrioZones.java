@@ -303,18 +303,18 @@ public final class TrioZones {
         // it from the drawing rather than from the ink box is what keeps the guide over the
         // piece - the ink box is the outer reach of the whole glyph, including the stroke's
         // own half-width, so a guide sized to it would sit outside the arc it names.
-        final float halfW = (78f - a.ringStroke) * 0.5f;
+        final float halfW = zone==Zone.TOP?TrioRenderer.ringTopHalfWidth(a):(78f - a.ringStroke) * 0.5f;
         final float top;
         final float bottom;
         if (zone == Zone.TOP) {
             top = TrioGeometry.INK_Y;
-            bottom = TrioGeometry.ZONE_CUT_TOP;
+            bottom = TrioRenderer.ringTopCut(a);
         } else if (zone == Zone.BOTTOM) {
-            top = TrioGeometry.ZONE_CUT_BOTTOM;
+            top = TrioRenderer.ringBottomCut(a);
             bottom = TrioGeometry.INK_Y + TrioGeometry.INK_H;
         } else {
-            top = TrioGeometry.ZONE_CUT_TOP;
-            bottom = TrioGeometry.ZONE_CUT_BOTTOM;
+            top = TrioRenderer.ringTopCut(a);
+            bottom = TrioRenderer.ringBottomCut(a);
         }
         return new float[][] { { cx - halfW, top, cx + halfW, bottom } };
     }
@@ -355,6 +355,12 @@ public final class TrioZones {
 
     /** Layout-aware regions, including the capsule's four cells and its dot bands. */
     public static float[][] boxes(Zone zone, TrioAppearance a) {
+        if(a.ring) {
+            float top=TrioRenderer.ringTopCut(a),bottom=TrioRenderer.ringBottomCut(a);
+            if(zone==Zone.TOP)return new float[][]{{0f,0f,TrioGeometry.BOX,top}};
+            if(zone==Zone.CENTRE)return new float[][]{{0f,top,TrioGeometry.BOX,bottom}};
+            return new float[][]{{0f,bottom,TrioGeometry.BOX,TrioGeometry.INK_Y+TrioGeometry.INK_H}};
+        }
         if (!a.capsule) {
             return boxes(zone, a.rect);
         }

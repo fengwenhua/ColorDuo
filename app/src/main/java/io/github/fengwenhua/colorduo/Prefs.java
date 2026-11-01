@@ -838,6 +838,8 @@ public final class Prefs {
     public static final String KEY_RING_STROKE = "ring_stroke";
     public static final String KEY_ARC_STROKE = "arc_stroke";
     public static final String KEY_VALUE_SIZE = "value_size";
+    /** Whether middle-ring contents yield space to an enlarged top percentage. */
+    public static final String KEY_RING_VALUE_PRIORITY = "ring_value_priority";
     public static final String KEY_VALUE_WEIGHT = "value_weight";
     /**
      * Font size of the time, in the capsule's left-hand slot.

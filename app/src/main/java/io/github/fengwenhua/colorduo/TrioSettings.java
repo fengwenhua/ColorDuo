@@ -77,6 +77,7 @@ public final class TrioSettings {
     public int ringStroke;
     public int arcStroke;
     public int valueSize;
+    public boolean ringValuePriority;
     /** Numeric font weight of the value/type text, 100..900. */
     public int valueWeight;
     /**
@@ -297,6 +298,7 @@ public final class TrioSettings {
         s.ringStroke = Prefs.DEF_RING_STROKE;
         s.arcStroke = Prefs.DEF_ARC_STROKE;
         s.valueSize = Prefs.DEF_VALUE_SIZE;
+        s.ringValuePriority = false;
         s.valueWeight = Prefs.DEF_VALUE_WEIGHT;
         s.clockSize = Prefs.DEF_CLOCK_SIZE;
         s.clockWeight = Prefs.DEF_CLOCK_WEIGHT;
@@ -412,6 +414,7 @@ public final class TrioSettings {
         s.valueWeight = Prefs.clamp(
                 p.getInt(Prefs.KEY_VALUE_WEIGHT, Prefs.DEF_VALUE_WEIGHT),
                 Prefs.MIN_VALUE_WEIGHT, Prefs.MAX_VALUE_WEIGHT);
+        s.ringValuePriority = p.getBoolean(Prefs.KEY_RING_VALUE_PRIORITY, false);
         // The clock falls back to the value's OWN size and weight, not to the
         // constants: before these two keys existed the time was drawn at exactly
         // the value's size, so an install that had already moved that slider to 40
@@ -626,6 +629,7 @@ public final class TrioSettings {
         s.ringStroke = ringStroke;
         s.arcStroke = arcStroke;
         s.valueSize = valueSize;
+        s.ringValuePriority = ringValuePriority;
         s.valueWeight = valueWeight;
         s.clockSize = clockSize;
         s.clockWeight = clockWeight;
@@ -719,6 +723,7 @@ public final class TrioSettings {
             case Prefs.KEY_RING_STROKE: ringStroke = src.ringStroke; return true;
             case Prefs.KEY_ARC_STROKE: arcStroke = src.arcStroke; return true;
             case Prefs.KEY_VALUE_SIZE: valueSize = src.valueSize; return true;
+            case Prefs.KEY_RING_VALUE_PRIORITY: ringValuePriority = src.ringValuePriority; return true;
             case Prefs.KEY_VALUE_WEIGHT: valueWeight = src.valueWeight; return true;
             case Prefs.KEY_CLOCK_SIZE: clockSize = src.clockSize; return true;
             case Prefs.KEY_CLOCK_WEIGHT: clockWeight = src.clockWeight; return true;
@@ -806,6 +811,7 @@ public final class TrioSettings {
         s.valueWeight = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_VALUE_WEIGHT, Prefs.DEF_VALUE_WEIGHT),
                 Prefs.MIN_VALUE_WEIGHT, Prefs.MAX_VALUE_WEIGHT);
+        s.ringValuePriority = bundle.getBoolean(Prefs.KEY_RING_VALUE_PRIORITY, false);
         // Falls back to the value's own, as in from(SharedPreferences): a bundle
         // that predates these keys - or a sender that simply omits them - keeps the
         // shared-size look rather than snapping the time to a constant.
@@ -937,6 +943,7 @@ public final class TrioSettings {
                 && ringStroke == s.ringStroke
                 && arcStroke == s.arcStroke
                 && valueSize == s.valueSize
+                && ringValuePriority == s.ringValuePriority
                 && valueWeight == s.valueWeight
                 && clockSize == s.clockSize
                 && clockWeight == s.clockWeight
@@ -973,6 +980,7 @@ public final class TrioSettings {
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;
+        h = h * 31 + (ringValuePriority ? 1 : 0);
         h = h * 31 + capsuleLayout.hashCode();
         return h != 0 ? h : 1;
     }

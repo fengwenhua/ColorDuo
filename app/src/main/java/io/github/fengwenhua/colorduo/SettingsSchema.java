@@ -21,7 +21,7 @@ final class SettingsSchema {
         Object defaultValue() { return read.apply(TrioSettings.defaults()); }
         Group group() {
             if (field.startsWith("capsule")) return Group.CAPSULE_LAYOUT;
-            if (field.equals("ringZones") || field.endsWith("ChargingLayout") || field.equals("chargingLayout")) return Group.RING_LAYOUT;
+            if (field.equals("ringZones") || field.equals("ringValuePriority") || field.endsWith("ChargingLayout") || field.equals("chargingLayout")) return Group.RING_LAYOUT;
             if (styled() || field.startsWith("show") || field.equals("typeHideOnWifi")
                     || field.equals("chargingShowsValue") || field.equals("perfPower")
                     || field.equals("perfTemp") || field.equals("perfTempChargingOnly")) return Group.CONTENT;
@@ -85,6 +85,7 @@ final class SettingsSchema {
         entry(Prefs.KEY_RING_STROKE, "ringStroke", Kind.INT, Prefs.MIN_RING_STROKE, style -> Prefs.MAX_RING_STROKE, s -> s.ringStroke),
         entry(Prefs.KEY_ARC_STROKE, "arcStroke", Kind.INT, Prefs.MIN_ARC_STROKE, style -> Prefs.MAX_ARC_STROKE, s -> s.arcStroke),
         entry(Prefs.KEY_VALUE_SIZE, "valueSize", Kind.INT, Prefs.MIN_VALUE_SIZE, style -> Prefs.maxValueSize(style), s -> s.valueSize),
+        entry(Prefs.KEY_RING_VALUE_PRIORITY, "ringValuePriority", Kind.BOOLEAN, 0, style -> 1, s -> s.ringValuePriority),
         entry(Prefs.KEY_VALUE_WEIGHT, "valueWeight", Kind.INT, Prefs.MIN_VALUE_WEIGHT, style -> Prefs.MAX_VALUE_WEIGHT, s -> s.valueWeight),
         entry(Prefs.KEY_CLOCK_SIZE, "clockSize", Kind.INT, Prefs.MIN_CLOCK_SIZE, style -> Prefs.maxClockSize(style), s -> s.clockSize),
         entry(Prefs.KEY_CLOCK_WEIGHT, "clockWeight", Kind.INT, Prefs.MIN_CLOCK_WEIGHT, style -> Prefs.MAX_CLOCK_WEIGHT, s -> s.clockWeight),

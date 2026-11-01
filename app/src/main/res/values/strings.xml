@@ -184,7 +184,11 @@
 
     <string name="value_size_title">数字字号</string>
     <string name="value_size_summary">默认 36，上限随样式调整；空间不足时自动适配。</string>
-    <string name="value_size_ring_summary">当前布局可调 %1$d–%2$d；上、下部空间较小，居中可放大更多。</string>
+    <string name="value_size_ring_summary">当前布局可调 %1$d–%2$d；上限随放大方式和可用空间调整。</string>
+    <string name="ring_value_priority_title">上部数字放大方式</string>
+    <string name="ring_value_priority_summary">仅电量数字位于上部时生效。保持布局时利用剩余空间；选择让位后，中部组件随数字放大自动移动或缩小。</string>
+    <string name="ring_value_keep_middle">保持中部布局</string>
+    <string name="ring_value_yield_middle">为数字让位</string>
 
     <string name="value_weight_title">数字字重</string>
     <string name="value_weight_summary">按当前字体可用字重调节，效果相同的档位会合并。</string>

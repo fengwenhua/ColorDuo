@@ -191,6 +191,7 @@ public final class TrioAppearance {
     public final int arcStroke;
     public final int trackAlpha;
     public final int valueSize;
+    public final boolean ringValuePriority;
     public final int valueWeight;
     /** Independent size and weight of the capsule or free-ring clock. */
     public final int clockSize;
@@ -324,6 +325,7 @@ public final class TrioAppearance {
         arcStroke = c.arcStroke;
         trackAlpha = c.trackAlpha;
         valueSize = c.valueSize;
+        ringValuePriority = c.ringValuePriority;
         valueWeight = c.valueWeight;
         clockSize = c.clockSize;
         clockWeight = c.clockWeight;

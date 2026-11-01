@@ -166,7 +166,11 @@
 
     <string name="value_size_title">Number size</string>
     <string name="value_size_summary">Default: 36. The limit depends on the style; text fits the available space.</string>
-    <string name="value_size_ring_summary">This layout supports %1$d–%2$d. Top and bottom slots have less room; the centre allows larger digits.</string>
+    <string name="value_size_ring_summary">This layout supports %1$d–%2$d. The limit follows the enlargement mode and available space.</string>
+    <string name="ring_value_priority_title">Enlarging top digits</string>
+    <string name="ring_value_priority_summary">Applies to top digits. Keep the middle layout to use remaining space, or let middle components move or shrink as the digits grow.</string>
+    <string name="ring_value_keep_middle">Keep middle layout</string>
+    <string name="ring_value_yield_middle">Make room for digits</string>
 
     <string name="value_weight_title">Number weight</string>
     <string name="value_weight_summary">Uses weights supported by the current font; identical results share one step.</string>

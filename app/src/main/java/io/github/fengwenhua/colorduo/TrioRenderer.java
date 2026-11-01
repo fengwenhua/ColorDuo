@@ -448,6 +448,156 @@ final class TrioRenderer {
                 slotLevels, mobileType, role, fg, a, r);
     }
 
+    /** One stable layout for every possible network/charging occupant in these chains. */
+    static final class RingContent {
+        final TrioAppearance source;
+        final int fontGeneration;
+        final float topRoom, valueCy, valueHalfWidth, middleCy, middleScale, topCut, bottomCut;
+        private RingContent() {
+            source=null; fontGeneration=-1;
+            topRoom=TrioGeometry.zoneTextRoomH(0); valueCy=TrioGeometry.ZONE_CY[0];
+            valueHalfWidth=0f;
+            middleCy=TrioGeometry.ZONE_CY[1]; middleScale=1f;
+            topCut=TrioGeometry.ZONE_CUT_TOP; bottomCut=TrioGeometry.ZONE_CUT_BOTTOM;
+        }
+        private RingContent(TrioAppearance a) {
+            source=a; fontGeneration=sFontGeneration;
+            final float edge=TrioGeometry.INK_Y+1f, gap=2f;
+            RectF mid=new RectF(), bottom=new RectF(), otherTop=new RectF();
+            boolean hasMiddle=ringChainEnvelope(a,1,false,mid);
+            boolean hasBottom=ringChainEnvelope(a,2,false,bottom);
+            boolean hasOtherTop=ringChainEnvelope(a,0,true,otherTop);
+            final float middleHalfH=hasMiddle?(mid.bottom-mid.top)*.5f:0f;
+            final float middleHalfW=hasMiddle?(mid.right-mid.left)*.5f:0f;
+            final float bottomEdge=hasBottom?bottom.top:TrioGeometry.INK_Y+TrioGeometry.INK_H-1f;
+            if(a.ringValuePriority) {
+                // A useful middle reading remains even with an unusually tall custom face.
+                topRoom=Math.max(TrioGeometry.zoneTextRoomH(0),bottomEdge-gap-edge-(hasMiddle?24f+gap:0f));
+            } else {
+                final float last=hasMiddle?Math.min(TrioGeometry.ZONE_CUT_TOP-1f,mid.top-gap):TrioGeometry.ZONE_CUT_TOP-1f;
+                topRoom=Math.max(1f,last-edge);
+            }
+            applyWeight(Prefs.MAX_VALUE_WEIGHT);
+            float height=Math.min(topRoom,textInkHeight("0123456789",a.valueSize));
+            applyWeight(a.valueWeight);
+            height=Math.max(height,Math.min(topRoom,textInkHeight("0123456789",a.valueSize)));
+            float rawHeight=Math.max(1f,textInkHeight("0123456789",a.valueSize));
+            TEXT.setTextSize(a.valueSize*Math.min(1f,height/rawHeight));
+            float digitAdvance=0f;
+            for(int digit=0;digit<10;digit++)digitAdvance=Math.max(digitAdvance,TEXT.measureText(String.valueOf(digit)));
+            valueHalfWidth=Math.min((TrioGeometry.INK_W-4f)*.5f,
+                    Math.max(TEXT.measureText("100"),digitAdvance*2f)*.5f+1f);
+            float cy=Math.max(TrioGeometry.ZONE_CY[0],edge+height*.5f);
+            if(!a.ringValuePriority) {
+                float last=edge+topRoom;
+                cy=Math.min(cy,last-height*.5f);
+            }
+            valueCy=cy;
+            float topBottom=cy+height*.5f;
+            if(hasOtherTop)topBottom=Math.max(topBottom,otherTop.bottom);
+            float scale=1f, centre=TrioGeometry.ZONE_CY[1];
+            if(a.ringValuePriority&&hasMiddle&&topBottom+gap>mid.top) {
+                float first=topBottom+gap, last=bottomEdge-gap;
+                // Do not expand the middle component's radial envelope while moving it.
+                // Existing large Wi-Fi settings can have empty bounding-box corners outside
+                // the inner circle; preserving their envelope avoids an abrupt size jump.
+                float allowed=Math.max(TrioGeometry.B_R-a.ringStroke*.5f-1f,
+                        (float)Math.hypot(middleHalfW,Math.abs(centre-TrioGeometry.B_CY)+middleHalfH));
+                float low=0f, high=1f;
+                for(int pass=0;pass<18;pass++) {
+                    float candidate=(low+high)*.5f;
+                    float candidateCy=Math.max(TrioGeometry.ZONE_CY[1],first+middleHalfH*candidate);
+                    float reach=(float)Math.hypot(middleHalfW*candidate,
+                            Math.abs(candidateCy-TrioGeometry.B_CY)+middleHalfH*candidate);
+                    if(candidateCy+middleHalfH*candidate<=last&&reach<=allowed)low=candidate;
+                    else high=candidate;
+                }
+                scale=low;
+                centre=Math.max(TrioGeometry.ZONE_CY[1],first+middleHalfH*scale);
+            }
+            middleScale=scale; middleCy=centre;
+            float middleTop=hasMiddle?centre-middleHalfH*scale:TrioGeometry.ZONE_CUT_BOTTOM;
+            float middleBottom=hasMiddle?centre+middleHalfH*scale:TrioGeometry.ZONE_CUT_TOP;
+            topCut=seam(TrioGeometry.ZONE_CUT_TOP,topBottom+1f,middleTop-1f);
+            bottomCut=seam(TrioGeometry.ZONE_CUT_BOTTOM,middleBottom+1f,bottomEdge-1f);
+        }
+        private static float seam(float preferred,float low,float high) {
+            return low<=high?Math.max(low,Math.min(preferred,high)):(low+high)*.5f;
+        }
+        boolean matches(TrioAppearance a) {
+            TrioAppearance b=source;
+            return b!=null&&fontGeneration==sFontGeneration&&a.style==b.style&&a.value==b.value
+                    &&a.ringValuePriority==b.ringValuePriority&&a.valueSize==b.valueSize&&a.valueWeight==b.valueWeight
+                    &&a.ringStroke==b.ringStroke&&a.arcStroke==b.arcStroke&&a.wifiScale==b.wifiScale
+                    &&a.boltScale==b.boltScale&&a.dotScale==b.dotScale&&a.typeSize==b.typeSize
+                    &&a.typeWeight==b.typeWeight&&a.clockSize==b.clockSize&&a.clockWeight==b.clockWeight
+                    &&java.util.Arrays.deepEquals(a.ringZones,b.ringZones);
+        }
+    }
+    private static final RingContent DEFAULT_RING_CONTENT=new RingContent();
+    private static RingContent sRingContent;
+
+    static RingContent ringContent(TrioAppearance a) {
+        boolean topValue=false;
+        for(int part:a.ringZones[0])topValue|=part==Prefs.PART_VALUE;
+        if(!a.ring||!a.value||!topValue)return DEFAULT_RING_CONTENT;
+        if(sRingContent==null||!sRingContent.matches(a))sRingContent=new RingContent(a);
+        return sRingContent;
+    }
+    static float ringTopCut(TrioAppearance a) { return ringContent(a).topCut; }
+    static float ringBottomCut(TrioAppearance a) { return ringContent(a).bottomCut; }
+    static float ringTopHalfWidth(TrioAppearance a) {
+        return Math.max((78f-a.ringStroke)*.5f,ringContent(a).valueHalfWidth);
+    }
+
+    /** Conservative ink envelopes, independent of live Wi-Fi, SIM or charging state. */
+    private static boolean ringChainEnvelope(TrioAppearance a,int zone,boolean skipValue,RectF out) {
+        boolean any=false;
+        float cy=TrioGeometry.ZONE_CY[zone],cx=TrioGeometry.B_CX,width=78f-a.ringStroke;
+        float boxH=zone==0?TrioGeometry.DOT_BOX_TOP:zone==1?TrioGeometry.DOT_BOX_CENTRE:TrioGeometry.DOT_BOX_BOTTOM;
+        for(int part:a.ringZones[zone]) {
+            if(part==Prefs.PART_NONE||(skipValue&&part==Prefs.PART_VALUE))continue;
+            float halfW,halfH,top,low;
+            if(part==Prefs.PART_WIFI) {
+                float extra=Math.max(0f,a.arcStroke-TrioGeometry.W_STROKE);
+                float fit=Math.min(width/(TrioGeometry.W_INK_W+extra),boxH/(TrioGeometry.W_INK_H+extra))*a.wifiScaleFactor();
+                halfW=(TrioGeometry.W_INK_W+extra)*fit*.5f;halfH=(TrioGeometry.W_INK_H+extra)*fit*.5f;
+            } else if(part==Prefs.PART_BOLT) {
+                float fit=Math.min(width/15f,boxH/TrioGeometry.BOLT_INK_H)*a.boltScaleFactor();
+                halfW=(BOLT_INK.right-BOLT_INK.left)*fit*.5f;halfH=TrioGeometry.BOLT_INK_H*fit*.5f;
+            } else if(part==Prefs.PART_MOBILE||part==Prefs.PART_SIM_1||part==Prefs.PART_SIM_2) {
+                float radius=TrioGeometry.arcRowDotR(zone,a.ringStroke,width,a.dotScaleFactor());
+                if(zone==1){halfW=radius*5.5f;halfH=radius;}
+                else {
+                    float angle=Math.min((float)Math.toRadians(TrioGeometry.BEAD_SPAN_DEG*.5f),
+                            Math.max(0f,(float)Math.toRadians(TrioGeometry.GAP_WIDTH_DEG*.5f)-(radius+a.ringStroke*.5f+1f)/TrioGeometry.B_R));
+                    halfW=TrioGeometry.B_R*(float)Math.sin(angle)+radius;
+                    float outer=TrioGeometry.B_CY+(zone==0?-1f:1f)*TrioGeometry.B_R;
+                    float inner=TrioGeometry.B_CY+(zone==0?-1f:1f)*TrioGeometry.B_R*(float)Math.cos(angle);
+                    top=Math.min(outer,inner)-radius;low=Math.max(outer,inner)+radius;
+                    if(!any)out.set(cx-halfW,top,cx+halfW,low);
+                    else out.set(Math.min(out.left,cx-halfW),Math.min(out.top,top),Math.max(out.right,cx+halfW),Math.max(out.bottom,low));
+                    any=true;continue;
+                }
+            } else {
+                int weight=part==Prefs.PART_VALUE?Prefs.MAX_VALUE_WEIGHT:part==Prefs.PART_CLOCK?a.clockWeight:a.typeWeight;
+                int size=part==Prefs.PART_VALUE?a.valueSize:part==Prefs.PART_CLOCK?a.clockSize:a.typeSize;
+                applyWeight(weight);
+                String probe=part==Prefs.PART_TYPE?"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ+": "0123456789:";
+                halfH=Math.min(TrioGeometry.zoneTextRoomH(zone),textInkHeight(probe,size))*.5f;
+                float digit=0f;
+                for(int i=0;i<probe.length();i++)digit=Math.max(digit,TEXT.measureText(probe.substring(i,i+1)));
+                float advance=digit*(part==Prefs.PART_CLOCK?5f:part==Prefs.PART_VALUE?3f:4f);
+                halfW=Math.min(advance,TrioGeometry.zoneTextRoomW(zone,a.ringStroke,0f))*.5f;
+            }
+            top=cy-halfH;low=cy+halfH;
+            if(!any)out.set(cx-halfW,top,cx+halfW,low);
+            else out.set(Math.min(out.left,cx-halfW),Math.min(out.top,top),Math.max(out.right,cx+halfW),Math.max(out.bottom,low));
+            any=true;
+        }
+        return any;
+    }
+
     private static float fittedRingTextSize(TrioAppearance a, int z, int part, String text) {
         final float requested = part == Prefs.PART_VALUE ? a.valueSize
                 : part == Prefs.PART_TYPE ? a.typeSize : a.clockSize;
@@ -472,6 +622,8 @@ final class TrioRenderer {
 
     private static float fittedRingTextAtWeight(TrioAppearance a, int z, int part,
                                                 String text, float requested, int weight) {
+        final boolean topValue=part==Prefs.PART_VALUE&&z==0;
+        final float room=topValue?ringContent(a).topRoom:TrioGeometry.zoneTextRoomH(z);
         applyWeight(weight);
         TEXT.setTextSize(requested);
         // Type is fitted to the THIRD it sits in, not to the small
@@ -484,7 +636,6 @@ final class TrioRenderer {
         // units of actual ink - so dividing by them capped every line at
         // about 58% of the room it really had, and the bottom third came
         // out around a third of the size asked for.
-        final float room = TrioGeometry.zoneTextRoomH(z);
         final int suffixScale = part == Prefs.PART_TYPE ? a.typeSuffixScale : 100;
         // The height cap is a straight ratio at the requested size.
         final float inkAtRequested = Math.max(1f, textInkHeight(text, requested));
@@ -499,7 +650,7 @@ final class TrioRenderer {
         for (int pass = 0; pass < 4; pass++) {
             final float inkH = Math.max(1f, textInkHeight(text, fitted));
             final float maxByWidth = fitSize(text, requested,
-                    TrioGeometry.zoneTextRoomW(z, a.ringStroke, inkH), suffixScale);
+                    topValue?TrioGeometry.INK_W-4f:TrioGeometry.zoneTextRoomW(z, a.ringStroke, inkH), suffixScale);
             final float next = Math.min(maxByHeight, maxByWidth);
             if (Math.abs(next - fitted) < 0.05f) {
                 fitted = next;
@@ -532,12 +683,13 @@ final class TrioRenderer {
     static boolean ringInkBounds(RectF out, TrioAppearance a, TrioAppearance.Ring r, int zone) {
         int part = r.parts[zone];
         if (part == Prefs.PART_BOLT) {
-            float height = zone == 0 ? TrioGeometry.DOT_BOX_TOP : TrioGeometry.DOT_BOX_BOTTOM;
+            float height = zone == 0 ? TrioGeometry.DOT_BOX_TOP : zone==1?TrioGeometry.DOT_BOX_CENTRE:TrioGeometry.DOT_BOX_BOTTOM;
             float scale = Math.min((78f - a.ringStroke) / 15f, height / TrioGeometry.BOLT_INK_H) * a.boltScaleFactor();
             out.set(TrioGeometry.B_CX + (BOLT_INK.left - TrioGeometry.BOLT_CX_REF) * scale,
                     TrioGeometry.ZONE_CY[zone] + (BOLT_INK.top - TrioGeometry.BOLT_INK_CY) * scale,
                     TrioGeometry.B_CX + (BOLT_INK.right - TrioGeometry.BOLT_CX_REF) * scale,
                     TrioGeometry.ZONE_CY[zone] + (BOLT_INK.bottom - TrioGeometry.BOLT_INK_CY) * scale);
+            if(zone==1)transformMiddleBounds(out,ringContent(a));
             return true;
         }
         if (part != Prefs.PART_VALUE && part != Prefs.PART_TYPE && part != Prefs.PART_CLOCK) return false;
@@ -545,7 +697,9 @@ final class TrioRenderer {
                 : part == Prefs.PART_TYPE ? r.typeReading : TrioState.sClockText;
         if (text == null || text.isEmpty()) return false;
         float size = fittedRingTextSize(a, zone, part, text);
-        float baseline = inkCentredBaseline(text, size, TrioGeometry.zoneTextCy(zone, a.ringStroke));
+        RingContent content=ringContent(a);
+        float textCy=zone==0&&part==Prefs.PART_VALUE?content.valueCy:TrioGeometry.zoneTextCy(zone,a.ringStroke);
+        float baseline = inkCentredBaseline(text, size, textCy);
         int suffixScale = part == Prefs.PART_TYPE ? a.typeSuffixScale : 100;
         float left = TrioGeometry.B_CX - measureType(text, size, suffixScale) * 0.5f;
         boolean suffix = TrioGeometry.hasShrunkSuffix(text, suffixScale);
@@ -561,7 +715,15 @@ final class TrioRenderer {
                     Math.max(out.right, cursor + TEXT_INK.right), Math.max(out.bottom, baseline + TEXT_INK.bottom));
             TEXT.setTextSize(size);
         }
+        if(zone==1)transformMiddleBounds(out,content);
         return true;
+    }
+
+    private static void transformMiddleBounds(RectF out,RingContent content) {
+        out.set(TrioGeometry.B_CX+(out.left-TrioGeometry.B_CX)*content.middleScale,
+                content.middleCy+(out.top-TrioGeometry.ZONE_CY[1])*content.middleScale,
+                TrioGeometry.B_CX+(out.right-TrioGeometry.B_CX)*content.middleScale,
+                content.middleCy+(out.bottom-TrioGeometry.ZONE_CY[1])*content.middleScale);
     }
 
     /** Explicit slots share the editor's thirds and fit ink on BOTH axes. */
@@ -569,17 +731,19 @@ final class TrioRenderer {
                                      int mobileLevel, int[] levels, String type, int role, int fg,
                                      TrioAppearance a, TrioAppearance.Ring r) {
         final TrioGeometry.RingArc arc = ringArc(a, r);
+        final RingContent content=ringContent(a);
         drawBattery(c, level, role, fg, a, arc.gapStart, arc.gapEnd, arc.sweep, arc.start);
         for (int z = 0; z < 3; z++) {
             final int part = r.parts[z];
             if (part == Prefs.PART_NONE) continue;
             final float cx = TrioGeometry.B_CX;
-            final float cy = TrioGeometry.ZONE_CY[z];
+            final float cy = z==1?content.middleCy:TrioGeometry.ZONE_CY[z];
             final float width = 78f - a.ringStroke;
             final float height = z == 0 ? TrioGeometry.DOT_BOX_TOP
                     : z == 1 ? TrioGeometry.DOT_BOX_CENTRE : TrioGeometry.DOT_BOX_BOTTOM;
             final int save = c.save();
             c.translate(cx, cy);
+            if(z==1)c.scale(content.middleScale,content.middleScale);
             if (part == Prefs.PART_WIFI) {
                 // The reference bounds include the default stroke. Extra thickness
                 // must count before scaling, otherwise the arcs escape their slot.
@@ -636,7 +800,7 @@ final class TrioRenderer {
                     // The canvas is already translated to the zone's centre by the
                     // caller, so what the baseline helper wants is that local centre -
                     // 0 - not an absolute design-space y.
-                    final float slotCentre = TrioGeometry.zoneTextCy(z, a.ringStroke)
+                    final float slotCentre = (z==0&&part==Prefs.PART_VALUE?content.valueCy:TrioGeometry.zoneTextCy(z,a.ringStroke))
                             - TrioGeometry.ZONE_CY[z];
                     final float baseline = inkCentredBaseline(text, fitted, slotCentre);
                     if (part == Prefs.PART_TYPE) drawType(c, text, 0f, baseline, fitted, fg, a);
