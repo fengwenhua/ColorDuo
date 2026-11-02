@@ -244,22 +244,7 @@ internal fun geometrySliders(): List<SliderSpec> {
             enabled = { it.glyph && it.capsule },
         ),
         capsuleWidthSlider(),
-        SliderSpec(
-            group = GeometryGroup.Scale,
-            part = null,
-            min = Prefs.MIN_GLYPH_SCALE,
-            max = Prefs.MAX_GLYPH_SCALE,
-            maxFor = { if (it.ring && io.github.fengwenhua.colorduo.ColorOsFontPublisher.supportedDevice()) Prefs.MAX_RING_GLYPH_SCALE else Prefs.MAX_GLYPH_SCALE },
-            read = { it.glyphScale },
-            write = { r, v -> r.setGlyphScale(v) },
-            titleRes = { R.string.glyph_scale_title },
-            summaryRes = { if (it.ring && io.github.fengwenhua.colorduo.ColorOsFontPublisher.supportedDevice()) R.string.ring_glyph_scale_summary else R.string.glyph_scale_summary },
-            // Gated on the master switch and nothing else: it sizes the glyph
-            // itself, so with the glyph off there is nothing for it to act on. No
-            // row is gated by it, so it can never be the reason another is shut.
-            enabled = { it.glyph },
-            suffix = "%",
-        ),
+        glyphScaleSlider(),
         SliderSpec(
             group = GeometryGroup.Scale,
             part = null,
@@ -614,6 +599,23 @@ internal fun CapsuleContainerRows(
     }
 }
 
+private fun glyphScaleSlider(): SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_SCALE,
+    max = Prefs.MAX_GLYPH_SCALE,
+    maxFor = { if (it.ring && io.github.fengwenhua.colorduo.ColorOsFontPublisher.supportedDevice()) Prefs.MAX_RING_GLYPH_SCALE else Prefs.MAX_GLYPH_SCALE },
+    read = { it.glyphScale },
+    write = { r, v -> r.setGlyphScale(v) },
+    titleRes = { R.string.glyph_scale_title },
+    summaryRes = { if (it.ring && io.github.fengwenhua.colorduo.ColorOsFontPublisher.supportedDevice()) R.string.ring_glyph_scale_summary else R.string.glyph_scale_summary },
+    // Gated on the master switch and nothing else: it sizes the glyph
+    // itself, so with the glyph off there is nothing for it to act on. No
+    // row is gated by it, so it can never be the reason another is shut.
+    enabled = { it.glyph },
+    suffix = "%",
+)
+
 private fun capsuleWidthSlider(): SliderSpec = SliderSpec(
     group = GeometryGroup.Scale,
     part = null,
@@ -627,7 +629,7 @@ private fun capsuleWidthSlider(): SliderSpec = SliderSpec(
 )
 
 internal fun slidersForEditor(part: TrioSettingsPart): List<SliderSpec> = when (part) {
-    // Width is shown immediately after the style chooser instead of among colour rows.
+    // Overall size and capsule width are shown immediately after the style chooser.
     TrioSettingsPart.Appearance -> emptyList()
     TrioSettingsPart.Battery, TrioSettingsPart.Readouts ->
         geometrySliders().filter { it.part == null && it.editorOwner == part }
@@ -726,8 +728,9 @@ internal fun PartSettingsSheet(
                     if (part == TrioSettingsPart.Vpn) VpnSettings(settings, update)
                     controls.forEach { control ->
                         ContentControlRow(control, settings, update, ringSettings)
-                        if (control == ContentControl.Style && a.capsule) {
-                            SliderRow(capsuleWidthSlider(), settings, update)
+                        if (control == ContentControl.Style) {
+                            SliderRow(glyphScaleSlider(), settings, update)
+                            if (a.capsule) SliderRow(capsuleWidthSlider(), settings, update)
                         }
                     }
                 if (part != TrioSettingsPart.Vpn && rows.isEmpty() && colors.isEmpty() && controls.isEmpty()) {

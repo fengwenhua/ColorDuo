@@ -143,7 +143,7 @@
 
     <string name="perf_temp_title">电池温度</string>
 
-    <string name="glyph_scale_title">图标整体尺寸</string>
+    <string name="glyph_scale_title">整体图标大小</string>
     <string name="glyph_scale_summary">默认 100%，可调 60–100%。</string>
 
     <string name="perf_scale_title">读数整体尺寸</string>
