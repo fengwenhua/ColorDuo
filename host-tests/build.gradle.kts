@@ -39,6 +39,9 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
     inputs.file(production.resolve("ColorOsNetworkAdapter.java"))
     inputs.file(templates.file("NetworkTypeRecoveryTest.java.template"))
     inputs.file(templates.file("WifiHandoffTest.java.template"))
+    inputs.file(production.resolve("ColorOsBatteryAdapter.java"))
+    inputs.file(templates.file("NetworkFrameTest.java.template"))
+    inputs.file(templates.file("NetworkLeaseScopeTest.java.template"))
     inputs.file(production.resolve("ColorOsDataEnabledSource.java"))
     inputs.file(templates.file("DataEnabledSourceTest.java.template"))
     outputs.dir(presenceSources)
@@ -62,6 +65,15 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
             "@RESOLVE@" to method(production.resolve("WifiPresence.java"), "static boolean resolve(boolean iconVisible, int cachedLevel)"),
             "@PUBLISH@" to method(production.resolve("WifiPresence.java"), "private static void publish(boolean next)")))
         val network = production.resolve("ColorOsNetworkAdapter.java")
+        emit("NetworkFrameTest", mapOf("@BEFORE_DRAW@" to method(
+            production.resolve("ColorOsBatteryAdapter.java"), "private boolean beforeDrawNetwork(Host host)")))
+        val networkPlan = Regex("static final class Plan \\{.*?\\n    \\}", RegexOption.DOT_MATCHES_ALL)
+            .findAll(network.readText()).toList()
+        require(networkPlan.size == 1) { "Network plan must be unique" }
+        emit("NetworkLeaseScopeTest", mapOf(
+            "@PLAN@" to networkPlan.single().value,
+            "@RELEASE_ROOT@" to method(network, "private void releaseRoot(View root)"),
+            "@NEEDS_HANDOFF@" to method(network, "boolean needsHandoff(View meter, Plan plan)")))
         val dataSource = production.resolve("ColorOsDataEnabledSource.java").readText()
         emit("DataEnabledSourceTest", mapOf("@SOURCE@" to dataSource.substring(
             dataSource.indexOf("final class ColorOsDataEnabledSource {")).replaceFirst(

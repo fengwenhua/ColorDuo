@@ -1,0 +1,53 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class NetworkLeaseScopeTest {
+    static class View {}
+    static class ImageView extends View {}
+    @PLAN@
+    static class Lease {Plan plan;Lease(Plan plan){this.plan=plan;}}
+    static class Mobile {WeakReference<View> root;Mobile(View root){this.root=new WeakReference<>(root);}}
+    static class TypeRow {WeakReference<View> root;TypeRow(View root){this.root=new WeakReference<>(root);}}
+    final Map<View,Lease> leases=new HashMap<>();
+    final Map<ImageView,Mobile> mobileRows=new HashMap<>();
+    final Map<ImageView,TypeRow> typeRows=new HashMap<>();
+    static void requireMain(){}
+    void release(View meter){leases.remove(meter);}
+    @RELEASE_ROOT@
+    @NEEDS_HANDOFF@
+    @Test public void detachedQsRowDoesNotRevokeHomeLease(){
+        View home=new View(),qs=new View(),homeWifi=new View(),qsWifi=new View();
+        Plan h=new Plan(4,-1,homeWifi,new View(),null),q=new Plan(4,-1,qsWifi,new View(),null);
+        leases.put(home,new Lease(h));leases.put(qs,new Lease(q));releaseRoot(qsWifi);
+        assertEquals(1,leases.size());assertSame(h,leases.get(home).plan);
+    }
+    @Test public void detachedMobileOrTypeOnlyRowReleasesOnlyItsOwnHost(){
+        View home=new View(),qs=new View(),root=new View();ImageView signal=new ImageView(),type=new ImageView();
+        leases.put(home,new Lease(new Plan(4,-1,new View(),new View(),null)));
+        mobileRows.put(signal,new Mobile(root));leases.put(qs,new Lease(new Plan(-1,4,null,null,signal)));
+        releaseRoot(root);assertTrue(leases.containsKey(home));assertFalse(leases.containsKey(qs));
+        typeRows.put(type,new TypeRow(root));leases.put(qs,new Lease(new Plan(-1,-1,null,null,null,0,"5G",type,true)));
+        releaseRoot(root);assertTrue(leases.containsKey(home));assertFalse(leases.containsKey(qs));
+    }
+    @Test public void descriptionSurvivesOwnedPlanCopiesButNotAbsentWifi(){
+        View root=new View(),container=new View();Plan p=new Plan(4,4,root,container,new ImageView(),0,"5G",new ImageView(),true,false,"strength, no internet");
+        assertEquals(p.wifiDescription,p.withTypeOwnership(false).wifiDescription);
+        assertEquals(p.wifiDescription,p.withSignals(true,false).wifiDescription);
+        assertEquals("",p.withSignals(false,true).wifiDescription);
+        assertEquals(p.wifiDescription,p.retainedBy(p).wifiDescription);
+        assertFalse(p.same(new Plan(4,4,root,container,p.signal.get(),0,"5G",p.typeImage.get(),true,false,"strength")));
+    }
+    @Test public void sameOwnersNeedNoNewPixelsButNewOwnersDo(){
+        View meter=new View(),root=new View(),container=new View();Plan plan=new Plan(4,-1,root,container,null);
+        assertTrue(needsHandoff(meter,plan));assertFalse(needsHandoff(meter,Plan.EMPTY));
+        leases.put(meter,new Lease(plan));assertFalse(needsHandoff(meter,new Plan(3,-1,root,container,null)));
+        assertTrue(needsHandoff(meter,new Plan(4,-1,new View(),container,null)));
+        assertTrue(needsHandoff(meter,Plan.EMPTY));
+    }
+}

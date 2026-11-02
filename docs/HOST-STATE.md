@@ -7,7 +7,7 @@
 2. Model：校验原生 Drawable、样式、电量、透明度和尺寸。
 3. Preparation：尺寸变化先释放并安排布局；空间不足恢复原生。
 4. Attachment：第三方 Drawable 保留所有权；新尺寸或首次挂载先 preflight，随后 MOUNT/UPDATE。
-5. Presentation：只有当前 token/帧、配置启用、布局完成、宿主可见且网络计划匹配，才 COMMIT_LEASES。
+5. Presentation：实际 draw 的当前 token/帧、配置启用、布局完成、宿主可见且计划匹配时确认交接。网络新增 pre-draw 事务：在相同条件下先准备完整像素缓冲，再隐藏原生网络图标，接下来的实际 draw 使用这份缓冲；不会把准备过程伪记为已上屏。
 
 原生样式更新期间不释放仍已成功绘制的帧；新插电的样式 2 仍由 `ColorOsPlugBridge` 限定，
 不把任意隐藏策略视为充电动画。布局等待保留原先区别：模块主动 resize 可以暂留既有接管，
@@ -33,3 +33,11 @@ JADX 确认该固件 `StatBatteryMeterView.onConfigurationChanged` 仅调用父�
 home/configuration 4 次 retained=true，最新 nativeStyle=2、generation=4；home/mount 保持 1 次，
 没有 home/native 释放条目；最终 home/style 为 1 retained=true，home/drawn generation=4。
 这是当前固件、同一存活宿主的结果；重新创建的宿主仍需首次真实绘制，不能继承旧 View 的 leases。
+
+## 网络切换事务（1.1.27）
+
+仅等 draw 后的 main.post 回调会让新出现的原生网络图标至少有一次可见机会。网络交接现在在窗口 pre-draw 完成：校验实际宿主和最新计划、准备当前完整帧像素、提交对应隐藏。若隐藏改变占位，则取消本轮遍历，完成布局后一起绘制；不是固定延时等待。已有隐藏状态也在该阶段修复。
+
+准备失败、尺寸不匹配、未知警告图标、配置关闭、宿主替换/移除等情况继续保留或恢复原生。其他图标的首次实际绘制确认仍沿用原有路径。普通 Wi-Fi 在网络验证前后使用同一图案的已知资源族可以提前表示，系统本地化网络状态描述随接管保留；不扩大到无法等价表示的警告族。
+
+完整的复现、桌面与真机验收边界见 [网络闪现验证](validation/network-flicker-2026-11-02.md)。

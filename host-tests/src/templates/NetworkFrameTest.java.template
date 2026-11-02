@@ -1,0 +1,107 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+/** Runs the production pre-draw transaction with an explicit traversal and pixel buffer. */
+public class NetworkFrameTest {
+    static class View {
+        boolean attached=true,shown=true,layout;
+        boolean isAttachedToWindow(){return attached;}
+        boolean isShown(){return shown;}
+        View getRootView(){return this;}
+        boolean isLayoutRequested(){return layout;}
+    }
+    static class ImageView extends View {
+        Object drawable;
+        Object getDrawable(){return drawable;}
+    }
+    static class Plan {
+        int wifi=4,mobile=4;String wifiDescription="no internet";
+        boolean same(Plan other){return this==other;}
+    }
+    static class ColorOsBatteryDrawable {
+        static class Frame { Plan network=new Plan();int level=74; }
+        final Frame frame=new Frame();
+        final List<String> calls;
+        boolean ready=true,throwOnPrepare,pixels;
+        ColorOsBatteryDrawable(List<String> calls){this.calls=calls;}
+        Frame currentFrame(){return frame;}
+        boolean prepareCurrentFrame(){calls.add("pixels");if(throwOnPrepare)throw new IllegalStateException();pixels=ready;return ready;}
+    }
+    static class Host {
+        WeakReference<View> meter;WeakReference<ImageView> image;
+        ColorOsBatteryDrawable preview;boolean failed,awaitLayout,resizing;int nativeStyleDepth;String key="home";
+    }
+    class Config {
+        boolean ready=true,enabled=true;
+        boolean ready(){return ready;}
+        Config get(){return this;}
+    }
+    class Network {
+        boolean handoff=true,visible=true,changesLayout;
+        boolean needsHandoff(View meter,Plan plan){return handoff;}
+        void commit(View meter,Plan plan){calls.add("commit");visible=false;handoff=false;if(changesLayout)meter.layout=true;}
+    }
+    class Font { void prepareRenderer(){calls.add("font");} }
+    final List<String> calls=new ArrayList<>();
+    final Config config=new Config();
+    Network network=new Network();Font font;
+    final View meter=new View();final ImageView image=new ImageView();final Host host=new Host();
+    Plan current;
+    int scheduled;
+    public NetworkFrameTest(){host.meter=new WeakReference<>(meter);host.image=new WeakReference<>(image);host.preview=new ColorOsBatteryDrawable(calls);image.drawable=host.preview;current=host.preview.frame.network;}
+    void reconcile(Host h){calls.add("reconcile");}
+    void scheduleReconcile(Host h){scheduled++;}
+    Plan currentPlan(View meter,Host h,int level){return current;}
+    void updateClockDescription(Host h,ColorOsBatteryDrawable.Frame f){calls.add("description");}
+    void log(String key,String message){}
+    void release(Host h,String reason){calls.add("release");network.visible=true;h.preview=null;}
+    @BEFORE_DRAW@
+
+    @Test public void firstNetworkFrameOwnsExactReadyPixelsBeforeNativeCanDraw(){
+        assertTrue(beforeDrawNetwork(host));
+        assertEquals(List.of("reconcile","pixels","commit","description"),calls);
+        assertFalse(network.visible);assertTrue(host.preview.pixels);
+    }
+    @Test public void placementChangeCancelsMixedTraversalThenDrawsPreparedFrame(){
+        network.changesLayout=true;
+        assertFalse(beforeDrawNetwork(host));assertFalse(network.visible);assertTrue(host.preview.pixels);
+        meter.layout=false;network.changesLayout=false;calls.clear();
+        assertTrue(beforeDrawNetwork(host));assertEquals(List.of("reconcile","commit"),calls);
+        assertTrue(host.preview.pixels);assertFalse(network.visible);
+    }
+    @Test public void existingLeaseIsRepairedBeforeDrawWithoutAllocatingAnotherBuffer(){
+        network.handoff=false;
+        assertTrue(beforeDrawNetwork(host));assertEquals(List.of("reconcile","commit"),calls);assertFalse(network.visible);
+    }
+    @Test public void absentPixelsCannotHideNativeNetwork(){
+        host.preview.ready=false;
+        assertTrue(beforeDrawNetwork(host));assertTrue(network.visible);assertFalse(calls.contains("commit"));
+    }
+    @Test public void pixelRenderingFailureRestoresNativeAndDoesNotCommit(){
+        host.preview.throwOnPrepare=true;
+        assertTrue(beforeDrawNetwork(host));assertTrue(host.failed);assertTrue(network.visible);
+        assertEquals(List.of("reconcile","pixels","release"),calls);
+    }
+    @Test public void stalePlanWaitsForNewSnapshotBeforeCommitting(){
+        current=new Plan();assertFalse(beforeDrawNetwork(host));assertEquals(1,scheduled);assertTrue(network.visible);assertFalse(calls.contains("pixels"));
+        current=host.preview.frame.network;assertTrue(beforeDrawNetwork(host));assertFalse(network.visible);
+    }
+    @Test public void disabledOrDetachedOrHiddenOrReplacedHostDoesNotAcquire(){
+        config.enabled=false;assertTrue(beforeDrawNetwork(host));assertTrue(network.visible);
+        config.enabled=true;meter.attached=false;assertTrue(beforeDrawNetwork(host));assertTrue(network.visible);
+        meter.attached=true;meter.shown=false;assertTrue(beforeDrawNetwork(host));assertTrue(network.visible);
+        meter.shown=true;image.drawable=new Object();assertTrue(beforeDrawNetwork(host));assertTrue(network.visible);
+        assertFalse(calls.contains("commit"));
+    }
+    @Test public void sizingWaitCannotDrawNewPlacementBeforeLayout(){
+        host.awaitLayout=true;host.resizing=true;meter.layout=true;
+        assertFalse(beforeDrawNetwork(host));assertTrue(network.visible);assertEquals(1,scheduled);
+        host.awaitLayout=false;meter.layout=false;assertTrue(beforeDrawNetwork(host));assertFalse(network.visible);
+    }
+}

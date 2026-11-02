@@ -41,7 +41,10 @@ final class ColorOsNetworkAdapter {
     private Field validated, inService, softSim, ignoredSlots;
     private boolean capable;
     private boolean pending;
-    private volatile int latestWifi = -1;
+    private record WifiReading(boolean active, boolean validated, boolean visible, int level,
+                               int resource, String description) {}
+    private volatile WifiReading wifiReading = new WifiReading(false, false, false, -1, 0, "");
+    private int acceptedWifi = -1;
     private final boolean typeStage = "type".equals(BuildConfig.COLOROS_STAGE) || "capsule".equals(BuildConfig.COLOROS_STAGE)
             || "font".equals(BuildConfig.COLOROS_STAGE) || "outside".equals(BuildConfig.COLOROS_STAGE);
     private boolean typeCapable;
@@ -57,6 +60,7 @@ final class ColorOsNetworkAdapter {
         final String typeLabel;
         final WeakReference<ImageView> typeImage;
         final boolean hideType, suppressType;
+        final String wifiDescription;
         Plan(int wifi, int mobile, View root, View container, ImageView signal) {
             this(wifi, mobile, root, container, signal, 0);
         }
@@ -69,6 +73,10 @@ final class ColorOsNetworkAdapter {
         }
         Plan(int wifi, int mobile, View root, View container, ImageView signal, int mobileSlot,
              String typeLabel, ImageView typeImage, boolean hideType, boolean suppressType) {
+            this(wifi, mobile, root, container, signal, mobileSlot, typeLabel, typeImage, hideType, suppressType, "");
+        }
+        Plan(int wifi, int mobile, View root, View container, ImageView signal, int mobileSlot,
+             String typeLabel, ImageView typeImage, boolean hideType, boolean suppressType, String wifiDescription) {
             this.wifi = wifi; this.mobile = mobile;
             this.mobileSlot = mobileSlot;
             wifiRoot = new WeakReference<>(root);
@@ -78,11 +86,12 @@ final class ColorOsNetworkAdapter {
             this.typeImage = new WeakReference<>(typeImage);
             this.hideType = hideType;
             this.suppressType = suppressType;
+            this.wifiDescription = wifiDescription;
         }
         boolean same(Plan other) {
             return other != null && wifi == other.wifi && mobile == other.mobile && mobileSlot == other.mobileSlot
                     && wifiRoot.get() == other.wifiRoot.get() && container.get() == other.container.get()
-                    && signal.get() == other.signal.get() && sameType(other);
+                    && signal.get() == other.signal.get() && sameType(other) && wifiDescription.equals(other.wifiDescription);
         }
         boolean sameType(Plan other) {
             return other != null && typeLabel.equals(other.typeLabel) && typeImage.get() == other.typeImage.get()
@@ -100,17 +109,17 @@ final class ColorOsNetworkAdapter {
             return new Plan(keepWifi ? wifi : -1, keepSignal ? mobile : -1,
                     keepWifi ? wifiRoot.get() : null, keepWifi ? container.get() : null,
                     keepSignal ? signal.get() : null, mobileSlot, typeLabel,
-                    keepType ? typeImage.get() : null, keepType, keepType && suppressType);
+                    keepType ? typeImage.get() : null, keepType, keepType && suppressType, keepWifi ? wifiDescription : "");
         }
         Plan withSignals(boolean wifiInk, boolean mobileInk) {
             return new Plan(wifiInk ? wifi : -1, mobileInk ? mobile : -1,
                     wifiInk ? wifiRoot.get() : null, wifiInk ? container.get() : null,
                     mobileInk ? signal.get() : null, mobileInk ? mobileSlot : 0,
-                    typeLabel, typeImage.get(), hideType, suppressType);
+                    typeLabel, typeImage.get(), hideType, suppressType, wifiInk ? wifiDescription : "");
         }
         Plan withTypeOwnership(boolean owned) {
             return new Plan(wifi, mobile, wifiRoot.get(), container.get(), signal.get(), mobileSlot,
-                    typeLabel, typeImage.get(), owned, suppressType);
+                    typeLabel, typeImage.get(), owned, suppressType, wifiDescription);
         }
     }
 
@@ -153,6 +162,9 @@ final class ColorOsNetworkAdapter {
             cellularType = type(ColorOsSymbols.CLASS_MODEL_SIGNAL_ICON_MODEL_CELLULAR);
             containerType = type(ColorOsSymbols.CLASS_PHONE_STATUS_ICON_CONTAINER);
             Class<?> modern = type(ColorOsSymbols.CLASS_VIEW_MODERN_STATUS_BAR_VIEW);
+            Method wifiResource = visibleType.getMethod(ColorOsSymbols.NAME_GET_RES);
+            Method wifiDescription = visibleType.getMethod(ColorOsSymbols.NAME_GET_CONTENT_DESCRIPTION);
+            Method descriptionText = wifiDescription.getReturnType().getMethod(ColorOsSymbols.NAME_GET_DESCRIPTION);
             wifiLevel = activeType.getMethod(ColorOsSymbols.NAME_GET_LEVEL);
             validated = activeType.getDeclaredField(ColorOsSymbols.NAME_IS_VALIDATED);
             cellLevel = cellularType.getMethod(ColorOsSymbols.NAME_GET_LEVEL);
@@ -173,12 +185,16 @@ final class ColorOsNetworkAdapter {
             ignoredSlots.setAccessible(true);
             boolean valid = hook(WIFI + ColorOsSymbols.CLASS_VIEWMODEL_WIFI_VIEW_MODEL_WIFI_ICON_1, ColorOsSymbols.NAME_INVOKE, (chain, result) -> {
                 Object model = chain.getArg(3);
-                int next = ColorOsNetworkPolicy.wifi(activeType.isInstance(model),
-                        activeType.isInstance(model) && validated.getBoolean(model), visibleType.isInstance(result),
-                        activeType.isInstance(model) ? ((Number) wifiLevel.invoke(model)).intValue() : -1);
-                if (next != latestWifi) {
-                    latestWifi = next;
-                    log("wifi/model", "level=" + next + " active=" + activeType.isInstance(model)
+                boolean visible = visibleType.isInstance(result);
+                String description = visible ? String.valueOf(descriptionText.invoke(wifiDescription.invoke(result))) : "";
+                int resource = visible ? ((Number) wifiResource.invoke(result)).intValue() : 0;
+                WifiReading reading = new WifiReading(activeType.isInstance(model),
+                        activeType.isInstance(model) && validated.getBoolean(model), visible,
+                        activeType.isInstance(model) ? ((Number) wifiLevel.invoke(model)).intValue() : -1,
+                        resource, description);
+                if (!reading.equals(wifiReading)) {
+                    wifiReading = reading;
+                    log("wifi/model", "rawLevel=" + reading.level + " active=" + activeType.isInstance(model)
                             + " validated=" + (activeType.isInstance(model) && validated.getBoolean(model))
                             + " visible=" + visibleType.isInstance(result));
                     requestRefresh();
@@ -388,7 +404,7 @@ final class ColorOsNetworkAdapter {
         root.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> requestRefresh());
         root.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
             @Override public void onViewAttachedToWindow(View v) { requestRefresh(); }
-            @Override public void onViewDetachedFromWindow(View v) { releaseAll(); requestRefresh(); }
+            @Override public void onViewDetachedFromWindow(View v) { releaseRoot(v); requestRefresh(); }
         });
     }
 
@@ -455,6 +471,13 @@ final class ColorOsNetworkAdapter {
         requireMain();
         debugLog = settings.debugLog;
         if (!capable) return Plan.EMPTY;
+        WifiReading wifiState = wifiReading;
+        String wifiResource = "";
+        try { if (wifiState.resource > 0) wifiResource = meter.getResources().getResourceEntryName(wifiState.resource); }
+        catch (RuntimeException ignored) {}
+        int latestWifi = ColorOsNetworkPolicy.wifi(wifiState.active, wifiState.validated, wifiState.visible,
+                wifiState.level, wifiResource, wifiState.description);
+        acceptedWifi = latestWifi;
         try {
             View wifi = null, container = null;
             ImageView signal = null;
@@ -504,7 +527,8 @@ final class ColorOsNetworkAdapter {
                 }
             }
             return new Plan(wifi == null ? -1 : latestWifi, signal == null ? -1 : mobile, wifi, container, signal,
-                    signal == null ? 0 : mobileSlot, label, typeImage, hideType, suppressType && typeImage != null);
+                    signal == null ? 0 : mobileSlot, label, typeImage, hideType, suppressType && typeImage != null,
+                    wifi == null ? "" : wifiState.description);
         } catch (Throwable failure) { disable(failure); return Plan.EMPTY; }
     }
 
@@ -649,6 +673,24 @@ final class ColorOsNetworkAdapter {
         for (View meter : new ArrayList<>(leases.keySet())) release(meter);
     }
 
+    /** Detaching a QS row must not reveal the unrelated home row. */
+    private void releaseRoot(View root) {
+        requireMain();
+        for (Map.Entry<View, Lease> entry : new ArrayList<>(leases.entrySet())) {
+            Plan plan = entry.getValue().plan;
+            Mobile mobile = mobileRows.get(plan.signal.get());
+            TypeRow type = typeRows.get(plan.typeImage.get());
+            if (plan.wifiRoot.get() == root || mobile != null && mobile.root.get() == root
+                    || type != null && type.root.get() == root) release(entry.getKey());
+        }
+    }
+
+    boolean needsHandoff(View meter, Plan plan) {
+        Lease old = leases.get(meter);
+        return old == null ? plan.container.get() != null || plan.signal.get() != null || plan.hideType
+                : !old.plan.sameOwners(plan);
+    }
+
     /** Layout listeners only schedule work when the empty/nonempty group boundary changes. */
     void onHostLayout(View meter) {
         Lease lease = leases.get(meter);
@@ -731,7 +773,7 @@ final class ColorOsNetworkAdapter {
     void dump(java.io.PrintWriter out) {
         out.println("    network/data observing=" + dataEnabled.active() + " enabled=" + dataEnabled.get()
                 + " live=" + dataEnabled.live() + " subscription=" + dataEnabled.subscription());
-        out.println("    network/state wifiLevel=" + latestWifi + " wifiRows=" + wifiRows.size()
+        out.println("    network/state wifiLevel=" + acceptedWifi + " wifiRows=" + wifiRows.size()
                 + " mobileRows=" + mobileRows.size() + " leases=" + leases.size());
         for (Map.Entry<View, Lease> entry : new ArrayList<>(leases.entrySet())) {
             Plan plan = entry.getValue().plan;

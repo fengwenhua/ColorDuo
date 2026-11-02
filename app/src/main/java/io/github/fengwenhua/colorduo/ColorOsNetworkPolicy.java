@@ -15,7 +15,16 @@ final class ColorOsNetworkPolicy {
     }
 
     static int wifi(boolean active, boolean validated, boolean visible, int level) {
-        return active && validated && visible && level >= 1 && level <= 4 ? level : -1;
+        return wifi(active, validated, visible, level, "", "");
+    }
+
+    static int wifi(boolean active, boolean validated, boolean visible, int level,
+                    String resource, String description) {
+        // This OEM family uses exactly the same ordinary icon before/after validation.
+        // Other families may carry a warning we cannot draw; keep those native.
+        boolean ordinary = ("stat_signal_wifi_signal_" + level).equals(resource)
+                && description != null && !description.isEmpty();
+        return active && (validated || ordinary) && visible && level >= 1 && level <= 4 ? level : -1;
     }
 
     static int mobile(boolean cellular, boolean inService, int inetCondition,

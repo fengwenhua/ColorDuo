@@ -91,6 +91,8 @@ final class ColorOsBatteryDrawable extends Drawable {
     private boolean failed;
     private boolean drawn;
     private Frame reportedFrame;
+    private Frame preparedFrame;
+    private Bitmap preparedPixels;
 
     ColorOsBatteryDrawable(Drawable original, Frame frame, Runnable onFailed, Consumer<Frame> onDrawn) {
         nativeDrawable = new WeakReference<>(original);
@@ -106,6 +108,8 @@ final class ColorOsBatteryDrawable extends Drawable {
     void update(Frame next) {
         if (!frame.same(next)) {
             frame = next;
+            preparedFrame = null;
+            preparedPixels = null;
             if(next.settings.trioStyle==Prefs.STYLE_CAPSULE||next.outside.reserve>0||ColorOsBatterySize.enlargedRing(next.settings)) {
                 intrinsicWidth=next.viewWidth;intrinsicHeight=next.viewHeight;
             } else if(next.settings.trioStyle!=Prefs.STYLE_CAPSULE&&next.outside.reserve==0) {
@@ -132,11 +136,31 @@ final class ColorOsBatteryDrawable extends Drawable {
     Drawable original() { return nativeDrawable.get(); }
     boolean isCurrent(Frame presented) { return !failed && frame == presented; }
     boolean hasPresented(Frame desired) { return !failed && reportedFrame == frame && frame.same(desired); }
+    Frame currentFrame() { return frame; }
     void useNativeFallback() { failed = true; invalidateSelf(); }
 
     @Override protected void onBoundsChange(Rect bounds) {
         reportedFrame = null;
+        preparedFrame = null;
+        preparedPixels = null;
         invalidateSelf();
+    }
+
+    /** Ready-to-display pixels, validated before changing any native network visibility. */
+    boolean prepareCurrentFrame() {
+        Rect bounds = getBounds();
+        if (failed || bounds.width() != frame.viewWidth || bounds.height() != frame.viewHeight
+                || bounds.isEmpty()) return false;
+        if (preparedFrame == frame && preparedPixels != null) return true;
+        if (bounds.width() > 2048 || bounds.height() > 2048) throw new IllegalArgumentException("bounds");
+        Bitmap pixels = Bitmap.createBitmap(bounds.width(), bounds.height(), Bitmap.Config.ARGB_8888);
+        try { render(new Canvas(pixels), bounds.width(), bounds.height(), frame); }
+        catch (Throwable failure) { pixels.recycle(); throw failure; }
+        preparedPixels = pixels;
+        preparedFrame = frame;
+        // Do not mark it as drawn or report presentation here. The next traversal
+        // will draw these exact pixels; the ordinary callback still confirms that.
+        return true;
     }
 
     static void preflight(int width, int height, Frame frame) {
@@ -175,7 +199,9 @@ final class ColorOsBatteryDrawable extends Drawable {
                     canvas.saveLayer(bounds.left, bounds.top, bounds.right, bounds.bottom, layer);
                 }
                 canvas.translate(bounds.left, bounds.top);
-                render(canvas, bounds.width(), bounds.height(), frame);
+                if (preparedFrame == frame && preparedPixels != null)
+                    canvas.drawBitmap(preparedPixels, 0f, 0f, null);
+                else render(canvas, bounds.width(), bounds.height(), frame);
                 success = true;
                 drawn = true;
             } catch (Throwable failure) {

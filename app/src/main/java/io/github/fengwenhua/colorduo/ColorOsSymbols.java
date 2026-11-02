@@ -57,6 +57,7 @@ final class ColorOsSymbols {
     static final String NAME_GET_BATTERY_STYLE_DRAWABLE = "getBatteryStyleDrawable";
     static final String NAME_GET_CARRIER_NETWORK_CHANGE = "getCarrierNetworkChange";
     static final String NAME_GET_CONTENT_DESCRIPTION = "getContentDescription";
+    static final String NAME_GET_DESCRIPTION = "getDescription";
     static final String NAME_GET_ICON_STYLE = "getIconStyle";
     static final String NAME_GET_INSTANCE = "getInstance";
     static final String NAME_GET_LEVEL = "getLevel";

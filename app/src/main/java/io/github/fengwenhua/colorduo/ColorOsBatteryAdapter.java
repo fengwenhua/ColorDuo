@@ -91,6 +91,7 @@ final class ColorOsBatteryAdapter {
         ColorOsBatteryDrawable preview;
         WeakReference<ViewTreeObserver> visibilityTree;
         ViewTreeObserver.OnGlobalLayoutListener visibilityListener;
+        ViewTreeObserver.OnPreDrawListener networkDrawListener;
         boolean lastGlobalShown;
         String nativeDescription;
         String moduleDescription;
@@ -515,19 +516,67 @@ final class ColorOsBatteryAdapter {
         };
         host.visibilityTree = new WeakReference<>(tree);
         tree.addOnGlobalLayoutListener(host.visibilityListener);
+        host.networkDrawListener = () -> beforeDrawNetwork(host);
+        tree.addOnPreDrawListener(host.networkDrawListener);
     }
 
     private void unwatchVisibility(Host host) {
         ViewTreeObserver tree = host.visibilityTree == null ? null : host.visibilityTree.get();
         if (tree != null && tree.isAlive() && host.visibilityListener != null)
             tree.removeOnGlobalLayoutListener(host.visibilityListener);
+        if (tree != null && tree.isAlive() && host.networkDrawListener != null)
+            tree.removeOnPreDrawListener(host.networkDrawListener);
         // A floating observer can merge its listeners into the attached window's observer.
         View meter = host.meter.get();
         ViewTreeObserver current = meter == null ? null : meter.getViewTreeObserver();
         if (current != null && current != tree && current.isAlive() && host.visibilityListener != null)
             current.removeOnGlobalLayoutListener(host.visibilityListener);
+        if (current != null && current != tree && current.isAlive() && host.networkDrawListener != null)
+            current.removeOnPreDrawListener(host.networkDrawListener);
         host.visibilityTree = null;
         host.visibilityListener = null;
+        host.networkDrawListener = null;
+    }
+
+    /** Finish network ownership before recording the window's next display list. */
+    private boolean beforeDrawNetwork(Host host) {
+        View meter = host.meter.get();
+        ImageView image = host.image.get();
+        if (network == null || meter == null || image == null || !meter.isAttachedToWindow() || !meter.isShown()) return true;
+        try {
+            reconcile(host);
+            if (!config.ready() || !config.get().enabled || host.failed || host.nativeStyleDepth > 0
+                    || host.preview == null || image.getDrawable() != host.preview || !image.isShown()) return true;
+            if (host.awaitLayout) {
+                scheduleReconcile(host);
+                return !host.resizing || !meter.getRootView().isLayoutRequested();
+            }
+            ColorOsBatteryDrawable.Frame frame = host.preview.currentFrame();
+            if (!frame.network.same(currentPlan(meter, host, frame.level))) {
+                scheduleReconcile(host);
+                return false;
+            }
+            boolean handoff = network.needsHandoff(meter, frame.network);
+            if (handoff) {
+                if (font != null) font.prepareRenderer();
+                if (!host.preview.prepareCurrentFrame()) return true;
+            }
+            // A new lease requires ready pixels. Existing leases are repaired here
+            // too, after all asynchronous OEM collectors and before this traversal.
+            network.commit(meter, frame.network);
+            if (handoff) {
+                updateClockDescription(host, frame);
+                log(host.key + "/network-frame", "prepared=true wifi=" + frame.network.wifi
+                        + " mobile=" + frame.network.mobile);
+            }
+            // GONE/ignored-slot changes need layout. Keep the previous displayed
+            // buffer until the new placement and prepared glyph can draw together.
+            return !meter.getRootView().isLayoutRequested();
+        } catch (Throwable failure) {
+            host.failed = true;
+            try { release(host, "network-frame-failure"); } catch (Throwable ignored) {}
+            return true;
+        }
     }
 
     private void reconcile(Host host) throws Throwable {
@@ -629,7 +678,8 @@ final class ColorOsBatteryAdapter {
         }
         boolean networkChanged = !host.networkPlan.same(plan);
         boolean readingsChanged = !host.readingsPlan.same(rawPlan);
-        if (networkChanged && network != null) network.retain(meter, plan);
+        // Keep old ownership until the replacement's pixels are ready in pre-draw
+        // (or its ordinary presentation callback). Releasing here exposes a frame.
         host.networkPlan = plan;
         host.readingsPlan = rawPlan;
         if (host.paintSettings == null || host.sourceSettings != settings
@@ -852,6 +902,8 @@ final class ColorOsBatteryAdapter {
         if (!android.text.TextUtils.equals(current, host.nativeDescription)
                 && !android.text.TextUtils.equals(current, host.moduleDescription)) return false;
         String extra = frame.drawsClock ? frame.clock : "";
+        if (frame.network.wifi >= 1 && !frame.network.wifiDescription.isEmpty())
+            extra += (extra.isEmpty() ? "" : ", ") + frame.network.wifiDescription;
         String outsideDescription = frame.outside.description();
         if (!outsideDescription.isEmpty()) extra += (extra.isEmpty() ? "" : ", ") + outsideDescription;
         if (extra.isEmpty()) { restoreDescription(host); return true; }
