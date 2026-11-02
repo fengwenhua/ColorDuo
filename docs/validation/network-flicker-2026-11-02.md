@@ -41,3 +41,16 @@ JADX MCP 对当前 SystemUI APK 的以下源码交叉确认：
 主仓 CI 的纯 javac 检查暴露新增 JUnit 注解不适用于原 `ColorOsNetworkPolicyTest` 的 main 工装。将新增断言纳入原有 main，由 Gradle 的 PolicyRegressionTest 与纯 javac 同时执行，不添加脚本运行时依赖，不删除断言。正式 release workflow 补上同一 shell 检查，使两个入口门禁一致。最终 JUnit 计数回到 app 60、render 107、host 69，共 236（两组新断言并入既有用例，覆盖保留），另有 22 项 Python。
 
 1.1.27、1.1.28 为未公开的内部候选，保留源码标签；最后组合候选调整为 1.1.29，后续安装、CI 及验收以 1.1.29 为准。
+
+## 1.1.29 最终验收
+
+- 源码提交 `ec39522`、不可变标签 `v1.1.29`。main CI `41448399822`、tag CI `41448400946` 和同签名候选工作流 `41448633481` 均成功；CI 中此前报错的 ColorOS policy and configuration checks 已通过。
+- 最终完整门禁：236 项 JUnit（app 60、render 107、host 69）、22 项 Python、纯 javac 旧入口四组检查、release lint/R8、签名协议与打包检查。旧入口分别为 observer 15、revision gate 31、network policy 38、labels 14 个断言。
+- 已核验 artifact `13144116343` 的生产证书、v2/v3、manifest 签名、源码身份、包名及版本，覆盖安装 1.1.29（10129）。APK SHA-256：`6cc58ba87fe7da22e0dff753e5da7b609e305363fd8a97253a38952b91e48324`。安装前后配置逐键相同，已安装 APK 与候选摘要相同。
+- Find N5 上独立工具直接加载该已安装 APK：真实 Canvas 的直接绘制与预备像素完全一致，圆环和胶囊均通过；准备不伪报 hasDrawn/presentation，真正 draw 才确认；替换帧、bounds 变化、大小恢复不会复用旧像素。两种布局、环线避让、实际 View 尺寸和 intrinsic/bounds 恢复亦通过。临时工具和测试私钥已清理。
+- 真机录像按 60Hz 取样：原版的一次 Wi-Fi 重连中，普通原生 Wi-Fi 被检测为连续 14 个采样帧；修复后四组（圆环 Wi-Fi/数据、Wi-Fi 关闭时移动数据双关及恢复、胶囊 Wi-Fi/数据、QS 展开/收回及网络切换）分别为 1448、1665、1917、1489 个采样帧，没有检测到相同的重复原生 Wi-Fi。该模板对已知基线帧为 1.0 正匹配；原生四格信号条的模板也为零匹配，其已知原生参考的正控制为 0.906，高于实际 0.85 检测阈值。录像取样不是对所有刷新率、未知图标或其他固件的无限保证。
+- 运行日志含 home 与 QS 的 network-frame prepared=true，网络 ready，未见 failed=true 或适配 error。真实 SystemUI 在安装重载后始终为同一进程，没有后续异常重启。
+- 旧版外观 UI XML 确认滑块缺失；新版圆环和胶囊的实际弹层均能看到「整体图标大小」，位于三合一样式下方。圆环拖到 150% 后配置和页面均为 150%，实时图像由 85×52 增至 85×65，受该行 65px 高度约束；拖回 100% 恢复 85×52。胶囊同时显示其原有 60%–100% 范围及独立宽度。
+- 关闭模块后 leases=0，截图恢复原生 Wi-Fi/5G、信号条及系统电池百分比；重新开启恢复胶囊接管。最终恢复维护者原圆环、有效整体尺寸 100%、状态栏 120% 和网络双开。仅额外写入默认等价的 glyph_scale_pct=100，以及正常发布配置的传输 revision/snapshot；没有改动原字号、布局、字重、宽度等参数。
+
+候选备份位于本地忽略的 `dist/candidate-1.1.29`，包含 APK、校验和与签名清单。当前仅为已安装验证的候选，尚未公开 Release；公开稳定版仍为 1.1.26。本轮没有新增 HyperOS 或其他 ColorOS 设备的实机验收。
