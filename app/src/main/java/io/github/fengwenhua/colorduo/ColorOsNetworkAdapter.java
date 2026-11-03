@@ -515,14 +515,29 @@ final class ColorOsNetworkAdapter {
             int mobile = -1;
             int mobileSlot = -1;
             View mobileRoot = null;
+            int dataSlot = dataEnabled.slot(), dataCount = 0;
+            ImageView dataSignal = null;
             for (Map.Entry<ImageView, Mobile> entry : new ArrayList<>(mobileRows.entrySet())) {
                 View root = entry.getValue().root.get();
                 int distance = distance(meter, root);
                 if (distance > bestMobile || !eligible(root)) continue;
-                if (distance < bestMobile) { bestMobile = distance; mobileCount = 0; }
+                if (distance < bestMobile) {
+                    bestMobile = distance; mobileCount = 0; dataCount = 0; dataSignal = null;
+                }
                 mobileCount++; signal = entry.getKey(); mobile = entry.getValue().level;
                 mobileSlot = entry.getValue().slot;
                 mobileRoot = root;
+                if (mobileSlot == dataSlot) { dataCount++; dataSignal = signal; }
+            }
+            // The aggregate reading/type follows the actual data SIM, not map/slot order.
+            // A secondary row remains native until it is independently represented.
+            if (dataSlot >= 0) {
+                mobileCount = dataCount;
+                if (dataCount == 1) {
+                    signal = dataSignal;
+                    Mobile selected = mobileRows.get(signal);
+                    mobile = selected.level; mobileSlot = selected.slot; mobileRoot = selected.root.get();
+                } else { signal = null; mobile = -1; mobileRoot = null; }
             }
             if (wifiCount != 1 || !settings.content.showWifi() || latestWifi < 1) wifi = null;
             if (wifi != null) {
@@ -797,7 +812,7 @@ final class ColorOsNetworkAdapter {
 
     void dump(java.io.PrintWriter out) {
         out.println("    network/data observing=" + dataEnabled.active() + " enabled=" + dataEnabled.get()
-                + " live=" + dataEnabled.live() + " subscription=" + dataEnabled.subscription());
+                + " live=" + dataEnabled.live() + " subscription=" + dataEnabled.subscription() + " dataSlot=" + dataEnabled.slot());
         out.println("    network/state wifiLevel=" + acceptedWifi + " wifiRows=" + wifiRows.size()
                 + " mobileRows=" + mobileRows.size() + " leases=" + leases.size());
         for (Map.Entry<ImageView, Mobile> entry : new ArrayList<>(mobileRows.entrySet())) {

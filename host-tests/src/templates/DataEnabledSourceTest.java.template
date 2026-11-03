@@ -52,9 +52,12 @@ public final class DataEnabledSourceTest {
     }
     static class SubscriptionManager {
         static final int INVALID_SUBSCRIPTION_ID=-1;
+        static final int INVALID_SIM_SLOT_INDEX=-1;
+        static final Map<Integer,Integer> slots=Map.of(1,0,2,1,7,1);
         static int current;
         OnSubscriptionsChangedListener listener;
         static int getDefaultDataSubscriptionId(){return current;}
+        static int getSlotIndex(int subscription){return slots.getOrDefault(subscription,-1);}
         static boolean isValidSubscriptionId(int id){return id>=0;}
         static class OnSubscriptionsChangedListener { public void onSubscriptionsChanged(){} }
         void addOnSubscriptionsChangedListener(OnSubscriptionsChangedListener value){listener=value;}
@@ -107,6 +110,12 @@ public final class DataEnabledSourceTest {
         assertEquals(1,old.unregistered);assertEquals(2,source.subscription());assertEquals(true,source.get());
         sim(2).emit(false);context.drain();assertEquals("",ColorOsNetworkPolicy.typeLabel("5G",source.get()));
     }
+    @Test public void switchingBetweenEnabledSimsPublishesTheMappedSlotEvenWithoutBooleanChange(){
+        source.setActive(context,true);context.drain();assertEquals(0,source.slot());int previous=changes;
+        SubscriptionManager.current=7;context.defaultChanged();context.drain();
+        assertEquals(true,source.get());assertEquals(1,source.slot());assertEquals(previous+1,changes);
+        source.setActive(null,false);assertEquals(-1,source.slot());
+    }
     @Test public void leavingWifiWithoutDataSettingChangesKeepsEnabledDataAndThenRealOffHidesType(){
         source.setActive(context,true);context.drain();
         assertEquals(true,source.get());
@@ -125,7 +134,7 @@ public final class DataEnabledSourceTest {
     @Test public void repeatedGlobalNotificationsDoNotReregisterOrReadBinder(){
         source.setActive(context,true);context.drain();
         for(int i=0;i<30;i++)context.resolver.change();
-        assertEquals(1,sim(1).registered);assertEquals(1,sim(1).reads);assertEquals(1,changes);
+        assertEquals(1,sim(1).registered);assertEquals(1,sim(1).reads);assertEquals(2,changes);
     }
     @Test public void missingCallbackPermissionKeepsSettingsFallback(){
         sim(1).failRegistration=true;source.setActive(context,true);

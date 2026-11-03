@@ -16,6 +16,7 @@ public class MobilePresenceTest {
         boolean attached=true,shown=true,visible=true,blocked;
         int state,visibility=VISIBLE,distance=1;
         ViewParent parent;
+        ImageView type;
         boolean isAttachedToWindow(){return attached;}
         boolean isShown(){return shown;}
         int getVisibility(){return visibility;}
@@ -43,7 +44,7 @@ public class MobilePresenceTest {
     @PLAN@
     static class Mobile {WeakReference<View> root;int level=4,slot;Mobile(View v){root=new WeakReference<>(v);}}
     static class TypeRow {int nativeVisibility;String label="";}
-    static class Data {Boolean get(){return true;}}
+    static class Data {int slot=-1;Boolean get(){return true;}int slot(){return slot;}}
     final Map<View,Boolean> wifiRows=new HashMap<>();
     final Map<ImageView,Mobile> mobileRows=new HashMap<>();
     final Map<ImageView,TypeRow> typeRows=new HashMap<>();
@@ -62,7 +63,7 @@ public class MobilePresenceTest {
     boolean ownsSignal(ImageView image){return owned&&image==signal;}
     boolean ownsRoot(View view){return owned&&view==root;}
     void syncType(ImageView image,TypeRow row){}
-    View child(View root,String id){return null;}
+    View child(View root,String id){return root.type;}
     void disable(Throwable failure){throw new AssertionError(failure);}
     @PREPARE@
     @ELIGIBLE@
@@ -92,5 +93,29 @@ public class MobilePresenceTest {
         assertEquals(p.mobileDescription,p.withSignals(false,true).mobileDescription);
         assertEquals("",p.withSignals(false,false).mobileDescription);
         assertEquals(p.mobileDescription,p.withTypeOwnership(false).mobileDescription);
+    }
+    @Test public void defaultDataCardSelectsSlotTwoAndSwitchesEvenWithBothRadiosHealthy(){
+        View secondRoot=new View();ImageView second=new ImageView();Mobile sim2=new Mobile(secondRoot);sim2.slot=1;sim2.level=2;
+        mobileRows.put(second,sim2);dataEnabled.slot=1;
+        Plan p=prepare(meter,new TrioSettings());assertSame(second,p.signal.get());assertEquals(2,p.mobile);assertEquals(1,p.mobileSlot);
+        dataEnabled.slot=0;p=prepare(meter,new TrioSettings());assertSame(signal,p.signal.get());assertEquals(4,p.mobile);assertEquals(0,p.mobileSlot);
+        assertTrue("unrepresented secondary row remains visible",second.visibility==View.VISIBLE);
+    }
+    @Test public void missingOrAmbiguousDataCardNeverBorrowsOtherCardsReading(){
+        dataEnabled.slot=1;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+        View duplicateRoot=new View();ImageView duplicate=new ImageView();mobileRows.put(duplicate,new Mobile(duplicateRoot));
+        dataEnabled.slot=0;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+        dataEnabled.slot=-1;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+        mobileRows.remove(duplicate);assertEquals(4,prepare(meter,new TrioSettings()).mobile);
+    }
+    @Test public void typeAndSignalUseTheSameDataCardRatherThanTheFirstRegisteredCard(){
+        typeCapable=true;root.type=new ImageView();TypeRow firstType=new TypeRow();firstType.label="4G";
+        typeRows.put(root.type,firstType);
+        View secondRoot=new View();secondRoot.type=new ImageView();TypeRow secondType=new TypeRow();secondType.label="5G";
+        typeRows.put(secondRoot.type,secondType);ImageView second=new ImageView();Mobile sim2=new Mobile(secondRoot);sim2.slot=1;
+        mobileRows.put(second,sim2);dataEnabled.slot=1;
+        Plan p=prepare(meter,new TrioSettings());assertEquals("5G",p.typeLabel);assertSame(secondRoot.type,p.typeImage.get());assertSame(second,p.signal.get());
+        dataEnabled.slot=0;p=prepare(meter,new TrioSettings());assertEquals("4G",p.typeLabel);assertSame(root.type,p.typeImage.get());assertSame(signal,p.signal.get());
+        secondRoot.visible=false;dataEnabled.slot=1;p=prepare(meter,new TrioSettings());assertEquals("",p.typeLabel);assertNull(p.signal.get());
     }
 }

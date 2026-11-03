@@ -34,6 +34,7 @@ final class ColorOsDataEnabledSource {
     private TelephonyCallback dataCallback;
     private int observedSubscription = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
     private volatile Boolean enabled;
+    private int defaultSlot = SubscriptionManager.INVALID_SIM_SLOT_INDEX;
 
     ColorOsDataEnabledSource(Runnable changed, Consumer<String> report) {
         this.changed = changed; this.report = report;
@@ -43,6 +44,7 @@ final class ColorOsDataEnabledSource {
     boolean active() { return observer != null; }
     boolean live() { return dataCallback != null; }
     int subscription() { return observedSubscription; }
+    int slot() { return defaultSlot; }
 
     void setActive(Context requested, boolean active) {
         if (!active || requested == null) { stop(); return; }
@@ -89,6 +91,14 @@ final class ColorOsDataEnabledSource {
         if (context == null) return;
         try {
             int subscription = SubscriptionManager.getDefaultDataSubscriptionId();
+            int slot = SubscriptionManager.isValidSubscriptionId(subscription)
+                    ? SubscriptionManager.getSlotIndex(subscription) : SubscriptionManager.INVALID_SIM_SLOT_INDEX;
+            if (defaultSlot != slot) {
+                defaultSlot = slot;
+                report.accept("dataSlot=" + slot);
+                // Both SIMs may have data enabled. A slot change must refresh even if the boolean is identical.
+                changed.run();
+            }
             if (subscription == observedSubscription && dataCallback != null) return;
             unlisten();
             if (!SubscriptionManager.isValidSubscriptionId(subscription)) {
@@ -102,6 +112,10 @@ final class ColorOsDataEnabledSource {
             publish(selected.isDataEnabled());
             if (Build.VERSION.SDK_INT >= 31) listen(selected, subscription);
         } catch (RuntimeException failure) {
+            if (defaultSlot != SubscriptionManager.INVALID_SIM_SLOT_INDEX) {
+                defaultSlot = SubscriptionManager.INVALID_SIM_SLOT_INDEX;
+                changed.run();
+            }
             report.accept("dataEnabled=unknown reason=" + failure.getClass().getSimpleName());
             publish(null);
         }
@@ -165,5 +179,6 @@ final class ColorOsDataEnabledSource {
         }
         observer = null; subscriptions = null; subscriptionListener = null;
         defaultDataReceiver = null; enabled = null;
+        defaultSlot = SubscriptionManager.INVALID_SIM_SLOT_INDEX;
     }
 }
