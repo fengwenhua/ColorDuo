@@ -904,6 +904,8 @@ final class ColorOsBatteryAdapter {
         String extra = frame.drawsClock ? frame.clock : "";
         if (frame.network.wifi >= 1 && !frame.network.wifiDescription.isEmpty())
             extra += (extra.isEmpty() ? "" : ", ") + frame.network.wifiDescription;
+        if (frame.network.mobile >= 0 && !frame.network.mobileDescription.isEmpty())
+            extra += (extra.isEmpty() ? "" : ", ") + frame.network.mobileDescription;
         String outsideDescription = frame.outside.description();
         if (!outsideDescription.isEmpty()) extra += (extra.isEmpty() ? "" : ", ") + outsideDescription;
         if (extra.isEmpty()) { restoreDescription(host); return true; }

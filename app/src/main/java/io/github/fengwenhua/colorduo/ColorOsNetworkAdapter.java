@@ -36,7 +36,7 @@ final class ColorOsNetworkAdapter {
     private final Map<ImageView, String> activityResources = new WeakHashMap<>();
     private final Map<View, Lease> leases = new WeakHashMap<>();
     private Class<?> activeType, visibleType, cellularType, containerType;
-    private Method wifiLevel, cellLevel, cellLevels, cellChanging, cellInetCondition, cellSlot;
+    private Method wifiLevel, cellLevel, cellLevels, cellChanging, cellInetCondition, cellSlot, cellResource;
     private Method iconVisible, iconBlocked, visibleState, setVisibleState, slot, addIgnored, removeIgnored;
     private Field validated, inService, softSim, ignoredSlots;
     private boolean capable;
@@ -60,7 +60,7 @@ final class ColorOsNetworkAdapter {
         final String typeLabel;
         final WeakReference<ImageView> typeImage;
         final boolean hideType, suppressType;
-        final String wifiDescription;
+        final String wifiDescription, mobileDescription;
         Plan(int wifi, int mobile, View root, View container, ImageView signal) {
             this(wifi, mobile, root, container, signal, 0);
         }
@@ -77,6 +77,11 @@ final class ColorOsNetworkAdapter {
         }
         Plan(int wifi, int mobile, View root, View container, ImageView signal, int mobileSlot,
              String typeLabel, ImageView typeImage, boolean hideType, boolean suppressType, String wifiDescription) {
+            this(wifi, mobile, root, container, signal, mobileSlot, typeLabel, typeImage, hideType, suppressType, wifiDescription, "");
+        }
+        Plan(int wifi, int mobile, View root, View container, ImageView signal, int mobileSlot,
+             String typeLabel, ImageView typeImage, boolean hideType, boolean suppressType,
+             String wifiDescription, String mobileDescription) {
             this.wifi = wifi; this.mobile = mobile;
             this.mobileSlot = mobileSlot;
             wifiRoot = new WeakReference<>(root);
@@ -87,11 +92,13 @@ final class ColorOsNetworkAdapter {
             this.hideType = hideType;
             this.suppressType = suppressType;
             this.wifiDescription = wifiDescription;
+            this.mobileDescription = mobileDescription;
         }
         boolean same(Plan other) {
             return other != null && wifi == other.wifi && mobile == other.mobile && mobileSlot == other.mobileSlot
                     && wifiRoot.get() == other.wifiRoot.get() && container.get() == other.container.get()
-                    && signal.get() == other.signal.get() && sameType(other) && wifiDescription.equals(other.wifiDescription);
+                    && signal.get() == other.signal.get() && sameType(other) && wifiDescription.equals(other.wifiDescription)
+                    && mobileDescription.equals(other.mobileDescription);
         }
         boolean sameType(Plan other) {
             return other != null && typeLabel.equals(other.typeLabel) && typeImage.get() == other.typeImage.get()
@@ -109,17 +116,19 @@ final class ColorOsNetworkAdapter {
             return new Plan(keepWifi ? wifi : -1, keepSignal ? mobile : -1,
                     keepWifi ? wifiRoot.get() : null, keepWifi ? container.get() : null,
                     keepSignal ? signal.get() : null, mobileSlot, typeLabel,
-                    keepType ? typeImage.get() : null, keepType, keepType && suppressType, keepWifi ? wifiDescription : "");
+                    keepType ? typeImage.get() : null, keepType, keepType && suppressType, keepWifi ? wifiDescription : "",
+                    keepSignal ? mobileDescription : "");
         }
         Plan withSignals(boolean wifiInk, boolean mobileInk) {
             return new Plan(wifiInk ? wifi : -1, mobileInk ? mobile : -1,
                     wifiInk ? wifiRoot.get() : null, wifiInk ? container.get() : null,
                     mobileInk ? signal.get() : null, mobileInk ? mobileSlot : 0,
-                    typeLabel, typeImage.get(), hideType, suppressType, wifiInk ? wifiDescription : "");
+                    typeLabel, typeImage.get(), hideType, suppressType, wifiInk ? wifiDescription : "",
+                    mobileInk ? mobileDescription : "");
         }
         Plan withTypeOwnership(boolean owned) {
             return new Plan(wifi, mobile, wifiRoot.get(), container.get(), signal.get(), mobileSlot,
-                    typeLabel, typeImage.get(), owned, suppressType, wifiDescription);
+                    typeLabel, typeImage.get(), owned, suppressType, wifiDescription, mobileDescription);
         }
     }
 
@@ -127,6 +136,8 @@ final class ColorOsNetworkAdapter {
         final WeakReference<View> root;
         int level = -1;
         int slot = -1;
+        int inetCondition = -1;
+        String resource = "";
         Mobile(View root) { this.root = new WeakReference<>(root); }
     }
 
@@ -172,6 +183,8 @@ final class ColorOsNetworkAdapter {
             cellChanging = cellularType.getMethod(ColorOsSymbols.NAME_GET_CARRIER_NETWORK_CHANGE);
             cellInetCondition = cellularType.getMethod(ColorOsSymbols.NAME_GET_INET_CONDITION);
             cellSlot = cellularType.getMethod(ColorOsSymbols.NAME_GET_PHONE_ID);
+            try { cellResource = cellularType.getMethod(ColorOsSymbols.NAME_TO_SIGNAL_DRAWABLE_STATE); }
+            catch (ReflectiveOperationException ignored) { cellResource = null; }
             inService = cellularType.getDeclaredField(ColorOsSymbols.NAME_IS_IN_SERVICE);
             softSim = cellularType.getDeclaredField(ColorOsSymbols.NAME_IS_SOFT_SIM_CARD);
             iconVisible = modern.getMethod(ColorOsSymbols.NAME_IS_ICON_VISIBLE);
@@ -243,15 +256,26 @@ final class ColorOsNetworkAdapter {
                 Object model = chain.getArg(1);
                 boolean cell = cellularType.isInstance(model);
                 int inetCondition = cell ? ((Number) cellInetCondition.invoke(model)).intValue() : -1;
+                String resource = "";
+                if (cell && cellResource != null) {
+                    try {
+                        int id = ((Number) cellResource.invoke(model)).intValue();
+                        if (id > 0) resource = image.getResources().getResourceEntryName(id);
+                    } catch (ReflectiveOperationException | RuntimeException ignored) {}
+                }
                 int next = cell ? ColorOsNetworkPolicy.mobile(true, inService.getBoolean(model),
                         inetCondition, (Boolean) cellChanging.invoke(model),
                         softSim.getBoolean(model), ((Number) cellLevel.invoke(model)).intValue(),
-                        ((Number) cellLevels.invoke(model)).intValue()) : -1;
+                        ((Number) cellLevels.invoke(model)).intValue(), resource) : -1;
                 int nextSlot = cell ? ((Number) cellSlot.invoke(model)).intValue() : -1;
-                if (row.level != next || row.slot != nextSlot) {
-                    row.level = next; row.slot = nextSlot; requestRefresh();
+                if (row.level != next || row.slot != nextSlot || row.inetCondition != inetCondition || !row.resource.equals(resource)) {
+                    row.level = next; row.slot = nextSlot; row.inetCondition = inetCondition; row.resource = resource;
+                    requestRefresh();
                     log("mobile/" + Integer.toHexString(System.identityHashCode(image)),
-                            "slot=" + nextSlot + " inetCondition=" + inetCondition + " acceptedLevel=" + next);
+                            "slot=" + nextSlot + " inetCondition=" + inetCondition + " acceptedLevel=" + next + " resource=" + resource);
+                    if (inetCondition != 1 && next >= 0)
+                        log("mobile/ordinary/" + Integer.toHexString(System.identityHashCode(image)),
+                                "inetCondition=" + inetCondition + " retainedLevel=" + next + " resource=" + resource);
                 }
             }, ImageView.class, type(ColorOsSymbols.CLASS_MODEL_SIGNAL_ICON_MODEL));
             capable = valid;
@@ -494,7 +518,7 @@ final class ColorOsNetworkAdapter {
             for (Map.Entry<ImageView, Mobile> entry : new ArrayList<>(mobileRows.entrySet())) {
                 View root = entry.getValue().root.get();
                 int distance = distance(meter, root);
-                if (distance > bestMobile || !eligible(root) || ((Number) visibleState.invoke(root)).intValue() != 0) continue;
+                if (distance > bestMobile || !eligible(root)) continue;
                 if (distance < bestMobile) { bestMobile = distance; mobileCount = 0; }
                 mobileCount++; signal = entry.getKey(); mobile = entry.getValue().level;
                 mobileSlot = entry.getValue().slot;
@@ -528,7 +552,8 @@ final class ColorOsNetworkAdapter {
             }
             return new Plan(wifi == null ? -1 : latestWifi, signal == null ? -1 : mobile, wifi, container, signal,
                     signal == null ? 0 : mobileSlot, label, typeImage, hideType, suppressType && typeImage != null,
-                    wifi == null ? "" : wifiState.description);
+                    wifi == null ? "" : wifiState.description,
+                    signal == null || mobileRoot.getContentDescription() == null ? "" : mobileRoot.getContentDescription().toString());
         } catch (Throwable failure) { disable(failure); return Plan.EMPTY; }
     }
 
@@ -775,6 +800,17 @@ final class ColorOsNetworkAdapter {
                 + " live=" + dataEnabled.live() + " subscription=" + dataEnabled.subscription());
         out.println("    network/state wifiLevel=" + acceptedWifi + " wifiRows=" + wifiRows.size()
                 + " mobileRows=" + mobileRows.size() + " leases=" + leases.size());
+        for (Map.Entry<ImageView, Mobile> entry : new ArrayList<>(mobileRows.entrySet())) {
+            Mobile row = entry.getValue(); View root = row.root.get();
+            try {
+                out.println("    network/mobileState id=" + Integer.toHexString(System.identityHashCode(entry.getKey()))
+                        + " level=" + row.level + " inetCondition=" + row.inetCondition + " resource=" + row.resource
+                        + " state=" + (root == null ? -1 : visibleState.invoke(root))
+                        + " signalVisibility=" + entry.getKey().getVisibility() + " owned=" + ownsSignal(entry.getKey()));
+            } catch (ReflectiveOperationException failure) {
+                out.println("    network/mobileState error=" + failure.getClass().getSimpleName());
+            }
+        }
         for (Map.Entry<View, Lease> entry : new ArrayList<>(leases.entrySet())) {
             Plan plan = entry.getValue().plan;
             View root = plan.wifiRoot.get(), container = plan.container.get();

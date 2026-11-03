@@ -29,6 +29,19 @@ public final class ColorOsNetworkPolicyTest {
     public static void main(String[] args) {
         ordinaryOemWifiCanHandoffBeforeValidationWithoutLosingItsDescription();
         unknownWarningFamiliesAndMissingDescriptionsRemainNative();
+        for (int level = 0; level <= 4; level++) {
+            String resource = "stat_signal_signal_lte_single_" + level;
+            for (int condition : new int[]{-1, 0, 1}) for (boolean changing : new boolean[]{false, true})
+                expect(ColorOsNetworkPolicy.mobile(true, true, condition, changing, false, level, 5, resource), level);
+            expect(ColorOsNetworkPolicy.mobile(true, false, 0, false, false, level, 5, resource), -1);
+            expect(ColorOsNetworkPolicy.mobile(true, true, 0, false, true, level, 5, resource), -1);
+            expect(ColorOsNetworkPolicy.mobile(false, true, 0, false, false, level, 5, resource), -1);
+            expect(ColorOsNetworkPolicy.mobile(true, true, 0, false, false, level, 6, resource), -1);
+        }
+        for (String resource : new String[]{"stat_signal_noservice_lte", "stat_signal_single_novoice_4",
+                "stat_signal_soft_signal_4", "stat_signal_signal_lte_single_3", "unknown"})
+            for (int condition : new int[]{0, 1})
+                expect(ColorOsNetworkPolicy.mobile(true, true, condition, false, false, 4, 5, resource), -1);
         for (int level = 1; level <= 4; level++) expect(ColorOsNetworkPolicy.wifi(true, true, true, level), level);
         expect(ColorOsNetworkPolicy.wifi(true, true, true, 0), -1); // Current arcs have no ink at zero.
         expect(ColorOsNetworkPolicy.wifi(true, true, true, 5), -1);

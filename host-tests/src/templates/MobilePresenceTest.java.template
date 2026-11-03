@@ -1,0 +1,96 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+package io.github.fengwenhua.colorduo;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+/** Executes the production selector across native presentation changes, with one radio model. */
+public class MobilePresenceTest {
+    interface ViewParent {}
+    public static class View implements ViewParent {
+        static final int VISIBLE=0,GONE=8;
+        boolean attached=true,shown=true,visible=true,blocked;
+        int state,visibility=VISIBLE,distance=1;
+        ViewParent parent;
+        boolean isAttachedToWindow(){return attached;}
+        boolean isShown(){return shown;}
+        int getVisibility(){return visibility;}
+        ViewParent getParent(){return parent;}
+        CharSequence getContentDescription(){return "Signal strength, no internet";}
+        Resources getResources(){return new Resources();}
+        public boolean isIconVisible(){return visible;}
+        public boolean isIconBlocked(){return blocked;}
+        public int getVisibleState(){return state;}
+        public String getSlot(){return "wifi";}
+    }
+    public static class ImageView extends View {}
+    static class Resources {String getResourceEntryName(int id){return "unknown";}}
+    static class Prefs {static final int SIGNAL_IN_RING=0,MOBILE_TYPE_OUT_RING=2;}
+    static class BuildConfig {static final String COLOROS_STAGE="outside";}
+    static class ColorOsSymbols {static final String ID_MOBILE_TYPE="mobile_type";}
+    static class Content {
+        boolean showWifi(){return false;}
+        boolean showMobile(){return true;}
+        int signalMode(){return 0;}
+        int mobileTypeMode(){return 1;}
+    }
+    static class TrioSettings {boolean debugLog;Content content=new Content();}
+    record WifiReading(boolean active,boolean validated,boolean visible,int level,int resource,String description) {}
+    @PLAN@
+    static class Mobile {WeakReference<View> root;int level=4,slot;Mobile(View v){root=new WeakReference<>(v);}}
+    static class TypeRow {int nativeVisibility;String label="";}
+    static class Data {Boolean get(){return true;}}
+    final Map<View,Boolean> wifiRows=new HashMap<>();
+    final Map<ImageView,Mobile> mobileRows=new HashMap<>();
+    final Map<ImageView,TypeRow> typeRows=new HashMap<>();
+    final View meter=new View(),root=new View();final ImageView signal=new ImageView();
+    final Data dataEnabled=new Data();
+    final Class<?> containerType=View.class;
+    final Method iconVisible=View.class.getMethod("isIconVisible"),iconBlocked=View.class.getMethod("isIconBlocked"),visibleState=View.class.getMethod("getVisibleState"),slot=View.class.getMethod("getSlot");
+    WifiReading wifiReading=new WifiReading(false,false,false,-1,0,"");
+    boolean capable=true,debugLog,typeCapable,owned;
+    int acceptedWifi;
+    public MobilePresenceTest()throws Exception{mobileRows.put(signal,new Mobile(root));}
+    static void requireMain(){}
+    static int distance(View meter,View root){return root==null?100:root.distance;}
+    boolean ignored(View view){return false;}
+    boolean ownsWifi(View view){return false;}
+    boolean ownsSignal(ImageView image){return owned&&image==signal;}
+    boolean ownsRoot(View view){return owned&&view==root;}
+    void syncType(ImageView image,TypeRow row){}
+    View child(View root,String id){return null;}
+    void disable(Throwable failure){throw new AssertionError(failure);}
+    @PREPARE@
+    @ELIGIBLE@
+    @Test public void ownedRadioSurvivesNativeIconOverflowAndHiddenPresentation(){
+        owned=true;signal.visibility=View.GONE;
+        for(int state:new int[]{0,1,2,0}){
+            root.state=state;Plan p=prepare(meter,new TrioSettings());
+            assertEquals("presentation state must not invalidate the radio reading",4,p.mobile);assertSame(signal,p.signal.get());
+        }
+    }
+    @Test public void freshOverflowOrHiddenRootCannotAcquireOwnership(){
+        for(int state:new int[]{1,2}){root.state=state;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);}
+        root.state=0;assertEquals(4,prepare(meter,new TrioSettings()).mobile);
+    }
+    @Test public void policyBlockDetachAndHiddenWindowStillFailOpen(){
+        owned=true;root.blocked=true;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+        root.blocked=false;root.attached=false;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+        root.attached=true;root.shown=false;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+        root.shown=true;root.distance=100;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+    }
+    @Test public void unsupportedRadioOrSlotNeverBorrowsAnOldReading(){
+        owned=true;Mobile m=mobileRows.get(signal);m.level=-1;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+        m.level=4;m.slot=2;assertEquals(-1,prepare(meter,new TrioSettings()).mobile);
+    }
+    @Test public void accessibilityDescriptionTravelsWithTheRepresentedSignal(){
+        owned=true;Plan p=prepare(meter,new TrioSettings());assertEquals("Signal strength, no internet",p.mobileDescription);
+        assertEquals(p.mobileDescription,p.withSignals(false,true).mobileDescription);
+        assertEquals("",p.withSignals(false,false).mobileDescription);
+        assertEquals(p.mobileDescription,p.withTypeOwnership(false).mobileDescription);
+    }
+}

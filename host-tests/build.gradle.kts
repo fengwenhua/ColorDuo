@@ -42,6 +42,7 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
     inputs.file(production.resolve("ColorOsBatteryAdapter.java"))
     inputs.file(templates.file("NetworkFrameTest.java.template"))
     inputs.file(templates.file("NetworkLeaseScopeTest.java.template"))
+    inputs.file(templates.file("MobilePresenceTest.java.template"))
     inputs.file(production.resolve("ColorOsDataEnabledSource.java"))
     inputs.file(templates.file("DataEnabledSourceTest.java.template"))
     outputs.dir(presenceSources)
@@ -70,6 +71,10 @@ val generatePresenceFixtures = tasks.register("generatePresenceFixtures") {
         val networkPlan = Regex("static final class Plan \\{.*?\\n    \\}", RegexOption.DOT_MATCHES_ALL)
             .findAll(network.readText()).toList()
         require(networkPlan.size == 1) { "Network plan must be unique" }
+        emit("MobilePresenceTest", mapOf(
+            "@PLAN@" to networkPlan.single().value,
+            "@PREPARE@" to method(network, "Plan prepare(View meter, TrioSettings settings)"),
+            "@ELIGIBLE@" to method(network, "private boolean eligible(View root) throws ReflectiveOperationException")))
         emit("NetworkLeaseScopeTest", mapOf(
             "@PLAN@" to networkPlan.single().value,
             "@RELEASE_ROOT@" to method(network, "private void releaseRoot(View root)"),

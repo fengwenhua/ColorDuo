@@ -29,9 +29,19 @@ final class ColorOsNetworkPolicy {
 
     static int mobile(boolean cellular, boolean inService, int inetCondition,
                       boolean changing, boolean softSim, int level, int levels) {
+        return mobile(cellular, inService, inetCondition, changing, softSim, level, levels, "");
+    }
+
+    static int mobile(boolean cellular, boolean inService, int inetCondition,
+                      boolean changing, boolean softSim, int level, int levels, String resource) {
         // OPlus renders Cellular with inetCondition, not AOSP's showExclamationMark.
         // The latter also becomes true when data is deliberately disabled on working Wi-Fi.
-        return cellular && inService && inetCondition == 1 && !changing && !softSim
+        // The normal OPlus binder's LTE-single family ignores inetCondition and
+        // carrierNetworkChange: validation may change while the radio bars do not.
+        // Do not extend this to warning, no-service, soft-SIM or roaming variants.
+        boolean ordinary = ("stat_signal_signal_lte_single_" + level).equals(resource);
+        boolean legacy = resource.isEmpty() && inetCondition == 1 && !changing;
+        return cellular && inService && (ordinary || legacy) && !softSim
                 && levels == 5 && level >= 0 && level <= 4 ? level : -1;
     }
 }
