@@ -60,6 +60,8 @@ public final class TrioSettings {
      * Draws only the current data SIM in the out-of-ring reading, leaving the other out.
      */
     public boolean dataSimOnly;
+    /** Global, opt-in compensation for battery gauges reporting single-cell power. */
+    public boolean powerDualCell;
 
     /** Network highlight while a VPN is active. Global across glyph styles. */
     public int vpnColor;
@@ -279,6 +281,7 @@ public final class TrioSettings {
         s.navLabels = Prefs.DEF_NAV_LABELS;
         s.trioStyle = Prefs.DEF_TRIO_STYLE;
         s.dataSimOnly = Prefs.DEF_DATA_SIM_ONLY;
+        s.powerDualCell = Prefs.DEF_POWER_DUAL_CELL;
         s.perfScale = Prefs.DEF_PERF_SCALE;
         s.perfWeight = Prefs.DEF_PERF_WEIGHT;
         s.glyphScale = Prefs.DEF_GLYPH_SCALE;
@@ -379,6 +382,7 @@ public final class TrioSettings {
         s.chargingLayout = ChargeLayout.normalize(p.getString(Prefs.styledKey(Prefs.KEY_CHARGING_LAYOUT, s.trioStyle), ""));
         s.quickChargingLayout = ChargeLayout.normalize(p.getString(Prefs.styledKey(Prefs.KEY_QUICK_CHARGING_LAYOUT, s.trioStyle), ""));
         s.dataSimOnly = p.getBoolean(Prefs.KEY_DATA_SIM_ONLY, Prefs.DEF_DATA_SIM_ONLY);
+        s.powerDualCell = p.getBoolean(Prefs.KEY_POWER_DUAL_CELL, Prefs.DEF_POWER_DUAL_CELL);
         s.perfScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_PERF_SCALE, Prefs.DEF_PERF_SCALE),
                 Prefs.MIN_PERF_SCALE, Prefs.MAX_PERF_SCALE);
@@ -610,6 +614,7 @@ public final class TrioSettings {
         s.trioStyle = trioStyle;
         s.ringZones = copyZones(ringZones);
         s.dataSimOnly = dataSimOnly;
+        s.powerDualCell = powerDualCell;
         s.perfScale = perfScale;
         s.perfWeight = perfWeight;
         s.glyphScale = glyphScale;
@@ -699,6 +704,7 @@ public final class TrioSettings {
             case Prefs.KEY_SHOW_SIM_1: setShowSim1(src.content.showSim1()); return true;
             case Prefs.KEY_SHOW_SIM_2: setShowSim2(src.content.showSim2()); return true;
             case Prefs.KEY_DATA_SIM_ONLY: dataSimOnly = src.dataSimOnly; return true;
+            case Prefs.KEY_POWER_DUAL_CELL: powerDualCell = src.powerDualCell; return true;
             case Prefs.KEY_PERF_POWER: setPerfPower(src.content.perfPower()); return true;
             case Prefs.KEY_PERF_TEMP: setPerfTemp(src.content.perfTemp()); return true;
             case Prefs.KEY_PERF_TEMP_CHARGING_ONLY: setPerfTempChargingOnly(src.content.perfTempChargingOnly()); return true;
@@ -776,6 +782,7 @@ public final class TrioSettings {
         s.chargingLayout = ChargeLayout.normalize(bundle.getString(Prefs.styledKey(Prefs.KEY_CHARGING_LAYOUT, s.trioStyle), ""));
         s.quickChargingLayout = ChargeLayout.normalize(bundle.getString(Prefs.styledKey(Prefs.KEY_QUICK_CHARGING_LAYOUT, s.trioStyle), ""));
         s.dataSimOnly = bundle.getBoolean(Prefs.KEY_DATA_SIM_ONLY, Prefs.DEF_DATA_SIM_ONLY);
+        s.powerDualCell = bundle.getBoolean(Prefs.KEY_POWER_DUAL_CELL, Prefs.DEF_POWER_DUAL_CELL);
         s.perfScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_PERF_SCALE, Prefs.DEF_PERF_SCALE),
                 Prefs.MIN_PERF_SCALE, Prefs.MAX_PERF_SCALE);
@@ -922,6 +929,7 @@ public final class TrioSettings {
                 && trioStyle == s.trioStyle
                 && java.util.Arrays.deepEquals(ringZones, s.ringZones)
                 && dataSimOnly == s.dataSimOnly
+                && powerDualCell == s.powerDualCell
                 && perfScale == s.perfScale
                 // The readout's weight is a stored setting too, and issue 25
                 // applies to it exactly as it does to the size above: the slider
@@ -978,6 +986,7 @@ public final class TrioSettings {
         h = h * 31 + vpnColor;
         h = h * 31 + statusBarHeightPercent;
         h = h * 31 + perfScale;
+        h = h * 31 + (powerDualCell ? 1 : 0);
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;
         h = h * 31 + (ringValuePriority ? 1 : 0);

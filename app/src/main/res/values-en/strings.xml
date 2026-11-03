@@ -122,6 +122,8 @@
 
 
     <string name="perf_power_title">Charging power</string>
+    <string name="power_dual_cell_title">Dual-cell power compensation ×2</string>
+    <string name="power_dual_cell_summary">Enable only if your device reports power for a single cell. Doubles the displayed battery-side estimate; keep off if the gauge already reports pack power. Temperature is unchanged.</string>
 
     <string name="perf_temp_title">Battery temperature</string>
 

@@ -84,6 +84,7 @@ internal enum class ContentControl(val owner: TrioSettingsPart) {
     TypeHideOnWifi(TrioSettingsPart.Type),
     // --- readouts and fixed pieces --------------------------------------------
     Power(TrioSettingsPart.Readouts),
+    PowerDualCell(TrioSettingsPart.Readouts),
     Temperature(TrioSettingsPart.Readouts),
     ChargingTemp(TrioSettingsPart.Readouts),
     Clock(TrioSettingsPart.Clock),
@@ -229,6 +230,8 @@ internal fun ContentControlRow(
             }
         ContentControl.Power -> ContentToggle(settings.content.perfPower(), R.string.perf_power_title,
             null, master) { value -> update { it.setPerfPower(value) } }
+        ContentControl.PowerDualCell -> ContentToggle(settings.powerDualCell, R.string.power_dual_cell_title,
+            R.string.power_dual_cell_summary, master) { value -> update { it.setPowerDualCell(value) } }
         ContentControl.Temperature -> ContentToggle(settings.content.perfTemp(), R.string.perf_temp_title,
             null, master) { value -> update { it.setPerfTemp(value) } }
         ContentControl.ChargingTemp -> ContentToggle(settings.content.perfTempChargingOnly(),

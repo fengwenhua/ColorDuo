@@ -29,7 +29,7 @@ final class ColorOsReadoutSource {
                     && (!powerReady || !temperatureReady)) return "";
             String power = "";
             if (settings.content.perfPower() && powerReady) {
-                int tenths = Math.round(watts * 10f);
+                int tenths = Math.round(HyperOsReadout.compensatedWatts(watts, settings.powerDualCell) * 10f);
                 power = tenths >= 100 ? tenths / 10 + "W" : tenths / 10 + "." + tenths % 10 + "W";
             }
             String temp = settings.content.perfTemp() && temperatureReady && (!settings.content.perfTempChargingOnly() || charging)

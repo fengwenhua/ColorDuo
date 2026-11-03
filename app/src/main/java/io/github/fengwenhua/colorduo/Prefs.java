@@ -760,6 +760,9 @@ public final class Prefs {
      * <p>A brand-new key with a brand-new name.
      */
     public static final String KEY_PERF_POWER = "perf_power";
+    /** Opt-in compensation only for gauges reporting one cell's voltage/current product. */
+    public static final String KEY_POWER_DUAL_CELL = "power_dual_cell";
+    public static final boolean DEF_POWER_DUAL_CELL = false;
     /**
      * Draws the battery's temperature in degrees Celsius in the status bar, beside
      * the charging power.

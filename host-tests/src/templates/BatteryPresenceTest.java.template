@@ -35,7 +35,7 @@ public class BatteryPresenceTest {
  }
  static class TrioHooks { static int invalidations; static void invalidateHosts(){ invalidations++; } }
  static class TrioAppearance {
-  boolean perfPower; boolean perfTemp; boolean perfTempChargingOnly;
+  boolean perfPower; boolean perfTemp; boolean perfTempChargingOnly; boolean powerDualCell;
   boolean perfAnywhere(){ return perfPower || perfTemp; }
  }
  static final char PERF_BREAK = '@PERF_BREAK@';

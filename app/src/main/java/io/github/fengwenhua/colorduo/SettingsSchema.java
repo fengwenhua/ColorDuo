@@ -64,6 +64,7 @@ final class SettingsSchema {
         entry(Prefs.KEY_SHOW_SIM_2, "showSim2", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.showSim2()),
         entry(Prefs.KEY_DATA_SIM_ONLY, "dataSimOnly", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.dataSimOnly),
         entry(Prefs.KEY_PERF_POWER, "perfPower", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.perfPower()),
+        entry(Prefs.KEY_POWER_DUAL_CELL, "powerDualCell", Kind.BOOLEAN, 0, style -> 1, s -> s.powerDualCell),
         entry(Prefs.KEY_PERF_TEMP, "perfTemp", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.perfTemp()),
         entry(Prefs.KEY_PERF_TEMP_CHARGING_ONLY, "perfTempChargingOnly", Kind.BOOLEAN, Integer.MIN_VALUE, style -> Integer.MAX_VALUE, s -> s.content.perfTempChargingOnly()),
         entry(Prefs.KEY_PERF_SCALE, "perfScale", Kind.INT, Prefs.MIN_PERF_SCALE, style -> Prefs.MAX_PERF_SCALE, s -> s.perfScale),

@@ -14,6 +14,11 @@ package io.github.fengwenhua.colorduo;
 final class HyperOsReadout {
     private HyperOsReadout() {}
 
+    /** Apply at presentation time, once; cached sensor readings always remain unmodified. */
+    static float compensatedWatts(float watts, boolean dualCell) {
+        return dualCell ? watts * 2f : watts;
+    }
+
     static float wattsOf(int currentMicroAmps, int voltageMilliVolts) {
         if (currentMicroAmps == Integer.MIN_VALUE || voltageMilliVolts <= 0) {
             return Float.NaN;

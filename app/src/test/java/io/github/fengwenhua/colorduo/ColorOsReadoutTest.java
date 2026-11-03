@@ -6,6 +6,28 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public final class ColorOsReadoutTest {
+    @Test public void dualCellCompensationIsOptInReversibleAndNeverCompoundsCachedPower() {
+        TrioSettings settings = TrioSettings.defaults();
+        settings.setPerfPower(true); settings.setPerfTemp(true); settings.setPerfTempChargingOnly(true);
+        ColorOsReadoutSource.State cached = new ColorOsReadoutSource.State(true, 4.2f, 34);
+        assertFalse(settings.powerDualCell);
+        assertEquals("4.2W\n34\u00b0C", cached.text(settings));
+        settings.powerDualCell = true;
+        for (int draw = 0; draw < 5; draw++) assertEquals("8.4W\n34\u00b0C", cached.text(settings));
+        assertEquals(4.2f, cached.watts, 0f);
+        settings.powerDualCell = false;
+        assertEquals("4.2W\n34\u00b0C", cached.text(settings));
+        settings.powerDualCell = true;
+        assertEquals("", new ColorOsReadoutSource.State(false, 4.2f, 34).text(settings));
+        assertEquals("", new ColorOsReadoutSource.State(true, Float.NaN, 34).text(settings));
+        assertEquals("0.0W\n34\u00b0C", new ColorOsReadoutSource.State(true, 0f, 34).text(settings));
+    }
+
+    @Test public void compensationIsSharedWithoutChangingPlatformCurrentUnits() {
+        assertEquals(8.4f, HyperOsReadout.compensatedWatts(ColorOsReadout.wattsOf(1000, 4200), true), 0.00001f);
+        assertEquals(8.4f, HyperOsReadout.compensatedWatts(HyperOsReadout.wattsOf(1000000, 4200), true), 0.00001f);
+        assertTrue(Float.isNaN(HyperOsReadout.compensatedWatts(Float.NaN, true)));
+    }
     @Test public void measuredOplusMilliampSamplesRenderNonZeroPower() {
         // Find N5: API current -651 mA, battery voltage 4415 mV, charge counter rising.
         for (int current : new int[]{-651, 651}) {

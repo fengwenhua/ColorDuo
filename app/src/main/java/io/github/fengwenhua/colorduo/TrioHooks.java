@@ -3736,7 +3736,7 @@ private static boolean unmarkCollapsed(View child) {
 private static String perfText(TrioAppearance a) {
         if (!a.perfAnywhere()) return "";
         return HyperOsReadout.text(a.perfPower, a.perfTemp, a.perfTempChargingOnly,
-                TrioState.sChargingAttached, TrioState.sChargePowerW, TrioState.sBatteryTempC,
+                TrioState.sChargingAttached, HyperOsReadout.compensatedWatts(TrioState.sChargePowerW, a.powerDualCell), TrioState.sBatteryTempC,
                 TrioState.TEMP_UNKNOWN, PERF_BREAK);
     }
 

@@ -140,6 +140,8 @@
 
 
     <string name="perf_power_title">充电功率</string>
+    <string name="power_dual_cell_title">双电芯功率补偿 ×2</string>
+    <string name="power_dual_cell_summary">仅在设备上报单颗电芯功率时开启，显示值乘以 2；若已上报整组功率，请保持关闭。不影响温度，读数为电池侧估算。</string>
 
     <string name="perf_temp_title">电池温度</string>
 

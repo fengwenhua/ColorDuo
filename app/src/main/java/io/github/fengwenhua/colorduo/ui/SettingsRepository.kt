@@ -234,6 +234,7 @@ class SettingsRepository @JvmOverloads constructor(
 
     /** Charging power in the out-of-ring strip - see [Prefs.KEY_PERF_POWER]. */
     fun setPerfPower(value: Boolean) = writeBoolean(Prefs.KEY_PERF_POWER, value)
+    fun setPowerDualCell(value: Boolean) = writeBoolean(Prefs.KEY_POWER_DUAL_CELL, value)
     /** Battery temperature in the out-of-ring strip - see [Prefs.KEY_PERF_TEMP]. */
     fun setPerfTemp(value: Boolean) = writeBoolean(Prefs.KEY_PERF_TEMP, value)
     /** Temperature only while charging - see [Prefs.KEY_PERF_TEMP_CHARGING_ONLY]. */

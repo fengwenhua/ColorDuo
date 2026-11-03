@@ -148,6 +148,7 @@ public final class TrioAppearance {
      * this one only for the power segment.
      */
     public final boolean perfPower;
+    public final boolean powerDualCell;
     /** The battery temperature is drawn in the same out-of-ring strip. */
     public final boolean perfTemp;
     /** Drops the temperature unless a charger is attached; see {@link Prefs#KEY_PERF_TEMP_CHARGING_ONLY}. */
@@ -306,6 +307,7 @@ public final class TrioAppearance {
         chargingShowsValue = c.content.chargingShowsValue();
         fontPath = c.fontPath == null ? "" : c.fontPath;
         perfPower = c.content.perfPower();
+        powerDualCell = c.powerDualCell;
         perfTemp = c.content.perfTemp();
         perfTempChargingOnly = c.content.perfTempChargingOnly();
         perfScale = c.perfScale;
